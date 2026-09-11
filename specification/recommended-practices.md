@@ -26,20 +26,87 @@
 
 モジュールの具体的な表現方法は使用言語に依存します。
 
-例:
+代表例:
 
 ```text
-OOP言語      -> class / module
-C            -> .c / .h の組
-Go           -> package / file / struct + functions
-Rust         -> module / struct + impl
-Python       -> module / class
-関数型言語   -> module / function group
+Go      -> package / file / struct + functions
+Python  -> .py module / class / function group
+C++     -> .cpp + .hpp/.h / namespace / class
+C#      -> .cs file / namespace / class
+C       -> .c + .h
+Rust    -> module / struct + impl
+関数型言語 -> module / function group
 ```
 
-オブジェクト指向言語では、1モジュールを1クラスとして実装しても構いません。
+現在 UPD Commander 設計を適用する主要な実装言語では、次のように考えます。
 
-ただし、クラスはモジュール境界の代替ではありません。クラスを使用する場合も、ファイルおよびモジュールの責務境界を曖昧にしないことを推奨します。
+### Go
+
+Go では package が比較的大きな公開・依存境界となり、その内部を複数ファイルへ分割できます。
+
+UPD Commander 設計では、package 内でも責務ごとにファイルを分割し、1ファイルへ独立した複数責務を詰め込まないことを推奨します。
+
+```text
+process/
+├─ commander.go
+├─ messenger.go
+├─ battle_processing.go
+└─ movement_processing.go
+```
+
+必要に応じて `struct + method` を使用しても構いませんが、struct を使うこと自体は必須ではありません。状態を持たない処理は関数群として実装しても構いません。
+
+### Python
+
+Python では `.py` ファイル自体をモジュールとして扱えます。
+
+そのため、UPD Commander 設計では1つの `.py` ファイルを1つの責務単位として扱う構造が自然です。
+
+```text
+process/
+├─ commander.py
+├─ messenger.py
+├─ battle_processing.py
+└─ movement_processing.py
+```
+
+クラスが必要な場合は使用して構いませんが、単純な処理をクラス化する必要はありません。関数のみで責務を表現できる場合は、モジュール + 関数でも同じ設計を実現できます。
+
+### C++
+
+C++ では `.cpp` と `.hpp` / `.h` の組を1つの実装モジュールとして扱うことができます。
+
+```text
+process/
+├─ Commander.cpp
+├─ Commander.hpp
+├─ Messenger.cpp
+├─ Messenger.hpp
+├─ BattleProcessing.cpp
+├─ BattleProcessing.hpp
+├─ MovementProcessing.cpp
+└─ MovementProcessing.hpp
+```
+
+クラスを利用する場合は、原則として1クラスを1責務へ対応させ、ファイル境界と責務境界が可能な限り一致する構造を推奨します。
+
+ただし、UPD Commander 設計上のモジュールはクラスそのものではありません。namespace、自由関数、内部リンケージ等を使った非OOP実装でも同じ設計を実現できます。
+
+### C#
+
+C# ではクラスを主要な実装単位として使用することが一般的ですが、UPD Commander 設計ではクラスより先にファイル・モジュールの責務を定義します。
+
+```text
+Process/
+├─ ProcessCommander.cs
+├─ ProcessMessenger.cs
+├─ BattleProcessing.cs
+└─ MovementProcessing.cs
+```
+
+原則として、1つの主要クラスを1ファイルへ配置し、そのクラスをファイルの責務と対応させる構造を推奨します。
+
+ただし、補助型、record、enum、内部型などを同一ファイルへ置くことまで禁止するものではありません。同一責務の範囲内であることを優先します。
 
 ## 3. 1関数1動作
 
