@@ -14,6 +14,7 @@
 - [Message Contract](message-contract.md) — 層間メッセージの契約
 - [Error Handling](error-handling.md) — エラー検出・伝播・変換
 - [Testing Rules](testing-rules.md) — 単体・統合・アーキテクチャテスト規定
+- [Recommended Practices](recommended-practices.md) — 1クラス1責務、1関数1動作、コメント、閉じた処理クラス等の推奨規約
 
 ## 最上位規定
 
