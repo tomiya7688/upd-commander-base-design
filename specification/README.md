@@ -14,7 +14,7 @@
 - [Message Contract](message-contract.md) — 層間メッセージの契約
 - [Error Handling](error-handling.md) — エラー検出・伝播・変換
 - [Testing Rules](testing-rules.md) — 単体・統合・アーキテクチャテスト規定
-- [Recommended Practices](recommended-practices.md) — 1クラス1責務、1関数1動作、コメント、閉じた処理クラス等の推奨規約
+- [Recommended Practices](recommended-practices.md) — 1ファイル1責務、1モジュール1責務、1関数1動作、コメント、閉じた処理モジュール等の推奨規約
 - [Implementation Quality Requirements](implementation-quality.md) — インデント、ビルド、CI、formatter、linter、テスト等の最低品質条件
 
 ## 最上位規定
@@ -27,6 +27,8 @@
 6. UI と Data は直接通信してはならない。
 7. Process は UI の表示方法を知らず、Data の保存方式を知らない。
 8. UI フレームワークや DB 等の層固有型を境界越しに漏らさない。
+9. 設計上の責務単位は言語固有のクラスではなく、ファイルおよびモジュールを基本とする。
+10. クラスを使用する言語では、クラスをモジュール内部の実装手段として使用してよいが、ファイルまたはモジュールの責務境界を曖昧にしてはならない。
 
 ## 規定の強さ
 
