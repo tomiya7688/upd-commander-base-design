@@ -15,6 +15,7 @@
 - [Error Handling](error-handling.md) — エラー検出・伝播・変換
 - [Testing Rules](testing-rules.md) — 単体・統合・アーキテクチャテスト規定
 - [Recommended Practices](recommended-practices.md) — 1クラス1責務、1関数1動作、コメント、閉じた処理クラス等の推奨規約
+- [Implementation Quality Requirements](implementation-quality.md) — インデント、ビルド、CI、formatter、linter、テスト等の最低品質条件
 
 ## 最上位規定
 
@@ -32,5 +33,7 @@
 本文中の「しなければならない」「禁止する」は原則として必須規定です。
 
 「推奨する」「してよい」は、プロジェクト固有事情に応じて変更可能です。ただし、その変更によって最上位規定を破ってはなりません。
+
+`implementation-quality.md` は推奨事項ではなく、通常品質の実装として受け入れるための適合条件を定義します。
 
 規定外の例外を導入する場合は、理由・範囲・代替案・将来除去可能性を文書化してください。
