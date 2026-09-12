@@ -1,8 +1,10 @@
 package checker
 
+import "strings"
+
 func DependencyError(source ModuleInfo, target ModuleInfo) string {
 	if source.ApplicationID != "" && target.ApplicationID != "" && source.ApplicationID != target.ApplicationID {
-		if target.Role != "messenger" && target.Role != "" && target.Role != "contract" {
+		if !isApplicationBoundaryAPI(target) {
 			return "cross-application internal dependency"
 		}
 	}
@@ -22,4 +24,17 @@ func DependencyError(source ModuleInfo, target ModuleInfo) string {
 		return "Commander must not depend on Processing in another layer"
 	}
 	return ""
+}
+
+func isApplicationBoundaryAPI(target ModuleInfo) bool {
+	if target.Role == "messenger" {
+		return true
+	}
+	path := strings.ToLower(target.Path)
+	for _, name := range []string{"/contract", "/contracts", "/dto", "/dtos", "/shared"} {
+		if strings.Contains(path, name) {
+			return true
+		}
+	}
+	return false
 }
