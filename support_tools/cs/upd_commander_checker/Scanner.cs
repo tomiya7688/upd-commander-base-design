@@ -58,7 +58,7 @@ internal static class Scanner
         {
             lines = File.ReadAllLines(file);
         }
-        catch
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return [new Finding(relative, 1, "UPD001", "read failed")];
         }
@@ -76,14 +76,14 @@ internal static class Scanner
                 var message = DependencyRules.GetError(source, target);
                 if (message is not null)
                 {
-                    var crossApplication = source.ApplicationId.Length > 0 &&
-                        target.ApplicationId.Length > 0 &&
-                        source.ApplicationId != target.ApplicationId;
+                    var code = message == "cross-application internal dependency"
+                        ? "UPD102"
+                        : "UPD101";
                     AddFinding(
                         findings,
                         relative,
                         lineNumber,
-                        crossApplication ? "UPD102" : "UPD101",
+                        code,
                         message,
                         "error",
                         lineText,
