@@ -5,7 +5,7 @@ import PyInstaller.__main__
 
 def main() -> None:
     project_root = Path(__file__).resolve().parent.parent
-    entry = project_root / "src" / "upd_commander_checker" / "__main__.py"
+    entry = project_root / "scripts" / "exe_entry.py"
     PyInstaller.__main__.run(
         [
             str(entry),
