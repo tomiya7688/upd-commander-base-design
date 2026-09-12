@@ -32,8 +32,9 @@ python -m upd_commander_checker path/to/project
 
 ```text
 E UPD101 ui/view.py:3 UI layer must not depend directly on Data layer
+E UPD102 applications/main/ui/view.py:4 direct dependency on another Application internal module
 W UPD202 process/game_commander.py:12 Commander contains a calculation expression
-FAIL e=1 w=1
+FAIL e=2 w=1
 ```
 
 問題なし:
@@ -41,6 +42,26 @@ FAIL e=1 w=1
 ```text
 OK
 ```
+
+## Nested Application
+
+`apps/`、`applications/`、`features/` 等の直下名を Application 境界として認識します。
+
+```text
+applications/
+├─ main/
+│  ├─ ui/
+│  ├─ process/
+│  └─ data/
+└─ settings/
+   ├─ ui/
+   ├─ process/
+   └─ data/
+```
+
+各 Application は独立した UI / Process / Data を持つものとして判定します。
+
+別 Application の内部層や Processing への直接 import は `UPD102` として検出します。Messenger および `contract` / `contracts` / `dto` / `dtos` / `shared` を含む共有契約 import は境界越し通信として許可します。
 
 ## Ignore
 
@@ -103,7 +124,8 @@ dist/upd-commander-check.exe
 
 - `UPD001`: Python ソース読み込み失敗
 - `UPD002`: Python 構文エラー
-- `UPD101`: UPD Commander の依存規則違反
+- `UPD101`: UPD Commander の層・役割依存規則違反
+- `UPD102`: 別 Application 内部実装への直接依存
 - `UPD201`: Commander 内のループ
 - `UPD202`: Commander 内の計算式
 - `UPD203`: Commander 内の直接的な実処理/API 呼び出し
@@ -113,5 +135,7 @@ dist/upd-commander-check.exe
 ## 判定方法
 
 ファイルパス、ファイル名、import 名に含まれる `ui` / `process` / `data` と `commander` / `messenger` / `processing` を利用して役割を推定します。
+
+Application 境界は `app` / `apps` / `application` / `applications` / `feature` / `features` の直下名から推定します。
 
 UPD Commander はクラス必須ではないため、クラス構造自体は判定条件にしていません。
