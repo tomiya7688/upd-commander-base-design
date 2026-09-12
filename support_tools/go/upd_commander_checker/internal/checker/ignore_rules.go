@@ -40,8 +40,7 @@ func LoadIgnoreRules(root string) []IgnoreRule {
 
 func IsIgnored(path string, code string, lineText string, rules []IgnoreRule) bool {
 	for _, rule := range rules {
-		matched, _ := filepath.Match(rule.Pattern, filepath.ToSlash(path))
-		if matched && (rule.Code == "all" || rule.Code == code) {
+		if globMatch(filepath.ToSlash(path), rule.Pattern) && (rule.Code == "all" || rule.Code == code) {
 			return true
 		}
 	}
