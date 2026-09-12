@@ -24,10 +24,11 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 			return nil
 		}
 		rel, _ := filepath.Rel(root, path)
-		if pathIgnored(filepath.ToSlash(rel), cliIgnore) {
+		relText := filepath.ToSlash(rel)
+		if pathIgnored(relText, cliIgnore) {
 			return nil
 		}
-		findings = append(findings, scanFile(path, filepath.ToSlash(rel), rules)...)
+		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
 	sort.Slice(findings, func(i, j int) bool {
@@ -67,16 +68,35 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 	}
 	if source.Role == "commander" {
 		ast.Inspect(file, func(node ast.Node) bool {
-			switch node.(type) {
+			switch value := node.(type) {
 			case *ast.ForStmt, *ast.RangeStmt:
 				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD201", "Commander loop", "warning", lines, rules)
 			case *ast.BinaryExpr:
 				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD202", "Commander calculation", "warning", lines, rules)
+			case *ast.CallExpr:
+				if isDirectWorkCall(value) {
+					addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD203", "Commander direct I/O/API call", "error", lines, rules)
+				}
 			}
 			return true
 		})
 	}
 	return findings
+}
+
+func isDirectWorkCall(call *ast.CallExpr) bool {
+	selector, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	ident, ok := selector.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	forbidden := map[string]bool{
+		"os": true, "ioutil": true, "json": true, "sql": true, "http": true,
+	}
+	return forbidden[ident.Name]
 }
 
 func addFinding(findings *[]Finding, path string, line int, code string, message string, severity string, lines []string, rules []IgnoreRule) {
@@ -109,10 +129,18 @@ func lineAt(lines []string, line int) string {
 
 func pathIgnored(path string, patterns []string) bool {
 	for _, pattern := range patterns {
-		matched, _ := filepath.Match(pattern, path)
-		if matched {
+		if globMatch(path, pattern) {
 			return true
 		}
 	}
 	return false
+}
+
+func globMatch(path string, pattern string) bool {
+	pattern = filepath.ToSlash(pattern)
+	if strings.HasSuffix(pattern, "/**") {
+		return strings.HasPrefix(path, strings.TrimSuffix(pattern, "**"))
+	}
+	matched, _ := filepath.Match(pattern, path)
+	return matched
 }
