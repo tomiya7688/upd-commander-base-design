@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(upd_checker_core
     src/classifier.cpp
+    src/config.cpp
     src/dependency_rules.cpp
     src/ignore_rules.cpp
     src/scanner.cpp
