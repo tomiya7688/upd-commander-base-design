@@ -5,7 +5,7 @@ from pathlib import Path
 from .classifier import classify_module
 from .commander_rules import check_commander
 from .dependency_rules import check_dependencies
-from .ignore_rules import filter_findings, is_path_ignored, load_ignore_rules
+from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
 
 
@@ -22,7 +22,7 @@ def _python_files(
     target: Path,
     root: Path,
     ignore_patterns: tuple[str, ...],
-    ignore_rules: tuple,
+    ignore_rules: tuple[IgnoreRule, ...],
 ) -> list[Path]:
     paths = [target] if target.is_file() else list(target.rglob("*.py"))
     return [
@@ -36,7 +36,7 @@ def _is_ignored(
     path: Path,
     root: Path,
     patterns: tuple[str, ...],
-    ignore_rules: tuple,
+    ignore_rules: tuple[IgnoreRule, ...],
 ) -> bool:
     relative_text = _relative_text(path, root)
     if any(fnmatch(relative_text, pattern) for pattern in patterns):
@@ -44,7 +44,11 @@ def _is_ignored(
     return is_path_ignored(relative_text, ignore_rules)
 
 
-def _scan_file(path: Path, root: Path, ignore_rules: tuple) -> list[Finding]:
+def _scan_file(
+    path: Path,
+    root: Path,
+    ignore_rules: tuple[IgnoreRule, ...],
+) -> list[Finding]:
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
