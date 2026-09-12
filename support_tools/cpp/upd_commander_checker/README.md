@@ -25,6 +25,12 @@ cmake --build build --config Release --target upd-commander-check
 upd-commander-check path/to/project
 ```
 
+引数なしなら実行ファイル側の `config/path.json` を使用します。
+
+```bash
+upd-commander-check
+```
+
 出力:
 
 ```text
@@ -39,13 +45,28 @@ FAIL e=1 w=1
 OK
 ```
 
+## config/path.json
+
+`build_exe.bat` 実行時にEXEと同じ出力ディレクトリの `config/path.json` を自動生成します。既存ファイルは上書きしません。
+
+```json
+{
+  "input": ".",
+  "output": "",
+  "ignore": ["tests/**", "generated/**"],
+  "warnings_as_errors": false
+}
+```
+
+`input` / `output` の相対パスは `config` の親基準です。`output` を指定するとコンソールと同じ短い結果をファイルへ保存します。CLIの位置引数、`--output`、`--ignore`、`--warnings-as-errors` は設定を上書き・追加します。
+
 ## Ignore
 
 ```bash
 upd-commander-check --ignore "tests/**" --ignore "generated/**" .
 ```
 
-`.updcommanderignore`:
+`config/path.json` の `ignore` と `.updcommanderignore` を併用できます。
 
 ```text
 generated/**

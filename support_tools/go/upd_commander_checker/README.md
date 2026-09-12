@@ -8,6 +8,12 @@ Goプロジェクト向けのUPD Commander静的チェッカーです。
 go run ./cmd/upd-commander-check path/to/project
 ```
 
+引数なしなら `config/path.json` の `input` を使用します。
+
+```bash
+go run ./cmd/upd-commander-check
+```
+
 出力は短くします。
 
 ```text
@@ -22,6 +28,21 @@ FAIL e=1 w=1
 OK
 ```
 
+## config/path.json
+
+`build_exe.bat` 実行時に `dist/config/path.json` を自動生成します。既存ファイルは上書きしません。
+
+```json
+{
+  "input": ".",
+  "output": "",
+  "ignore": ["tests/**", "generated/**"],
+  "warnings_as_errors": false
+}
+```
+
+`input` / `output` の相対パスは `config` の親基準です。`output` を指定するとコンソール出力と同じ結果をファイルにも保存します。CLI指定は設定より優先されます。
+
 ## Ignore
 
 CLI:
@@ -30,7 +51,7 @@ CLI:
 go run ./cmd/upd-commander-check --ignore "tests/**" --ignore "generated/**" .
 ```
 
-`.updcommanderignore`:
+`config/path.json` の `ignore` と `.updcommanderignore` を併用できます。
 
 ```text
 generated/**
@@ -69,10 +90,11 @@ Windows:
 build_exe.bat
 ```
 
-または:
+生成物:
 
-```bash
-go build -o dist/upd-commander-check.exe ./cmd/upd-commander-check
+```text
+dist/upd-commander-check.exe
+dist/config/path.json
 ```
 
 Go標準ライブラリのみで実装しているため、PyInstaller等は不要です。

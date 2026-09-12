@@ -22,10 +22,10 @@ python -m pip install -e support_tools/python/upd_commander_checker
 upd-commander-check path/to/project
 ```
 
-または:
+または引数なしで `config/path.json` の `input` を使用できます。
 
 ```bash
-python -m upd_commander_checker path/to/project
+upd-commander-check
 ```
 
 出力は短くします。
@@ -42,6 +42,21 @@ FAIL e=2 w=1
 ```text
 OK
 ```
+
+## config/path.json
+
+EXEビルド時に `dist/config/path.json` を自動生成します。既存ファイルは上書きしません。
+
+```json
+{
+  "input": ".",
+  "output": "",
+  "ignore": ["tests/**", "generated/**"],
+  "warnings_as_errors": false
+}
+```
+
+`input` と `output` の相対パスは `config` の親ディレクトリ基準です。`output` を設定すると、短い標準出力と同じ内容をファイルにも保存します。CLIの位置引数、`--output`、`--ignore`、`--warnings-as-errors` で設定を上書きできます。
 
 ## Nested Application
 
@@ -71,13 +86,10 @@ CLIでパス除外:
 upd-commander-check . --ignore "tests/**" --ignore "generated/**"
 ```
 
-プロジェクト直下の `.updcommanderignore` でも設定できます。
+`config/path.json` の `ignore` と、プロジェクト直下の `.updcommanderignore` も併用できます。
 
 ```text
-# 全チェックを除外
 generated/**
-
-# 特定規則だけ除外。理由はコメントに残す
 UPD202 process/fast_commander.py # performance hot path
 ```
 
@@ -88,10 +100,6 @@ value = left + right  # upd: ignore UPD202 - performance hot path
 ```
 
 `all` も使用できますが、原則として規則コードを指定してください。
-
-```python
-fast_call()  # upd: ignore all - generated bridge
-```
 
 警告も失敗扱い:
 
@@ -118,6 +126,7 @@ python scripts/build_exe.py
 
 ```text
 dist/upd-commander-check.exe
+dist/config/path.json
 ```
 
 ## 現在のチェック

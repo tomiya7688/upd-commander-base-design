@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"upd_commander_checker/internal/checker"
 )
@@ -17,24 +19,33 @@ func (items *stringList) Set(value string) error {
 }
 
 func main() {
+	config := checker.LoadConfig()
 	var ignores stringList
+	var output string
 	var warningsAsErrors bool
 	flag.Var(&ignores, "ignore", "ignore path glob; repeatable")
+	flag.StringVar(&output, "output", "", "report output path")
 	flag.BoolVar(&warningsAsErrors, "warnings-as-errors", false, "warnings fail the check")
 	flag.Parse()
 
-	target := "."
+	target := config.Input
 	if flag.NArg() > 0 {
 		target = flag.Arg(0)
 	}
+	if output == "" {
+		output = config.Output
+	}
+	ignores = append(stringList(config.Ignore), ignores...)
+	warningsAsErrors = warningsAsErrors || config.WarningsAsErrors
+
 	if _, err := os.Stat(target); err != nil {
-		fmt.Printf("E UPD000 %s missing\n", target)
-		os.Exit(2)
+		finish([]string{fmt.Sprintf("E UPD000 %s missing", target)}, output, 2)
 	}
 
 	findings := checker.ScanPath(target, ignores)
 	errors := 0
 	warnings := 0
+	lines := []string{}
 	for _, finding := range findings {
 		level := "E"
 		if finding.Severity == "warning" {
@@ -43,16 +54,30 @@ func main() {
 		} else {
 			errors++
 		}
-		fmt.Printf("%s %s %s:%d %s\n", level, finding.Code, finding.Path, finding.Line, finding.Message)
+		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message))
 	}
 
 	if errors > 0 || warningsAsErrors && warnings > 0 {
-		fmt.Printf("FAIL e=%d w=%d\n", errors, warnings)
-		os.Exit(1)
+		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d", errors, warnings))
+		finish(lines, output, 1)
 	}
 	if warnings > 0 {
-		fmt.Printf("OK w=%d\n", warnings)
-		return
+		lines = append(lines, fmt.Sprintf("OK w=%d", warnings))
+	} else {
+		lines = append(lines, "OK")
 	}
-	fmt.Println("OK")
+	finish(lines, output, 0)
+}
+
+func finish(lines []string, output string, code int) {
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+	if output != "" {
+		if dir := filepath.Dir(output); dir != "." {
+			_ = os.MkdirAll(dir, 0o755)
+		}
+		_ = os.WriteFile(output, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+	}
+	os.Exit(code)
 }

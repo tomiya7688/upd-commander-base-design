@@ -10,6 +10,12 @@ C#プロジェクト向けのUPD Commander静的チェッカーです。
 dotnet run --project UpdCommanderChecker.csproj -- path/to/project
 ```
 
+引数なしなら `config/path.json` の `input` を使用します。
+
+```bash
+dotnet run --project UpdCommanderChecker.csproj
+```
+
 出力:
 
 ```text
@@ -24,13 +30,28 @@ FAIL e=1 w=1
 OK
 ```
 
+## config/path.json
+
+`build_exe.bat` 実行時に `dist/config/path.json` を自動生成します。既存ファイルは上書きしません。
+
+```json
+{
+  "input": ".",
+  "output": "",
+  "ignore": ["tests/**", "generated/**"],
+  "warnings_as_errors": false
+}
+```
+
+`input` / `output` の相対パスは `config` の親基準です。`output` を設定するとコンソールと同じ短い結果をファイルにも保存します。CLI指定は設定より優先されます。
+
 ## Ignore
 
 ```bash
 dotnet run --project UpdCommanderChecker.csproj -- --ignore "tests/**" --ignore "generated/**" .
 ```
 
-`.updcommanderignore`:
+`config/path.json` の `ignore` と `.updcommanderignore` を併用できます。
 
 ```text
 generated/**
@@ -63,7 +84,14 @@ build_exe.bat
 dotnet publish UpdCommanderChecker.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist
 ```
 
-生成物は `dist/upd-commander-check.exe` です。self-contained のため.NETランタイム未導入環境でも実行できますが、ファイルサイズは大きくなります。
+生成物:
+
+```text
+dist/upd-commander-check.exe
+dist/config/path.json
+```
+
+self-contained のため.NETランタイム未導入環境でも実行できますが、ファイルサイズは大きくなります。
 
 ## 規則
 
