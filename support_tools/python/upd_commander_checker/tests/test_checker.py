@@ -26,6 +26,34 @@ class CheckerTest(unittest.TestCase):
 
             self.assertTrue(any(item.code == "UPD101" for item in findings))
 
+    def test_cross_application_internal_import_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "applications" / "main" / "ui" / "screen_processing.py"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "from applications.settings.process.settings_processing import run\n",
+                encoding="utf-8",
+            )
+
+            findings = scan_path(root)
+
+            self.assertTrue(any(item.code == "UPD102" for item in findings))
+
+    def test_cross_application_messenger_import_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "applications" / "main" / "process" / "main_commander.py"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "from applications.settings.process.settings_messenger import send\n",
+                encoding="utf-8",
+            )
+
+            findings = scan_path(root)
+
+            self.assertFalse(any(item.code == "UPD102" for item in findings))
+
     def test_inline_ignore_suppresses_rule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
