@@ -1,0 +1,75 @@
+name: Checker Self Check
+
+on:
+  pull_request:
+    paths:
+      - "support_tools/**"
+      - ".github/workflows/checker-self-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "support_tools/**"
+      - ".github/workflows/checker-self-check.yml"
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install checker
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m pip install -e .
+      - name: Test
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m unittest discover -s tests
+      - name: Self check
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m upd_commander_checker . --warnings-as-errors
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - name: Test
+        working-directory: support_tools/go/upd_commander_checker
+        run: go test ./...
+      - name: Self check
+        working-directory: support_tools/go/upd_commander_checker
+        run: go run ./cmd/upd-commander-check --warnings-as-errors .
+
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: cmake --build build --config Release
+      - name: Test
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: ctest --test-dir build --output-on-failure
+      - name: Self check
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: ./build/upd-commander-check --warnings-as-errors .
+
+  csharp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        working-directory: support_tools/cs/upd_commander_checker
+        run: dotnet build UpdCommanderChecker.csproj -c Release
+      - name: Self check
+        working-directory: support_tools/cs/upd_commander_checker
+        run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors .

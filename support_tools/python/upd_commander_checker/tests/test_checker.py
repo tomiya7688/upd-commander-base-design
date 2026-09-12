@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from upd_commander_checker.classifier import classify_module
 from upd_commander_checker.scanner import scan_path
 
 
@@ -53,6 +54,13 @@ class CheckerTest(unittest.TestCase):
             findings = scan_path(root)
 
             self.assertFalse(any(item.code == "UPD102" for item in findings))
+
+    def test_checker_package_name_does_not_make_helpers_commander(self) -> None:
+        path = Path("support_tools/python/upd_commander_checker/src/upd_commander_checker/commander_rules.py")
+
+        module = classify_module(path)
+
+        self.assertIsNone(module.role)
 
     def test_inline_ignore_suppresses_rule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

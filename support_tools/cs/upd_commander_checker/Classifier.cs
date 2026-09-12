@@ -6,11 +6,18 @@ internal static class Classifier
     private static readonly HashSet<string> Roles = ["commander", "messenger", "processing"];
     private static readonly HashSet<string> AppRoots = ["app", "apps", "application", "applications", "feature", "features"];
 
-    internal static ModuleInfo ClassifyPath(string path) => Classify(path);
+    internal static ModuleInfo ClassifyPath(string path)
+    {
+        var directories = PathDirectories(path);
+        var stem = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+        return new ModuleInfo(
+            path,
+            FindName(directories, Layers),
+            FindPathRole(directories, stem),
+            FindApplication(directories));
+    }
 
-    internal static ModuleInfo ClassifyReference(string value) => Classify(value);
-
-    private static ModuleInfo Classify(string value)
+    internal static ModuleInfo ClassifyReference(string value)
     {
         var parts = SplitParts(value);
         return new ModuleInfo(
@@ -18,6 +25,17 @@ internal static class Classifier
             FindName(parts, Layers),
             FindRole(parts),
             FindApplication(parts));
+    }
+
+    private static List<string> PathDirectories(string value)
+    {
+        var directory = Path.GetDirectoryName(value) ?? string.Empty;
+        return directory
+            .Replace('\\', '/')
+            .Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => part.ToLowerInvariant())
+            .Where(part => part != ".")
+            .ToList();
     }
 
     private static List<string> SplitParts(string value)
@@ -37,6 +55,23 @@ internal static class Classifier
             if (candidates.Contains(part))
             {
                 return part;
+            }
+        }
+        return string.Empty;
+    }
+
+    private static string FindPathRole(IEnumerable<string> directories, string stem)
+    {
+        var directoryRole = FindName(directories, Roles);
+        if (!string.IsNullOrEmpty(directoryRole))
+        {
+            return directoryRole;
+        }
+        foreach (var role in Roles)
+        {
+            if (stem == role || stem.EndsWith("_" + role, StringComparison.Ordinal))
+            {
+                return role;
             }
         }
         return string.Empty;

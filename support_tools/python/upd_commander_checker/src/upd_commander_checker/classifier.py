@@ -9,12 +9,12 @@ _APPLICATION_MARKERS = {"app", "apps", "application", "applications", "feature",
 
 
 def classify_module(path: Path) -> ModuleInfo:
-    parts = [part.lower() for part in path.parts]
-    stem_parts = path.stem.lower().replace("-", "_").split("_")
+    directory_parts = [part.lower() for part in path.parent.parts]
+    stem = path.stem.lower().replace("-", "_")
 
-    layer = _find_name(parts + stem_parts, _LAYER_NAMES)
-    role = _find_role(parts + stem_parts)
-    application = _find_application(parts)
+    layer = _find_name(directory_parts, _LAYER_NAMES)
+    role = _find_path_role(directory_parts, stem)
+    application = _find_application(directory_parts)
     return ModuleInfo(path=path, layer=layer, role=role, application=application)
 
 
@@ -34,6 +34,16 @@ def _find_name(parts: list[str], candidates: set[str]) -> str | None:
     for part in parts:
         if part in candidates:
             return part
+    return None
+
+
+def _find_path_role(directory_parts: list[str], stem: str) -> str | None:
+    directory_role = _find_name(directory_parts, _ROLE_NAMES)
+    if directory_role:
+        return directory_role
+    for role in _ROLE_NAMES:
+        if stem == role or stem.endswith("_" + role):
+            return role
     return None
 
 

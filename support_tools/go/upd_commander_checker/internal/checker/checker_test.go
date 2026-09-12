@@ -34,6 +34,13 @@ func TestCrossApplicationMessengerIsAllowed(t *testing.T) {
 	}
 }
 
+func TestCheckerPackageNameDoesNotMakeHelpersCommander(t *testing.T) {
+	module := ClassifyPath("support_tools/go/upd_commander_checker/internal/checker/scanner.go")
+	if module.Role != "" {
+		t.Fatalf("unexpected role: %s", module.Role)
+	}
+}
+
 func TestInlineIgnoreSuppressesCommanderCalculation(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "process", "fast_commander.go")

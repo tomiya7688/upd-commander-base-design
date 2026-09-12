@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 
+#include "classifier.hpp"
 #include "scanner.hpp"
 
 namespace {
@@ -40,6 +41,12 @@ void test_cross_application_dependency() {
     std::filesystem::remove_all(root);
 }
 
+void test_checker_package_name_is_not_commander() {
+    const auto module = upd_checker::classify_path(
+        "support_tools/cpp/upd_commander_checker/src/scanner.cpp");
+    assert(module.role.empty());
+}
+
 void test_inline_ignore() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ignore";
     std::filesystem::remove_all(root);
@@ -55,6 +62,7 @@ void test_inline_ignore() {
 int main() {
     test_ui_to_data_dependency();
     test_cross_application_dependency();
+    test_checker_package_name_is_not_commander();
     test_inline_ignore();
     return 0;
 }
