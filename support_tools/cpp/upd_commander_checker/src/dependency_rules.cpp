@@ -2,24 +2,36 @@
 
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <string>
+#include <unordered_set>
 
 namespace upd_checker {
 namespace {
 
-bool is_boundary_api(const ModuleInfo& target) {
-    if (target.role == "messenger") {
-        return true;
-    }
-    std::string path = target.path;
+const std::unordered_set<std::string> kBoundaryApiNames = {
+    "contract", "contracts", "dto", "dtos", "shared"};
+
+bool has_boundary_component(std::string path) {
     std::transform(path.begin(), path.end(), path.begin(), [](unsigned char ch) {
+        if (ch == '\\' || ch == '.' || ch == '-' || ch == '_') {
+            return '/';
+        }
         return static_cast<char>(std::tolower(ch));
     });
-    return path.find("/contract") != std::string::npos ||
-           path.find("/contracts") != std::string::npos ||
-           path.find("/dto") != std::string::npos ||
-           path.find("/dtos") != std::string::npos ||
-           path.find("/shared") != std::string::npos;
+
+    std::stringstream stream(path);
+    std::string part;
+    while (std::getline(stream, part, '/')) {
+        if (kBoundaryApiNames.count(part) != 0U) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_boundary_api(const ModuleInfo& target) {
+    return target.role == "messenger" || has_boundary_component(target.path);
 }
 
 }  // namespace
