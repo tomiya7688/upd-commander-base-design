@@ -1,6 +1,12 @@
 package checker
 
-import "strings"
+var boundaryAPINames = map[string]bool{
+	"contract":  true,
+	"contracts": true,
+	"dto":       true,
+	"dtos":      true,
+	"shared":    true,
+}
 
 func DependencyError(source ModuleInfo, target ModuleInfo) string {
 	if source.ApplicationID != "" && target.ApplicationID != "" && source.ApplicationID != target.ApplicationID {
@@ -30,9 +36,8 @@ func isApplicationBoundaryAPI(target ModuleInfo) bool {
 	if target.Role == "messenger" {
 		return true
 	}
-	path := strings.ToLower(target.Path)
-	for _, name := range []string{"/contract", "/contracts", "/dto", "/dtos", "/shared"} {
-		if strings.Contains(path, name) {
+	for _, part := range splitParts(target.Path) {
+		if boundaryAPINames[part] {
 			return true
 		}
 	}
