@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "upd-commander-checker"
+version = "0.1.0"
+description = "Static checker for Python projects using the UPD Commander design rules"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "UPD Commander contributors" }]
+dependencies = []
+
+[project.scripts]
+upd-commander-check = "upd_commander_checker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
