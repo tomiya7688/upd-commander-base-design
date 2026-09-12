@@ -18,10 +18,39 @@ std::string read_text(const std::filesystem::path& path) {
     return stream.str();
 }
 
+std::string decode_json_string(const std::string& value) {
+    std::string output;
+    bool escaped = false;
+    for (const char ch : value) {
+        if (escaped) {
+            if (ch == 'n') {
+                output.push_back('\n');
+            } else if (ch == 'r') {
+                output.push_back('\r');
+            } else if (ch == 't') {
+                output.push_back('\t');
+            } else {
+                output.push_back(ch);
+            }
+            escaped = false;
+        } else if (ch == '\\') {
+            escaped = true;
+        } else {
+            output.push_back(ch);
+        }
+    }
+    if (escaped) {
+        output.push_back('\\');
+    }
+    return output;
+}
+
 std::string string_value(const std::string& text, const std::string& key) {
-    const std::regex pattern("\\\"" + key + "\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"");
+    const std::regex pattern("\\\"" + key + "\\\"\\s*:\\s*\\\"((?:\\\\.|[^\\\"])*)\\\"");
     std::smatch match;
-    return std::regex_search(text, match, pattern) ? match[1].str() : std::string{};
+    return std::regex_search(text, match, pattern)
+        ? decode_json_string(match[1].str())
+        : std::string{};
 }
 
 bool bool_value(const std::string& text, const std::string& key) {
@@ -39,11 +68,11 @@ std::vector<std::string> string_array(const std::string& text, const std::string
 
     std::vector<std::string> values;
     const std::string body = array_match[1].str();
-    const std::regex item_pattern("\\\"([^\\\"]*)\\\"");
+    const std::regex item_pattern("\\\"((?:\\\\.|[^\\\"])*)\\\"");
     for (std::sregex_iterator iterator(body.begin(), body.end(), item_pattern), end;
          iterator != end;
          ++iterator) {
-        values.push_back((*iterator)[1].str());
+        values.push_back(decode_json_string((*iterator)[1].str()));
     }
     return values;
 }
