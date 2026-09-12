@@ -82,14 +82,14 @@ std::vector<Finding> scan_file(
             const ModuleInfo target = classify_include(match[1].str());
             const std::string message = dependency_error(source, target);
             if (!message.empty()) {
-                const bool cross_application =
-                    !source.application_id.empty() && !target.application_id.empty() &&
-                    source.application_id != target.application_id;
+                const std::string code = message == "cross-application internal dependency"
+                    ? "UPD102"
+                    : "UPD101";
                 add_finding(
                     findings,
                     relative,
                     line_number,
-                    cross_application ? "UPD102" : "UPD101",
+                    code,
                     message,
                     "error",
                     line_text,
