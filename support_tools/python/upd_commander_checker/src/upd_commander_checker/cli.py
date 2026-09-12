@@ -5,23 +5,10 @@ from .scanner import scan_path
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="upd-commander-check",
-        description="Check Python source against mechanically verifiable UPD Commander rules.",
-    )
-    parser.add_argument("target", nargs="?", default=".", help="Python file or project directory")
-    parser.add_argument(
-        "--ignore",
-        action="append",
-        default=[],
-        metavar="GLOB",
-        help="Ignore a relative path glob. Can be specified multiple times.",
-    )
-    parser.add_argument(
-        "--warnings-as-errors",
-        action="store_true",
-        help="Return failure when warnings are found.",
-    )
+    parser = argparse.ArgumentParser(prog="upd-commander-check")
+    parser.add_argument("target", nargs="?", default=".")
+    parser.add_argument("--ignore", action="append", default=[], metavar="GLOB")
+    parser.add_argument("--warnings-as-errors", action="store_true")
     return parser
 
 
@@ -30,22 +17,30 @@ def main() -> int:
     target = Path(args.target).resolve()
 
     if not target.exists():
-        print(f"ERROR UPD000 {target}: target does not exist")
+        print(f"E UPD000 {target}: missing")
         return 2
 
     findings = scan_path(target, tuple(args.ignore))
     for finding in findings:
-        print(
-            f"{finding.severity.upper()} {finding.code} "
-            f"{finding.path}:{finding.line}: {finding.message}"
-        )
+        level = "E" if finding.severity == "error" else "W"
+        print(f"{level} {finding.code} {_display_path(finding.path, target)}:{finding.line} {finding.message}")
 
     error_count = sum(item.severity == "error" for item in findings)
     warning_count = sum(item.severity == "warning" for item in findings)
-    print(f"UPD Commander check: {error_count} error(s), {warning_count} warning(s)")
+    if error_count or (warning_count and args.warnings_as_errors):
+        print(f"FAIL e={error_count} w={warning_count}")
+        return 1
 
-    if error_count:
-        return 1
-    if warning_count and args.warnings_as_errors:
-        return 1
+    if warning_count:
+        print(f"OK w={warning_count}")
+    else:
+        print("OK")
     return 0
+
+
+def _display_path(path: Path, target: Path) -> str:
+    root = target if target.is_dir() else target.parent
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
