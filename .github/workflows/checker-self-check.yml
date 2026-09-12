@@ -70,6 +70,29 @@ jobs:
       - name: Build
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet build UpdCommanderChecker.csproj -c Release
+      - name: Test
+        working-directory: support_tools/cs/upd_commander_checker
+        shell: bash
+        run: |
+          target="$(mktemp -d)"
+          mkdir -p "$target/applications/main/ui"
+          mkdir -p "$target/applications/main/process"
+          cat > "$target/applications/main/ui/screen_processing.cs" <<'EOF'
+          using Applications.Settings.Shared.Data.Storage;
+          namespace Sample;
+          EOF
+          cat > "$target/applications/main/process/main_commander.cs" <<'EOF'
+          using Applications.Settings.Contractor.Process.SettingsProcessing;
+          namespace Sample;
+          EOF
+          set +e
+          output="$(dotnet bin/Release/net8.0/upd-commander-check.dll "$target" 2>&1)"
+          status=$?
+          set -e
+          echo "$output"
+          test "$status" -eq 1
+          grep -q "E UPD101" <<< "$output"
+          grep -q "E UPD102" <<< "$output"
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors .
