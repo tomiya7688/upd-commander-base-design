@@ -7,6 +7,7 @@
 ## 規定文書
 
 - [Layer Specification](layer-spec.md) — UI / Process / Data 各層の責務
+- [Application Boundary](application-boundary.md) — Application / Sub Application の境界と3層構造の再帰適用
 - [Commander Specification](commander-spec.md) — Commander の責務と禁止事項
 - [Messenger Specification](messenger-spec.md) — 層間通信の責務と正式経路
 - [Processing Specification](processing-spec.md) — 各層の実処理の責務
@@ -20,15 +21,17 @@
 ## 最上位規定
 
 1. システムは原則として UI / Process / Data の3層に分離する。
-2. Commander は処理を実行せず、適切な Processing または Messenger を呼び出す。
-3. Messenger は層を越える通信のみを担当する。
-4. 実際の計算・変換・描画・データ操作は各層の Processing が担当する。
-5. 別層の Processing を直接呼び出してはならない。
-6. UI と Data は直接通信してはならない。
-7. Process は UI の表示方法を知らず、Data の保存方式を知らない。
-8. UI フレームワークや DB 等の層固有型を境界越しに漏らさない。
-9. 設計上の責務単位は言語固有のクラスではなく、ファイルおよびモジュールを基本とする。
-10. クラスを使用する言語では、クラスをモジュール内部の実装手段として使用してよいが、ファイルまたはモジュールの責務境界を曖昧にしてはならない。
+2. 独立した機能境界は Application として扱い、各 Application 内で UI / Process / Data の3層を再度適用する。
+3. 別 Application の内部実装へ直接依存せず、Messenger / Contract / 上位 Commander 等の明示された境界を利用する。
+4. Commander は処理を実行せず、適切な Processing または Messenger を呼び出す。
+5. Messenger は層を越える通信のみを担当する。
+6. 実際の計算・変換・描画・データ操作は各層の Processing が担当する。
+7. 別層の Processing を直接呼び出してはならない。
+8. UI と Data は直接通信してはならない。
+9. Process は UI の表示方法を知らず、Data の保存方式を知らない。
+10. UI フレームワークや DB 等の層固有型を境界越しに漏らさない。
+11. 設計上の責務単位は言語固有のクラスではなく、ファイルおよびモジュールを基本とする。
+12. クラスを使用する言語では、クラスをモジュール内部の実装手段として使用してよいが、ファイルまたはモジュールの責務境界を曖昧にしてはならない。
 
 ## 規定の強さ
 
