@@ -1,0 +1,118 @@
+package checker
+
+import (
+	"bufio"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+func ScanPath(target string, cliIgnore []string) []Finding {
+	root := target
+	info, err := os.Stat(target)
+	if err == nil && !info.IsDir() {
+		root = filepath.Dir(target)
+	}
+	rules := LoadIgnoreRules(root)
+	var findings []Finding
+	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil || entry.IsDir() || filepath.Ext(path) != ".go" {
+			return nil
+		}
+		rel, _ := filepath.Rel(root, path)
+		if pathIgnored(filepath.ToSlash(rel), cliIgnore) {
+			return nil
+		}
+		findings = append(findings, scanFile(path, filepath.ToSlash(rel), rules)...)
+		return nil
+	})
+	sort.Slice(findings, func(i, j int) bool {
+		if findings[i].Path != findings[j].Path {
+			return findings[i].Path < findings[j].Path
+		}
+		if findings[i].Line != findings[j].Line {
+			return findings[i].Line < findings[j].Line
+		}
+		return findings[i].Code < findings[j].Code
+	})
+	return findings
+}
+
+func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	if err != nil {
+		return []Finding{{Path: rel, Line: 1, Code: "UPD002", Message: "syntax error", Severity: "error"}}
+	}
+	lines := readLines(path)
+	source := ClassifyPath(rel)
+	var findings []Finding
+	for _, spec := range file.Imports {
+		name := strings.Trim(spec.Path.Value, "\"")
+		target := ClassifyImport(name)
+		if message := DependencyError(source, target); message != "" {
+			code := "UPD101"
+			if source.ApplicationID != "" && target.ApplicationID != "" && source.ApplicationID != target.ApplicationID {
+				code = "UPD102"
+			}
+			line := fset.Position(spec.Pos()).Line
+			if !IsIgnored(rel, code, lineAt(lines, line), rules) {
+				findings = append(findings, Finding{Path: rel, Line: line, Code: code, Message: message, Severity: "error"})
+			}
+		}
+	}
+	if source.Role == "commander" {
+		ast.Inspect(file, func(node ast.Node) bool {
+			switch node.(type) {
+			case *ast.ForStmt, *ast.RangeStmt:
+				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD201", "Commander loop", "warning", lines, rules)
+			case *ast.BinaryExpr:
+				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD202", "Commander calculation", "warning", lines, rules)
+			}
+			return true
+		})
+	}
+	return findings
+}
+
+func addFinding(findings *[]Finding, path string, line int, code string, message string, severity string, lines []string, rules []IgnoreRule) {
+	if IsIgnored(path, code, lineAt(lines, line), rules) {
+		return
+	}
+	*findings = append(*findings, Finding{Path: path, Line: line, Code: code, Message: message, Severity: severity})
+}
+
+func readLines(path string) []string {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines
+}
+
+func lineAt(lines []string, line int) string {
+	if line <= 0 || line > len(lines) {
+		return ""
+	}
+	return lines[line-1]
+}
+
+func pathIgnored(path string, patterns []string) bool {
+	for _, pattern := range patterns {
+		matched, _ := filepath.Match(pattern, path)
+		if matched {
+			return true
+		}
+	}
+	return false
+}
