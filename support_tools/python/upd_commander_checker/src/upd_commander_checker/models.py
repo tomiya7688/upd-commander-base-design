@@ -16,3 +16,4 @@ class ModuleInfo:
     path: Path
     layer: str | None
     role: str | None
+    application: str | None = None
