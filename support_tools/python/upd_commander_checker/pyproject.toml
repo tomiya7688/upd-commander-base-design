@@ -12,6 +12,9 @@ license = { text = "MIT" }
 authors = [{ name = "UPD Commander contributors" }]
 dependencies = []
 
+[project.optional-dependencies]
+build = ["pyinstaller>=6"]
+
 [project.scripts]
 upd-commander-check = "upd_commander_checker.cli:main"
 
