@@ -2,6 +2,9 @@ namespace UpdCommanderChecker;
 
 internal static class DependencyRules
 {
+    private static readonly HashSet<string> BoundaryApiNames =
+        ["contract", "contracts", "dto", "dtos", "shared"];
+
     internal static string? GetError(ModuleInfo source, ModuleInfo target)
     {
         if (!string.IsNullOrEmpty(source.ApplicationId) &&
@@ -42,13 +45,10 @@ internal static class DependencyRules
         {
             return true;
         }
-        var path = target.Path.ToLowerInvariant();
-        return path.Contains(".contract", StringComparison.Ordinal) ||
-               path.Contains(".contracts", StringComparison.Ordinal) ||
-               path.Contains(".dto", StringComparison.Ordinal) ||
-               path.Contains(".dtos", StringComparison.Ordinal) ||
-               path.Contains(".shared", StringComparison.Ordinal) ||
-               path.Contains("/contract", StringComparison.Ordinal) ||
-               path.Contains("/shared", StringComparison.Ordinal);
+
+        var parts = target.Path
+            .ToLowerInvariant()
+            .Split(['.', '/', '\\', '-', '_'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Any(BoundaryApiNames.Contains);
     }
 }
