@@ -4,13 +4,11 @@ Python プロジェクト向けの UPD Commander 静的文法・設計チェッ�
 
 ## 配置
 
-このツールは言語別 support tool として独立パッケージ化しています。
-
 ```text
 support_tools/python/upd_commander_checker/
 ```
 
-今後 Go / C++ / C# 版などを `support_tools/<language>/` に並列追加できます。
+他言語版は `support_tools/<language>/` に並列配置できます。
 
 ## インストール
 
@@ -30,16 +28,75 @@ upd-commander-check path/to/project
 python -m upd_commander_checker path/to/project
 ```
 
-除外指定:
+出力は短くします。
+
+```text
+E UPD101 ui/view.py:3 UI layer must not depend directly on Data layer
+W UPD202 process/game_commander.py:12 Commander contains a calculation expression
+FAIL e=1 w=1
+```
+
+問題なし:
+
+```text
+OK
+```
+
+## Ignore
+
+CLIでパス除外:
 
 ```bash
 upd-commander-check . --ignore "tests/**" --ignore "generated/**"
 ```
 
-警告も失敗扱いにする場合:
+プロジェクト直下の `.updcommanderignore` でも設定できます。
+
+```text
+# 全チェックを除外
+generated/**
+
+# 特定規則だけ除外。理由はコメントに残す
+UPD202 process/fast_commander.py # performance hot path
+```
+
+性能上やむを得ない局所例外は、対象行へ明示できます。
+
+```python
+value = left + right  # upd: ignore UPD202 - performance hot path
+```
+
+`all` も使用できますが、原則として規則コードを指定してください。
+
+```python
+fast_call()  # upd: ignore all - generated bridge
+```
+
+警告も失敗扱い:
 
 ```bash
 upd-commander-check . --warnings-as-errors
+```
+
+## EXE ビルド
+
+Windows:
+
+```bat
+build_exe.bat
+```
+
+または:
+
+```bash
+python -m pip install -e ".[build]"
+python scripts/build_exe.py
+```
+
+生成先:
+
+```text
+dist/upd-commander-check.exe
 ```
 
 ## 現在のチェック
@@ -47,14 +104,14 @@ upd-commander-check . --warnings-as-errors
 - `UPD001`: Python ソース読み込み失敗
 - `UPD002`: Python 構文エラー
 - `UPD101`: UPD Commander の依存規則違反
-- `UPD201`: Commander 内のループ（要確認）
-- `UPD202`: Commander 内の計算式（要確認）
+- `UPD201`: Commander 内のループ
+- `UPD202`: Commander 内の計算式
 - `UPD203`: Commander 内の直接的な実処理/API 呼び出し
 
-静的解析だけでは確定できない規約は warning とし、機械的に確定できる違反と分離します。
+静的解析だけでは断定しづらい項目は warning とし、確定的な違反と分離します。
 
 ## 判定方法
 
 ファイルパス、ファイル名、import 名に含まれる `ui` / `process` / `data` と `commander` / `messenger` / `processing` を利用して役割を推定します。
 
-UPD Commander はクラス必須ではないため、クラス構造そのものは判定条件にしていません。
+UPD Commander はクラス必須ではないため、クラス構造自体は判定条件にしていません。
