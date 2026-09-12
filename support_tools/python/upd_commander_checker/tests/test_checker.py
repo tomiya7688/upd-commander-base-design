@@ -26,12 +26,44 @@ class CheckerTest(unittest.TestCase):
 
             self.assertTrue(any(item.code == "UPD101" for item in findings))
 
+    def test_inline_ignore_suppresses_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "process" / "fast_commander.py"
+            path.parent.mkdir()
+            path.write_text(
+                "value = left + right  # upd: ignore UPD202 - performance\n",
+                encoding="utf-8",
+            )
+
+            findings = scan_path(root)
+
+            self.assertFalse(any(item.code == "UPD202" for item in findings))
+
+    def test_ignore_file_suppresses_specific_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "process" / "fast_commander.py"
+            path.parent.mkdir()
+            path.write_text("value = left + right\n", encoding="utf-8")
+            (root / ".updcommanderignore").write_text(
+                "UPD202 process/fast_commander.py # performance\n",
+                encoding="utf-8",
+            )
+
+            findings = scan_path(root)
+
+            self.assertFalse(any(item.code == "UPD202" for item in findings))
+
     def test_clean_module_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             path = root / "process" / "battle_processing.py"
             path.parent.mkdir()
-            path.write_text("def calculate(value: int) -> int:\n    return value + 1\n", encoding="utf-8")
+            path.write_text(
+                "def calculate(value: int) -> int:\n    return value + 1\n",
+                encoding="utf-8",
+            )
 
             findings = scan_path(root)
 
