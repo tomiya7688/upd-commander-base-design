@@ -11,10 +11,11 @@ from .models import Finding
 
 def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Finding]:
     root = target if target.is_dir() else target.parent
+    classification_root = root if target.is_dir() else None
     ignore_rules = load_ignore_rules(root)
     findings: list[Finding] = []
     for path in _python_files(target, root, ignore_patterns, ignore_rules):
-        findings.extend(_scan_file(path, root, ignore_rules))
+        findings.extend(_scan_file(path, root, classification_root, ignore_rules))
     return sorted(findings, key=lambda item: (str(item.path), item.line, item.code))
 
 
@@ -47,6 +48,7 @@ def _is_ignored(
 def _scan_file(
     path: Path,
     root: Path,
+    classification_root: Path | None,
     ignore_rules: tuple[IgnoreRule, ...],
 ) -> list[Finding]:
     try:
@@ -57,7 +59,7 @@ def _scan_file(
     except SyntaxError as exc:
         return [Finding(path, exc.lineno or 1, "UPD002", f"syntax: {exc.msg}")]
 
-    module = classify_module(path)
+    module = classify_module(path, classification_root)
     findings = check_dependencies(tree, module)
     findings.extend(check_commander(tree, module))
     return filter_findings(findings, source, _relative_text(path, root), ignore_rules)
