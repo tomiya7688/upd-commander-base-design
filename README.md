@@ -75,6 +75,16 @@ Process Messenger
 - [Commander & Messenger](docs/commander-messenger.md) — Commander と Messenger の責務
 - [Data Flow](docs/data-flow.md) — 要求と返却の流れ
 - [Anti-patterns](docs/anti-patterns.md) — 禁止・非推奨構造
+- [Technical Specification](specification/README.md) — 実装時に従う規定
+- [AI Context](AI_CONTEXT.md) — AI向けのread/change routingと探索停止条件
+
+## AI / coding agent で扱う場合
+
+この設計は責務境界と正式な通信経路が明確なため、変更対象から読む範囲を絞りやすい構造です。
+
+AI には最初から全 `docs/` / `specification/` を読ませず、`AI_CONTEXT.md` の routing から affected layer / Application / contract を特定し、必要な規定だけを追加で読みます。
+
+`specification/` は規定の source of truth、`docs/` は説明・理解補助として扱います。
 
 ## 最重要ルール
 
