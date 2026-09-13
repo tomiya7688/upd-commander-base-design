@@ -41,6 +41,28 @@ void test_cross_application_dependency() {
     std::filesystem::remove_all(root);
 }
 
+void test_boundary_like_directory_is_not_boundary_api() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_contractor";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "applications" / "main" / "process" / "main_commander.cpp",
+        "#include \"applications/settings/contractor/process/settings_processing.hpp\"\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD102"));
+    std::filesystem::remove_all(root);
+}
+
+void test_boundary_layer_violation_keeps_upd101() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_boundary_layer";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "applications" / "main" / "ui" / "screen_processing.cpp",
+        "#include \"applications/settings/shared/data/storage.hpp\"\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code(findings, "UPD101"));
+    assert(!has_code(findings, "UPD102"));
+    std::filesystem::remove_all(root);
+}
+
 void test_checker_package_name_is_not_commander() {
     const auto module = upd_checker::classify_path(
         "support_tools/cpp/upd_commander_checker/src/scanner.cpp");
@@ -62,6 +84,8 @@ void test_inline_ignore() {
 int main() {
     test_ui_to_data_dependency();
     test_cross_application_dependency();
+    test_boundary_like_directory_is_not_boundary_api();
+    test_boundary_layer_violation_keeps_upd101();
     test_checker_package_name_is_not_commander();
     test_inline_ignore();
     return 0;

@@ -20,10 +20,27 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	rules := LoadIgnoreRules(root)
 	var findings []Finding
 	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil || entry.IsDir() || filepath.Ext(path) != ".go" {
+		if walkErr != nil {
+			rel, relErr := filepath.Rel(root, path)
+			if relErr != nil {
+				rel = path
+			}
+			findings = append(findings, Finding{
+				Path:     filepath.ToSlash(rel),
+				Line:     1,
+				Code:     "UPD001",
+				Message:  "read failed",
+				Severity: "error",
+			})
 			return nil
 		}
-		rel, _ := filepath.Rel(root, path)
+		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" {
+			return nil
+		}
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			rel = path
+		}
 		relText := filepath.ToSlash(rel)
 		if pathIgnored(relText, cliIgnore) {
 			return nil
@@ -57,7 +74,7 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 		target := ClassifyImport(name)
 		if message := DependencyError(source, target); message != "" {
 			code := "UPD101"
-			if source.ApplicationID != "" && target.ApplicationID != "" && source.ApplicationID != target.ApplicationID {
+			if message == "cross-application internal dependency" {
 				code = "UPD102"
 			}
 			line := fset.Position(spec.Pos()).Line
