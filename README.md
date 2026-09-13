@@ -76,15 +76,14 @@ Process Messenger
 - [Data Flow](docs/data-flow.md) — 要求と返却の流れ
 - [Anti-patterns](docs/anti-patterns.md) — 禁止・非推奨構造
 - [Technical Specification](specification/README.md) — 実装時に従う規定
-- [AI Context](AI_CONTEXT.md) — AI向けのread/change routingと探索停止条件
 
-## AI / coding agent で扱う場合
+## スコープ
 
-この設計は責務境界と正式な通信経路が明確なため、変更対象から読む範囲を絞りやすい構造です。
+UPD Commander Base Design は、設計規約とそれを補助・検証する checker / support tools のためのプロジェクトです。
 
-AI には最初から全 `docs/` / `specification/` を読ませず、`AI_CONTEXT.md` の routing から affected layer / Application / contract を特定し、必要な規定だけを追加で読みます。
+コンテキスト削減、AI向けread routing、探索停止、Context Pack生成そのものを目的とする仕組みではありません。
 
-`specification/` は規定の source of truth、`docs/` は説明・理解補助として扱います。
+他の開発支援手法やAI向けツールがこの設計の責務境界を利用することはできますが、それらはUPD Commander本体とは別の関心事として扱います。
 
 ## 最重要ルール
 
