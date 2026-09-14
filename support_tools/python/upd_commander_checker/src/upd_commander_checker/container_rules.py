@@ -89,14 +89,22 @@ def _payload_parameters(arguments: ast.arguments) -> list[ast.arg]:
 
 def _max_multi_value_return(function: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
     maximum = 0
-    for node in ast.walk(function):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)) and node is not function:
-            continue
-        if not isinstance(node, ast.Return) or node.value is None:
-            continue
-        if isinstance(node.value, (ast.Tuple, ast.List)):
-            maximum = max(maximum, len(node.value.elts))
+    for statement in function.body:
+        for node in _returns_in_current_callable(statement):
+            if isinstance(node.value, (ast.Tuple, ast.List)):
+                maximum = max(maximum, len(node.value.elts))
     return maximum
+
+
+def _returns_in_current_callable(node: ast.AST):
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)):
+        return
+    if isinstance(node, ast.Return):
+        if node.value is not None:
+            yield node
+        return
+    for child in ast.iter_child_nodes(node):
+        yield from _returns_in_current_callable(child)
 
 
 def _signature_reducible_lines(function: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
