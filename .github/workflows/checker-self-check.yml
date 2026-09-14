@@ -2,18 +2,8 @@ name: Checker Self Check
 
 on:
   pull_request:
-    paths:
-      - "support_tools/**"
-      - "licenses/**"
-      - "THIRD_PARTY_NOTICES.md"
-      - ".github/workflows/checker-self-check.yml"
   push:
     branches: [main]
-    paths:
-      - "support_tools/**"
-      - "licenses/**"
-      - "THIRD_PARTY_NOTICES.md"
-      - ".github/workflows/checker-self-check.yml"
 
 jobs:
   python:
@@ -187,6 +177,7 @@ jobs:
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .
+
   license-packaging:
     runs-on: windows-latest
     steps:
@@ -202,6 +193,7 @@ jobs:
           if (-not (Test-Path "$roslynOutput/licenses/ROSLYN-LICENSE.txt")) { throw "Roslyn license missing" }
           if (-not (Test-Path "$llvmOutput/THIRD_PARTY_NOTICES.md")) { throw "LLVM notice missing" }
           if (-not (Test-Path "$llvmOutput/licenses/LLVM-LICENSE.txt")) { throw "LLVM license missing" }
+
   python-windows-gui:
     runs-on: windows-latest
     steps:
@@ -213,3 +205,31 @@ jobs:
         working-directory: support_tools/python/upd_commander_checker
         shell: cmd
         run: check_acceptance.bat
+
+  required:
+    name: required
+    runs-on: ubuntu-latest
+    needs:
+      - python
+      - go
+      - cpp
+      - csharp
+      - license-packaging
+      - python-windows-gui
+    if: ${{ always() }}
+    steps:
+      - name: Require all self-check jobs
+        shell: bash
+        run: |
+          python_result='${{ needs.python.result }}'
+          go_result='${{ needs.go.result }}'
+          cpp_result='${{ needs.cpp.result }}'
+          csharp_result='${{ needs.csharp.result }}'
+          license_result='${{ needs.license-packaging.result }}'
+          gui_result='${{ needs.python-windows-gui.result }}'
+          test "$python_result" = success
+          test "$go_result" = success
+          test "$cpp_result" = success
+          test "$csharp_result" = success
+          test "$license_result" = success
+          test "$gui_result" = success
