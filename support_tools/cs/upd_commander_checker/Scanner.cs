@@ -85,7 +85,8 @@ internal static class Scanner
             if (match.Success)
             {
                 var target = Classifier.ClassifyReference(match.Groups[1].Value);
-                var message = DependencyRules.GetError(new DependencyCheckInput(source, target));
+                var dependency = new DependencyCheckInput(source, target);
+                var message = DependencyRules.GetError(dependency);
                 if (message is not null)
                 {
                     var code = message == "cross-application internal dependency"
@@ -100,6 +101,22 @@ internal static class Scanner
                         "error",
                         lineText,
                         input.IgnoreRules));
+                }
+                else
+                {
+                    var warning = DependencyRules.GetWarning(dependency);
+                    if (warning is not null)
+                    {
+                        AddFinding(new AddFindingInput(
+                            findings,
+                            input.Relative,
+                            lineNumber,
+                            "UPD103",
+                            warning,
+                            "warning",
+                            lineText,
+                            input.IgnoreRules));
+                    }
                 }
             }
 
