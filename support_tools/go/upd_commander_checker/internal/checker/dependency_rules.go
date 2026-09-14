@@ -8,35 +8,31 @@ var boundaryAPINames = map[string]bool{
 	"shared":    true,
 }
 
-func DependencyError(source ModuleInfo, target ModuleInfo) string {
+func DependencyResult(source ModuleInfo, target ModuleInfo) *DependencyRuleResult {
 	if source.ApplicationID != "" && target.ApplicationID != "" && source.ApplicationID != target.ApplicationID {
 		if !isApplicationBoundaryAPI(target) {
-			return "cross-application internal dependency"
+			return &DependencyRuleResult{Code: "UPD102", Message: "cross-application internal dependency", Severity: "error"}
 		}
 	}
 	if source.Layer == "ui" && target.Layer == "data" {
-		return "UI must not depend on Data"
+		return &DependencyRuleResult{Code: "UPD101", Message: "UI must not depend on Data", Severity: "error"}
 	}
 	if source.Layer == "data" && target.Layer == "ui" {
-		return "Data must not depend on UI"
+		return &DependencyRuleResult{Code: "UPD101", Message: "Data must not depend on UI", Severity: "error"}
 	}
 	if source.Role == "messenger" && target.Role == "processing" {
-		return "Messenger must not depend on Processing"
+		return &DependencyRuleResult{Code: "UPD101", Message: "Messenger must not depend on Processing", Severity: "error"}
 	}
 	if source.Role == "processing" && target.Role == "processing" {
-		return "Processing must not depend on Processing"
+		return &DependencyRuleResult{Code: "UPD101", Message: "Processing must not depend on Processing", Severity: "error"}
 	}
 	if source.Role == "commander" && target.Role == "processing" && source.Layer != "" && target.Layer != "" && source.Layer != target.Layer {
-		return "Commander must not depend on Processing in another layer"
+		return &DependencyRuleResult{Code: "UPD101", Message: "Commander must not depend on Processing in another layer", Severity: "error"}
 	}
-	return ""
-}
-
-func DataCommanderWarning(source ModuleInfo, target ModuleInfo) string {
 	if source.Layer == "data" && source.Role == "commander" && target.Layer == "data" && target.Role == "commander" {
-		return "Data Commander should not communicate directly with another Data Commander"
+		return &DependencyRuleResult{Code: "UPD103", Message: "Data Commander should not communicate directly with another Data Commander", Severity: "warning"}
 	}
-	return ""
+	return nil
 }
 
 func isApplicationBoundaryAPI(target ModuleInfo) bool {
