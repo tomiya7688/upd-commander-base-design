@@ -28,7 +28,10 @@ internal static class Scanner
             includedFiles.Add(file);
             findings.AddRange(ScanFile(new ScanFileInput(file, relative, ignoreRules)));
         }
-        findings.AddRange(DataTypeLocationRules.Check(includedFiles, root, ignoreRules));
+        findings.AddRange(DataTypeLocationRules.Check(new DataTypeLocationRuleContext(
+            includedFiles,
+            root,
+            ignoreRules)));
 
         return findings
             .OrderBy(item => item.Path, StringComparer.Ordinal)
