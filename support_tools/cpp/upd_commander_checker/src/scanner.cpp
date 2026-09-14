@@ -46,7 +46,7 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
             return;
         }
         const std::string relative = relative_text(path, root);
-        if (ignored_by_cli(relative, cli_ignore)) {
+        if (ignored_by_cli(relative, cli_ignore) || is_path_ignored(relative, rules)) {
             return;
         }
         paths.push_back(path);
