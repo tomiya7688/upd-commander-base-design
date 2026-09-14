@@ -54,13 +54,13 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 	for _, spec := range file.Imports {
 		name := strings.Trim(spec.Path.Value, "\"")
 		target := ClassifyImport(name)
+		line := fset.Position(spec.Pos()).Line
 		if message := DependencyError(source, target); message != "" {
 			code := "UPD101"
 			if message == "cross-application internal dependency" { code = "UPD102" }
-			line := fset.Position(spec.Pos()).Line
-			if !IsIgnored(rel, code, lineAt(lines, line), rules) {
-				findings = append(findings, Finding{Path: rel, Line: line, Code: code, Message: message, Severity: "error"})
-			}
+			addFinding(&findings, rel, line, code, message, "error", lines, rules)
+		} else if warning := DataCommanderWarning(source, target); warning != "" {
+			addFinding(&findings, rel, line, "UPD103", warning, "warning", lines, rules)
 		}
 	}
 	if source.Role == "commander" {

@@ -60,4 +60,12 @@ std::string dependency_error(const ModuleInfo& source, const ModuleInfo& target)
     return {};
 }
 
+std::string data_commander_warning(const ModuleInfo& source, const ModuleInfo& target) {
+    if (source.layer == "data" && source.role == "commander" &&
+        target.layer == "data" && target.role == "commander") {
+        return "Data Commander should not communicate directly with another Data Commander";
+    }
+    return {};
+}
+
 }  // namespace upd_checker

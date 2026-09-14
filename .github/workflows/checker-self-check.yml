@@ -77,12 +77,17 @@ jobs:
           target="$(mktemp -d)"
           mkdir -p "$target/applications/main/ui"
           mkdir -p "$target/applications/main/process"
+          mkdir -p "$target/data"
           cat > "$target/applications/main/ui/screen_processing.cs" <<'EOF'
           using Applications.Settings.Shared.Data.Storage;
           namespace Sample;
           EOF
           cat > "$target/applications/main/process/main_commander.cs" <<'EOF'
           using Applications.Settings.Contractor.Process.SettingsProcessing;
+          namespace Sample;
+          EOF
+          cat > "$target/data/save_commander.cs" <<'EOF'
+          using Data.CacheCommander;
           namespace Sample;
           EOF
           set +e
@@ -93,6 +98,7 @@ jobs:
           test "$status" -eq 1
           grep -q "E UPD101" <<< "$output"
           grep -q "E UPD102" <<< "$output"
+          grep -q "W UPD103" <<< "$output"
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .

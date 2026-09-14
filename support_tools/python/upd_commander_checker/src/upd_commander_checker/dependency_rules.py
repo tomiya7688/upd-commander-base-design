@@ -20,6 +20,19 @@ def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                 findings.append(
                     Finding(module.path, getattr(node, "lineno", 1), code, message)
                 )
+                continue
+
+            warning = _data_commander_warning(module, target_layer, target_role)
+            if warning:
+                findings.append(
+                    Finding(
+                        module.path,
+                        getattr(node, "lineno", 1),
+                        "UPD103",
+                        warning,
+                        "warning",
+                    )
+                )
     return findings
 
 
@@ -59,6 +72,21 @@ def _dependency_error(
         if source.layer and target_layer and source.layer != target_layer:
             return "Commander must not depend on Processing in another layer", "UPD101"
     return None, "UPD101"
+
+
+def _data_commander_warning(
+    source: ModuleInfo,
+    target_layer: str | None,
+    target_role: str | None,
+) -> str | None:
+    if (
+        source.layer == "data"
+        and source.role == "commander"
+        and target_layer == "data"
+        and target_role == "commander"
+    ):
+        return "Data Commander should not communicate directly with another Data Commander"
+    return None
 
 
 def _cross_application_internal_dependency(

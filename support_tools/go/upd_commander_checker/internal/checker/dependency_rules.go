@@ -32,6 +32,13 @@ func DependencyError(source ModuleInfo, target ModuleInfo) string {
 	return ""
 }
 
+func DataCommanderWarning(source ModuleInfo, target ModuleInfo) string {
+	if source.Layer == "data" && source.Role == "commander" && target.Layer == "data" && target.Role == "commander" {
+		return "Data Commander should not communicate directly with another Data Commander"
+	}
+	return ""
+}
+
 func isApplicationBoundaryAPI(target ModuleInfo) bool {
 	if target.Role == "messenger" {
 		return true

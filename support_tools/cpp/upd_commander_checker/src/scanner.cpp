@@ -112,6 +112,11 @@ std::vector<Finding> scan_file(
             if (!message.empty()) {
                 const std::string code = message == "cross-application internal dependency" ? "UPD102" : "UPD101";
                 add_finding(findings, relative, line_number, code, message, "error", line_text, rules);
+            } else {
+                const std::string warning = data_commander_warning(source, target);
+                if (!warning.empty()) {
+                    add_finding(findings, relative, line_number, "UPD103", warning, "warning", line_text, rules);
+                }
             }
         }
 

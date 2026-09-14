@@ -14,6 +14,7 @@
 - [Compresser / Container Checker Rules](compresser-check-rules.md) — Container 化の Attention / Warning 判定と Self Check 規定
 - [Processing Specification](processing-spec.md) — 各層の実処理の責務
 - [Dependency Rules](dependency-rules.md) — 許可・禁止される依存関係
+- [Data Commander Communication](data-commander-communication.md) — Data Commander 同士の直接通信に対する警告規定
 - [Message Contract](message-contract.md) — 層間メッセージの契約
 - [Error Handling](error-handling.md) — エラー検出・伝播・変換
 - [Testing Rules](testing-rules.md) — 単体・統合・アーキテクチャテスト規定
