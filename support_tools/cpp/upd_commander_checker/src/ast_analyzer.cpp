@@ -213,21 +213,16 @@ void analyze_dependency(AnalysisState& state, CXCursor cursor) {
         return;
     }
     const ModuleInfo target = classify_include(include_name);
-    const std::string message = dependency_error(state.source, target);
-    const int line = cursor_line(cursor);
-    if (!message.empty()) {
-        add_finding(
-            state,
-            line,
-            message == "cross-application internal dependency" ? "UPD102" : "UPD101",
-            message,
-            "error");
+    const auto result = dependency_result(state.source, target);
+    if (!result.has_value()) {
         return;
     }
-    const std::string warning = data_commander_warning(state.source, target);
-    if (!warning.empty()) {
-        add_finding(state, line, "UPD103", warning, "warning");
-    }
+    add_finding(
+        state,
+        cursor_line(cursor),
+        result->code,
+        result->message,
+        result->severity);
 }
 
 void analyze_function(AnalysisState& state, CXCursor cursor) {
