@@ -25,7 +25,7 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 
 	var candidates []dataOnlyType
 	for _, item := range parsed {
-		hasBehavioralType := false
+		var types []*ast.TypeSpec
 		for _, declaration := range item.file.Decls {
 			gen, ok := declaration.(*ast.GenDecl)
 			if !ok || gen.Tok != token.TYPE {
@@ -33,41 +33,27 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 			}
 			for _, spec := range gen.Specs {
 				typeSpec, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
-				if methodCounts[dataTypeKey(item.path, item.packageName, typeSpec.Name.Name)] > 0 {
-					hasBehavioralType = true
+				if ok {
+					types = append(types, typeSpec)
 				}
 			}
 		}
-		if !hasBehavioralType {
+		if len(types) < 2 {
 			continue
 		}
-
-		for _, declaration := range item.file.Decls {
-			gen, ok := declaration.(*ast.GenDecl)
-			if !ok || gen.Tok != token.TYPE {
+		for _, typeSpec := range types {
+			if _, ok := typeSpec.Type.(*ast.StructType); !ok {
 				continue
 			}
-			for _, spec := range gen.Specs {
-				typeSpec, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
-				}
-				if _, ok := typeSpec.Type.(*ast.StructType); !ok {
-					continue
-				}
-				if methodCounts[dataTypeKey(item.path, item.packageName, typeSpec.Name.Name)] != 0 {
-					continue
-				}
-				candidates = append(candidates, dataOnlyType{
-					path: item.path,
-					rel: item.rel,
-					name: typeSpec.Name.Name,
-					line: item.fset.Position(typeSpec.Pos()).Line,
-				})
+			if methodCounts[dataTypeKey(item.path, item.packageName, typeSpec.Name.Name)] != 0 {
+				continue
 			}
+			candidates = append(candidates, dataOnlyType{
+				path: item.path,
+				rel: item.rel,
+				name: typeSpec.Name.Name,
+				line: item.fset.Position(typeSpec.Pos()).Line,
+			})
 		}
 	}
 
@@ -75,11 +61,11 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 	for _, item := range candidates {
 		code := "UPD403"
 		severity := "attention"
-		message := "data-only type " + item.name + " shares a file with a behavioral type"
+		message := "data-only type " + item.name + " shares a file with another type"
 		if dataTypeReferencedElsewhere(item, parsed) {
 			code = "UPD404"
 			severity = "warning"
-			message = "data-only type " + item.name + " shares a file with a behavioral type and is referenced from another file"
+			message = "data-only type " + item.name + " shares a file with another type and is referenced from another file"
 		}
 		addFinding(&findings, item.rel, item.line, code, message, severity, readLines(item.path), rules)
 	}
