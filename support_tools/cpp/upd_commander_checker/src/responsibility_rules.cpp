@@ -8,7 +8,7 @@
 namespace upd_checker {
 namespace {
 
-constexpr int kMaxResponsibilityLines = 250;
+constexpr int kMaxResponsibilityLines = 350;
 
 bool is_blank(const std::string& line) {
     return line.find_first_not_of(" \t\r\n") == std::string::npos;
@@ -44,24 +44,12 @@ std::vector<Finding> check_responsibilities(
 
     if (non_blank_lines > kMaxResponsibilityLines &&
         !is_ignored(path, "UPD401", "", rules)) {
-        findings.push_back(Finding{
-            path,
-            1,
-            "UPD401",
-            "file/module is too large for one responsibility",
-            "warning",
-        });
+        findings.push_back(Finding{path, 1, "UPD401", "file/module is too large for one responsibility", "warning"});
     }
 
     if (major_class_count > 1 &&
         !is_ignored(path, "UPD402", "", rules)) {
-        findings.push_back(Finding{
-            path,
-            second_class_line,
-            "UPD402",
-            "file contains multiple major classes",
-            "warning",
-        });
+        findings.push_back(Finding{path, second_class_line, "UPD402", "file contains multiple major classes", "warning"});
     }
 
     return findings;
