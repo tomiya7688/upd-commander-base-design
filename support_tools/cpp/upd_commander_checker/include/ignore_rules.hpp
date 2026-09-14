@@ -11,6 +11,7 @@ struct IgnoreRule {
 };
 
 std::vector<IgnoreRule> load_ignore_rules(const std::string& root);
+bool is_path_ignored(const std::string& path, const std::vector<IgnoreRule>& rules);
 bool is_ignored(
     const std::string& path,
     const std::string& code,
