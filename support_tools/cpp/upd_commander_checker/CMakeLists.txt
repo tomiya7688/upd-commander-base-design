@@ -10,6 +10,7 @@ add_library(upd_checker_core
     src/config.cpp
     src/dependency_rules.cpp
     src/ignore_rules.cpp
+    src/responsibility_rules.cpp
     src/scanner.cpp
 )
 target_include_directories(upd_checker_core PUBLIC include)
