@@ -15,6 +15,27 @@ func TestCommanderRulesMatrix(t *testing.T) {
 	assertHasCode(t, findings, "UPD203")
 }
 
+func TestCommanderComparisonsDoNotTriggerUPD202(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "process", "compare_commander.go")
+	writeTestFile(t, path, "package process\nfunc run(left, right int, ready, enabled bool) bool { return left == right || left != right || left < right || left > right || (ready && enabled) }\n")
+	findings := ScanPath(root, nil)
+	assertNoCode(t, findings, "UPD202")
+}
+
+func TestCommanderArithmeticOperatorsTriggerUPD202(t *testing.T) {
+	operators := []string{"+", "-", "*", "/", "%"}
+	for _, operator := range operators {
+		t.Run(operator, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "process", "math_commander.go")
+			writeTestFile(t, path, "package process\nfunc run(left, right int) int { return left "+operator+" right }\n")
+			findings := ScanPath(root, nil)
+			assertHasCode(t, findings, "UPD202")
+		})
+	}
+}
+
 func TestContainerRulesMatrix(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "process", "large_commander.go")
