@@ -103,7 +103,8 @@ internal static class Scanner
                 }
             }
 
-            if (source.Role != "compresser")
+            if (source.Role != "compresser" &&
+                !lineText.Contains(" record ", StringComparison.Ordinal))
             {
                 var methodMatch = MethodPattern.Match(lineText);
                 var parameterCount = methodMatch.Success
