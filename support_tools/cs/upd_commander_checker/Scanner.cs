@@ -25,6 +25,7 @@ internal static class Scanner
                 input.CliIgnore.Any(pattern =>
                     IgnoreRules.GlobMatch(new GlobMatchInput(relative, pattern))
                 )
+                || IgnoreRules.IsPathIgnored(new PathIgnoreCheckInput(relative, ignoreRules))
             )
             {
                 continue;
