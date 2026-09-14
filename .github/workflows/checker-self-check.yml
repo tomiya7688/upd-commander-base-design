@@ -27,7 +27,7 @@ jobs:
         run: python -m unittest discover -s tests
       - name: Self check
         working-directory: support_tools/python/upd_commander_checker
-        run: python -m upd_commander_checker . --warnings-as-errors
+        run: python -m upd_commander_checker . --warnings-as-errors --attentions-as-errors
 
   go:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
         run: go test ./...
       - name: Self check
         working-directory: support_tools/go/upd_commander_checker
-        run: go run ./cmd/upd-commander-check --warnings-as-errors .
+        run: go run ./cmd/upd-commander-check --warnings-as-errors --attentions-as-errors .
 
   cpp:
     runs-on: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Self check
         working-directory: support_tools/cpp/upd_commander_checker
-        run: ./build/upd-commander-check --warnings-as-errors .
+        run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors .
 
   csharp:
     runs-on: ubuntu-latest
@@ -95,4 +95,4 @@ jobs:
           grep -q "E UPD102" <<< "$output"
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
-        run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors .
+        run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .
