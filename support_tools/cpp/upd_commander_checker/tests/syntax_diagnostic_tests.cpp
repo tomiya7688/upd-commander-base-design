@@ -56,6 +56,17 @@ void test_warning_diagnostic_is_not_upd002() {
     std::filesystem::remove_all(root);
 }
 
+void test_semantic_error_is_not_upd002() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_syntax_semantic";
+    std::filesystem::remove_all(root);
+    const auto source = root / "semantic.cpp";
+    write_file(source, "int run() { return missing_name; }\n");
+
+    const auto findings = upd_checker::scan_path(source.string(), {});
+    assert(!has_code(findings, "UPD002"));
+    std::filesystem::remove_all(root);
+}
+
 void test_header_error_is_only_main_file_error_when_header_is_target() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_syntax_header";
     std::filesystem::remove_all(root);
@@ -78,6 +89,7 @@ int main() {
     test_main_file_syntax_error_reports_upd002();
     test_valid_code_has_no_upd002();
     test_warning_diagnostic_is_not_upd002();
+    test_semantic_error_is_not_upd002();
     test_header_error_is_only_main_file_error_when_header_is_target();
     return 0;
 }
