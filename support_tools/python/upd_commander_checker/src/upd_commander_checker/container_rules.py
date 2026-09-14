@@ -62,7 +62,9 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                 )
 
             if input_violation or output_violation:
-                reducible_lines += _signature_reducible_lines(node)
+                signature_lines = _signature_reducible_lines(node)
+                excess_values = max(0, len(parameters) - 1) + max(0, returned_values - 1)
+                reducible_lines += max(signature_lines, excess_values)
 
         if module.role in _BLOAT_ROLES and _large_compression_expected(
             reducible_lines, class_lines
