@@ -38,27 +38,36 @@ internal static class Program
         var findings = Scanner.ScanPath(target, ignores);
         var errors = 0;
         var warnings = 0;
+        var attentions = 0;
         var lines = new List<string>();
         foreach (var finding in findings)
         {
-            var warning = finding.Severity == "warning";
-            lines.Add($"{(warning ? "W" : "E")} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
-            if (warning)
+            var level = "A";
+            if (finding.Severity == "error")
             {
+                level = "E";
+                errors++;
+            }
+            else if (finding.Severity == "warning")
+            {
+                level = "W";
                 warnings++;
             }
             else
             {
-                errors++;
+                attentions++;
             }
+            lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
         }
 
         if (errors > 0 || (warningsAsErrors && warnings > 0))
         {
-            lines.Add($"FAIL e={errors} w={warnings}");
+            lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
             return Finish(lines, output, 1);
         }
-        lines.Add(warnings > 0 ? $"OK w={warnings}" : "OK");
+        lines.Add(warnings > 0 || attentions > 0
+            ? $"OK w={warnings} a={attentions}"
+            : "OK");
         return Finish(lines, output, 0);
     }
 
