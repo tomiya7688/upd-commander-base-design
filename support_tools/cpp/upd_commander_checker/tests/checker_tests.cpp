@@ -73,6 +73,42 @@ void test_boundary_layer_violation_keeps_upd101() {
     std::filesystem::remove_all(root);
 }
 
+void test_ast_ignores_comment_and_string_pseudo_syntax() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ast_text";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "text_commander.cpp",
+        "void run() {\n"
+        "    const char* sample = \"for (int i = 0; i < 3; ++i)\";\n"
+        "    // while (true) must not be treated as syntax.\n"
+        "}\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(!has_code(findings, "UPD201"));
+    std::filesystem::remove_all(root);
+}
+
+void test_ast_detects_real_loop() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ast_loop";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "loop_commander.cpp",
+        "void run() { for (int i = 0; i < 3; ++i) {} }\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD201"));
+    std::filesystem::remove_all(root);
+}
+
+void test_ast_detects_multiline_parameters() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ast_parameters";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "math_processing.cpp",
+        "void calculate(\n"
+        "    int left,\n"
+        "    int right) {}\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD301"));
+    std::filesystem::remove_all(root);
+}
+
 void test_checker_package_name_is_not_commander() {
     const auto module = upd_checker::classify_path(
         "support_tools/cpp/upd_commander_checker/src/scanner.cpp");
@@ -97,6 +133,9 @@ int main() {
     test_data_commander_warning();
     test_boundary_like_directory_is_not_boundary_api();
     test_boundary_layer_violation_keeps_upd101();
+    test_ast_ignores_comment_and_string_pseudo_syntax();
+    test_ast_detects_real_loop();
+    test_ast_detects_multiline_parameters();
     test_checker_package_name_is_not_commander();
     test_inline_ignore();
     return 0;
