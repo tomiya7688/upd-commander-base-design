@@ -33,10 +33,12 @@ internal static class ConfigLoader
             var text = File.ReadAllText(path);
             var config = JsonSerializer.Deserialize<CheckerConfig>(text) ?? new CheckerConfig();
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
-            config.Input = Resolve(root, string.IsNullOrWhiteSpace(config.Input) ? "." : config.Input);
+            config.Input = Resolve(new ResolvePathInput(
+                root,
+                string.IsNullOrWhiteSpace(config.Input) ? "." : config.Input));
             if (!string.IsNullOrWhiteSpace(config.Output))
             {
-                config.Output = Resolve(root, config.Output);
+                config.Output = Resolve(new ResolvePathInput(root, config.Output));
             }
             return config;
         }
@@ -62,8 +64,10 @@ internal static class ConfigLoader
         return File.Exists(currentConfig) ? currentConfig : null;
     }
 
-    private static string Resolve(string root, string value)
+    private static string Resolve(ResolvePathInput input)
     {
-        return Path.IsPathRooted(value) ? value : Path.GetFullPath(Path.Combine(root, value));
+        return Path.IsPathRooted(input.Value)
+            ? input.Value
+            : Path.GetFullPath(Path.Combine(input.Root, input.Value));
     }
 }
