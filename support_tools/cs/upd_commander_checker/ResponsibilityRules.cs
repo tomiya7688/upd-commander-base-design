@@ -20,6 +20,9 @@ internal static class ResponsibilityRules
         foreach (var type in types)
         {
             var span = type.GetLocation().GetLineSpan();
+            var line = span.StartLinePosition.Line + 1;
+            var lineText =
+                line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
             var lineCount = span.EndLinePosition.Line - span.StartLinePosition.Line + 1;
             var methodCount = type.Members.OfType<MethodDeclarationSyntax>().Count();
             if (lineCount <= MaxResponsibilityLines && methodCount <= MaxResponsibilityMethods)
@@ -28,7 +31,7 @@ internal static class ResponsibilityRules
             }
             if (
                 IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(input.Path, "UPD401", string.Empty, input.IgnoreRules)
+                    new IgnoreCheckInput(input.Path, "UPD401", lineText, input.IgnoreRules)
                 )
             )
             {
@@ -38,7 +41,7 @@ internal static class ResponsibilityRules
             findings.Add(
                 new Finding(
                     input.Path,
-                    span.StartLinePosition.Line + 1,
+                    line,
                     "UPD401",
                     $"type {type.Identifier.ValueText} is too large for one responsibility "
                         + $"(lines={lineCount}, methods={methodCount})",
@@ -47,11 +50,12 @@ internal static class ResponsibilityRules
             );
         }
 
+        var firstLineText = input.Lines.Count > 0 ? input.Lines[0] : string.Empty;
         if (
             types.Count == 0
             && input.Lines.Count > MaxResponsibilityLines
             && !IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(input.Path, "UPD401", string.Empty, input.IgnoreRules)
+                new IgnoreCheckInput(input.Path, "UPD401", firstLineText, input.IgnoreRules)
             )
         )
         {
@@ -66,23 +70,28 @@ internal static class ResponsibilityRules
             );
         }
 
-        if (
-            majorTypes.Count > 1
-            && !IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(input.Path, "UPD402", string.Empty, input.IgnoreRules)
-            )
-        )
+        if (majorTypes.Count > 1)
         {
             var second = majorTypes[1];
-            findings.Add(
-                new Finding(
-                    input.Path,
-                    second.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                    "UPD402",
-                    "file contains multiple responsibility-bearing types",
-                    "warning"
+            var line = second.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            var lineText =
+                line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
+            if (
+                !IgnoreRules.IsIgnored(
+                    new IgnoreCheckInput(input.Path, "UPD402", lineText, input.IgnoreRules)
                 )
-            );
+            )
+            {
+                findings.Add(
+                    new Finding(
+                        input.Path,
+                        line,
+                        "UPD402",
+                        "file contains multiple responsibility-bearing types",
+                        "warning"
+                    )
+                );
+            }
         }
 
         return findings;

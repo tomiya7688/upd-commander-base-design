@@ -17,6 +17,7 @@ internal static class DataTypeLocationRules
         string File,
         string Relative,
         int Line,
+        string LineText,
         string Name,
         INamedTypeSymbol Symbol
     );
@@ -47,17 +48,20 @@ internal static class DataTypeLocationRules
                 continue;
             }
             var model = compilation.GetSemanticModel(source.Tree, ignoreAccessibility: true);
+            var text = source.Tree.GetText();
             foreach (var type in types.Where(IsDataOnly))
             {
                 if (model.GetDeclaredSymbol(type) is not INamedTypeSymbol symbol)
                 {
                     continue;
                 }
+                var line = type.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                 candidates.Add(
                     new DataTypeCandidate(
                         source.File,
                         source.Relative,
-                        type.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                        line,
+                        text.Lines[line - 1].ToString(),
                         type.Identifier.ValueText,
                         symbol
                     )
@@ -81,7 +85,12 @@ internal static class DataTypeLocationRules
             var code = external ? "UPD404" : "UPD403";
             if (
                 IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(candidate.Relative, code, string.Empty, input.IgnoreRules)
+                    new IgnoreCheckInput(
+                        candidate.Relative,
+                        code,
+                        candidate.LineText,
+                        input.IgnoreRules
+                    )
                 )
             )
             {
