@@ -12,9 +12,11 @@ int main() {
 
     const auto path = root / "large.cpp";
     std::ofstream file(path);
+    file << "class LargeResponsibility {\npublic:\n";
     for (int index = 0; index < 360; ++index) {
-        file << "int value_" << index << " = " << index << ";\n";
+        file << "    void method_" << index << "() {}\n";
     }
+    file << "};\n";
     file.close();
 
     const auto findings = upd_checker::scan_path(root.string(), {});
