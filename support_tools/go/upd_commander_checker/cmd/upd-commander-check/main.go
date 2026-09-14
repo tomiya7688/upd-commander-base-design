@@ -23,9 +23,11 @@ func main() {
 	var ignores stringList
 	var output string
 	var warningsAsErrors bool
+	var attentionsAsErrors bool
 	flag.Var(&ignores, "ignore", "ignore path glob; repeatable")
 	flag.StringVar(&output, "output", "", "report output path")
 	flag.BoolVar(&warningsAsErrors, "warnings-as-errors", false, "warnings fail the check")
+	flag.BoolVar(&attentionsAsErrors, "attentions-as-errors", false, "attentions fail the check")
 	flag.Parse()
 
 	target := config.Input
@@ -62,7 +64,7 @@ func main() {
 		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message))
 	}
 
-	if errors > 0 || warningsAsErrors && warnings > 0 {
+	if errors > 0 || warningsAsErrors && warnings > 0 || attentionsAsErrors && attentions > 0 {
 		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
 		finish(lines, output, 1)
 	}
