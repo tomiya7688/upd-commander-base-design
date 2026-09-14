@@ -146,23 +146,27 @@ std::string qualified_name(CXCursor cursor) {
 bool is_direct_work(CXCursor cursor) {
     const auto kind = clang_getCursorKind(cursor);
     if (kind == CXCursor_VarDecl) {
-        const std::string type = lower(cx_text(clang_getTypeSpelling(clang_getCursorType(cursor))));
-        return type.find("ifstream") != std::string::npos ||
-               type.find("ofstream") != std::string::npos ||
-               type.find("fstream") != std::string::npos;
+        const CXType canonical = clang_getCanonicalType(clang_getCursorType(cursor));
+        const std::string type = lower(cx_text(clang_getTypeSpelling(canonical)));
+        return type.find("std::basic_ifstream") != std::string::npos ||
+               type.find("std::basic_ofstream") != std::string::npos ||
+               type.find("std::basic_fstream") != std::string::npos;
     }
     if (kind != CXCursor_CallExpr) {
         return false;
     }
 
     CXCursor referenced = clang_getCursorReferenced(cursor);
+    if (!clang_Cursor_isNull(referenced) && is_main_file_cursor(referenced)) {
+        return false;
+    }
     const std::string name = lower(cx_text(clang_getCursorSpelling(
         clang_Cursor_isNull(referenced) ? cursor : referenced)));
     const std::string qualified = lower(
         clang_Cursor_isNull(referenced) ? name : qualified_name(referenced));
     return name == "fopen" ||
            name.rfind("curl_", 0) == 0 ||
-           name.find("sqlite") != std::string::npos ||
+           name.rfind("sqlite3_", 0) == 0 ||
            qualified.find("::json::") != std::string::npos ||
            qualified.find("nlohmann::json") != std::string::npos;
 }
