@@ -17,3 +17,10 @@ class ModuleInfo:
     layer: str | None
     role: str | None
     application: str | None = None
+
+
+@dataclass(frozen=True)
+class DependencyRuleResult:
+    code: str
+    message: str
+    severity: str
