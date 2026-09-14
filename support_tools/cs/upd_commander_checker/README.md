@@ -52,11 +52,14 @@ OK
   "input": ".",
   "output": "",
   "ignore": ["tests/**", "generated/**"],
-  "warnings_as_errors": false
+  "warnings_as_errors": false,
+  "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
 
 `input` / `output` の相対パスは `config` の親基準です。`output` を設定するとコンソールと同じ短い結果をファイルにも保存します。CLI指定は設定より優先されます。
+
+`enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
 
 ## Ignore
 
@@ -111,7 +114,7 @@ self-contained のため.NETランタイム未導入環境でも実行できま�
 ## 規則
 
 - `UPD001`: ソース読み込み失敗
-- `UPD002`: C#構文エラー
+- `UPD002`: 構文・AST解析エラー
 - `UPD101`: UI / Process / Data・Commander / Messenger / Processing依存違反
 - `UPD102`: Application境界越しの内部実装直接依存
 - `UPD103`: Data Commander同士の直接通信
@@ -120,8 +123,10 @@ self-contained のため.NETランタイム未導入環境でも実行できま�
 - `UPD203`: Commander内の直接I/O/API呼び出し
 - `UPD301`: 複数入力によるContainer化候補 (`attention`)
 - `UPD302`: 複数返却値によるContainer化候補 (`attention`)
-- `UPD303`: Container/Compresser導入でCommander/Messengerの大幅圧縮が見込まれる場合 (`warning`)
+- `UPD303`: Container/Compresser導入による大幅圧縮候補 (`warning`)
 - `UPD401`: 責務単位が過大
 - `UPD402`: 1ファイルに複数の主要責務型
+- `UPD403`: データ型の同一ファイル配置 (`attention`)
+- `UPD404`: 外部利用されるデータ型の同一ファイル配置 (`warning`)
 
 C#コンパイラそのものの型検査等は `dotnet build` に任せ、このツールはRoslyn ASTを利用してUPD Commander規約を解析します。

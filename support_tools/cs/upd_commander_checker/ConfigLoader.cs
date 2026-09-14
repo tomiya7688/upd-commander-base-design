@@ -15,8 +15,15 @@ internal static class ConfigLoader
         try
         {
             var text = File.ReadAllText(path);
+            using var document = JsonDocument.Parse(text);
+            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            {
+                throw new ConfigException($"invalid config: {path}");
+            }
+            var enabledRules = RuleSelection.ReadEnabledRules(document.RootElement);
             var config = JsonSerializer.Deserialize<CheckerConfig>(text)
                 ?? throw new ConfigException($"invalid config: {path}");
+            config.EnabledRules = enabledRules;
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(new ResolvePathInput(
                 root,

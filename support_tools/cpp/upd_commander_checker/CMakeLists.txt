@@ -48,6 +48,7 @@ add_library(upd_checker_core
     src/data_type_location_rules.cpp
     src/dependency_rules.cpp
     src/ignore_rules.cpp
+    src/rule_selection.cpp
     src/scanner.cpp
 )
 target_include_directories(upd_checker_core

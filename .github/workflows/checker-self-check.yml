@@ -202,3 +202,14 @@ jobs:
           if (-not (Test-Path "$roslynOutput/licenses/ROSLYN-LICENSE.txt")) { throw "Roslyn license missing" }
           if (-not (Test-Path "$llvmOutput/THIRD_PARTY_NOTICES.md")) { throw "LLVM notice missing" }
           if (-not (Test-Path "$llvmOutput/licenses/LLVM-LICENSE.txt")) { throw "LLVM license missing" }
+  python-windows-gui:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build and test CUI and GUI
+        working-directory: support_tools/python/upd_commander_checker
+        shell: cmd
+        run: check_acceptance.bat

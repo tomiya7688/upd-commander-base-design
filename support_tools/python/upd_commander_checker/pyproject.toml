@@ -17,6 +17,7 @@ build = ["pyinstaller>=6"]
 
 [project.scripts]
 upd-commander-check = "upd_commander_checker.cli:main"
+upd-commander-check-gui = "upd_commander_checker.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

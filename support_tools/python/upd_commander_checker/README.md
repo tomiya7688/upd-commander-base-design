@@ -45,18 +45,21 @@ OK
 
 ## config/path.json
 
-EXEビルド時に `dist/config/path.json` を自動生成します。既存ファイルは上書きしません。
+EXEビルド時に `dist/upd-commander-check/config/path.json` を自動生成します。CUIとGUIで同じ設定を使用し、既存ファイルは上書きしません。
 
 ```json
 {
   "input": ".",
   "output": "",
   "ignore": ["tests/**", "generated/**"],
-  "warnings_as_errors": false
+  "warnings_as_errors": false,
+  "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
 
 `input` と `output` の相対パスは `config` の親ディレクトリ基準です。`output` を設定すると、短い標準出力と同じ内容をファイルにも保存します。CLIの位置引数、`--output`、`--ignore`、`--warnings-as-errors` で設定を上書きできます。
+
+`enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
 
 ## Nested Application
 
@@ -107,6 +110,10 @@ value = left + right  # upd: ignore UPD202 - performance hot path
 upd-commander-check . --warnings-as-errors
 ```
 
+## GUI
+
+`upd-commander-check-gui.exe` では、チェック対象ディレクトリ、結果出力先、Warningの失敗扱い、有効にするUPD番号を画面から設定できます。「設定を保存」でCUIと共通の `config/path.json` へ保存し、「チェック実行」で同じフォルダのCUI版を実行して結果を表示します。
+
 ## EXE ビルド
 
 Windows:
@@ -125,8 +132,9 @@ python scripts/build_exe.py
 生成先:
 
 ```text
-dist/upd-commander-check.exe
-dist/config/path.json
+dist/upd-commander-check/upd-commander-check.exe
+dist/upd-commander-check/upd-commander-check-gui.exe
+dist/upd-commander-check/config/path.json
 ```
 
 ## 現在のチェック
@@ -135,9 +143,17 @@ dist/config/path.json
 - `UPD002`: Python 構文エラー
 - `UPD101`: UPD Commander の層・役割依存規則違反
 - `UPD102`: 別 Application 内部実装への直接依存
+- `UPD103`: Data Commander同士の直接通信
 - `UPD201`: Commander 内のループ
 - `UPD202`: Commander 内の計算式
 - `UPD203`: Commander 内の直接的な実処理/API 呼び出し
+- `UPD301`: 複数入力によるContainer化候補
+- `UPD302`: 複数返却値によるContainer化候補
+- `UPD303`: Container/Compresserによる大幅圧縮候補
+- `UPD401`: 責務単位が過大
+- `UPD402`: 1ファイルに複数の主要責務型
+- `UPD403`: データ型の同一ファイル配置
+- `UPD404`: 外部利用されるデータ型の同一ファイル配置
 
 静的解析だけでは断定しづらい項目は warning とし、確定的な違反と分離します。
 

@@ -13,7 +13,8 @@ if not exist %OUTDIR%\config\path.json (
   >>%OUTDIR%\config\path.json echo   "input": ".",
   >>%OUTDIR%\config\path.json echo   "output": "",
   >>%OUTDIR%\config\path.json echo   "ignore": [],
-  >>%OUTDIR%\config\path.json echo   "warnings_as_errors": false
+  >>%OUTDIR%\config\path.json echo   "warnings_as_errors": false,
+  >>%OUTDIR%\config\path.json echo   "enabled_rules": ["UPD001", "UPD002", "UPD101", "UPD102", "UPD103", "UPD201", "UPD202", "UPD203", "UPD301", "UPD302", "UPD303", "UPD401", "UPD402", "UPD403", "UPD404"]
   >>%OUTDIR%\config\path.json echo }
 )
 set LLVM_BIN=

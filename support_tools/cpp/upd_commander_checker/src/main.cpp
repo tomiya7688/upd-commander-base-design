@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "config.hpp"
+#include "rule_selection.hpp"
 #include "scanner.hpp"
 
 namespace {
@@ -67,7 +68,11 @@ int main(int argc, char* argv[]) {
         return finish({"E UPD000 " + target + " missing"}, output, 2);
     }
 
-    const auto findings = upd_checker::scan_path(target, ignores);
+    const auto scanned_findings = upd_checker::scan_path(target, ignores);
+    const auto findings = upd_checker::filter_enabled_findings({
+        scanned_findings,
+        config.enabled_rules,
+        config.enabled_rules_configured});
     int errors = 0;
     int warnings = 0;
     int attentions = 0;
