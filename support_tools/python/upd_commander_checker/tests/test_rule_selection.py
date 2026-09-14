@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -27,8 +28,16 @@ class RuleSelectionTest(unittest.TestCase):
         self.assertEqual(["UPD202"], [finding.code for finding in selected])
 
     def test_gui_uses_relative_config_paths(self) -> None:
-        base = Path("C:/checker")
-        self.assertEqual("../project", _relative_path(base, "C:/project").replace("\\", "/"))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            base = root / "checker"
+            project = root / "project"
+            base.mkdir()
+            project.mkdir()
+            self.assertEqual(
+                "../project",
+                _relative_path(base, str(project)).replace("\\", "/"),
+            )
 
     def test_gui_development_command_uses_module_entry(self) -> None:
         self.assertEqual("-m", _checker_command()[1])
