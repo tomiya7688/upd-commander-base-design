@@ -6,14 +6,19 @@ namespace UpdCommanderChecker;
 
 internal static class DataTypeLocationRules
 {
-    private sealed record DataTypeSource(string File, string Relative, CompilationUnitSyntax Root);
-    private sealed record DataTypeCandidate(string File, string Relative, int Line, string Name);
+    private sealed record DataTypeSource(string File, string Relative, SyntaxTree Tree, CompilationUnitSyntax Root);
+    private sealed record DataTypeCandidate(string File, string Relative, int Line, string Name, INamedTypeSymbol Symbol);
     private sealed record ParseInput(IReadOnlyList<string> Files, string Root);
-    private sealed record ReferenceInput(CompilationUnitSyntax Root, string Name);
+    private sealed record ReferenceInput(CompilationUnitSyntax Root, SemanticModel Model, INamedTypeSymbol Symbol);
 
     internal static List<Finding> Check(DataTypeLocationRuleContext input)
     {
         var sources = Parse(new ParseInput(input.Files, input.Root));
+        var compilation = CSharpCompilation.Create(
+            "UpdCommanderDataTypeReferenceAnalysis",
+            sources.Select(source => source.Tree),
+            new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
         var candidates = new List<DataTypeCandidate>();
         foreach (var source in sources)
         {
@@ -22,13 +27,20 @@ internal static class DataTypeLocationRules
             {
                 continue;
             }
-            candidates.AddRange(types
-                .Where(IsDataOnly)
-                .Select(type => new DataTypeCandidate(
+            var model = compilation.GetSemanticModel(source.Tree, ignoreAccessibility: true);
+            foreach (var type in types.Where(IsDataOnly))
+            {
+                if (model.GetDeclaredSymbol(type) is not INamedTypeSymbol symbol)
+                {
+                    continue;
+                }
+                candidates.Add(new DataTypeCandidate(
                     source.File,
                     source.Relative,
                     type.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                    type.Identifier.ValueText)));
+                    type.Identifier.ValueText,
+                    symbol));
+            }
         }
 
         var findings = new List<Finding>();
@@ -36,7 +48,10 @@ internal static class DataTypeLocationRules
         {
             var external = sources.Any(source =>
                 !string.Equals(source.File, candidate.File, StringComparison.OrdinalIgnoreCase) &&
-                References(new ReferenceInput(source.Root, candidate.Name)));
+                References(new ReferenceInput(
+                    source.Root,
+                    compilation.GetSemanticModel(source.Tree, ignoreAccessibility: true),
+                    candidate.Symbol)));
             var code = external ? "UPD404" : "UPD403";
             if (IgnoreRules.IsIgnored(new IgnoreCheckInput(
                     candidate.Relative,
@@ -88,6 +103,7 @@ internal static class DataTypeLocationRules
             result.Add(new DataTypeSource(
                 file,
                 Path.GetRelativePath(input.Root, file).Replace('\\', '/'),
+                tree,
                 tree.GetCompilationUnitRoot()));
         }
         return result;
@@ -118,8 +134,18 @@ internal static class DataTypeLocationRules
 
     private static bool References(ReferenceInput input)
     {
-        return input.Root.DescendantNodes().Any(node =>
-            node is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == input.Name ||
-            node is GenericNameSyntax generic && generic.Identifier.ValueText == input.Name);
+        foreach (var node in input.Root.DescendantNodes().Where(node =>
+                     node is IdentifierNameSyntax or GenericNameSyntax))
+        {
+            var symbol = input.Model.GetSymbolInfo(node).Symbol;
+            if (symbol is INamedTypeSymbol typeSymbol &&
+                SymbolEqualityComparer.Default.Equals(
+                    typeSymbol.OriginalDefinition,
+                    input.Symbol.OriginalDefinition))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
