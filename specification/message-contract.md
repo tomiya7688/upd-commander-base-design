@@ -8,6 +8,8 @@
 2. メッセージは受信先が処理判断に必要な情報を明示的に含む。
 3. UI フレームワーク、DB 接続、ファイルハンドル等の実装依存オブジェクトを層間メッセージとして渡してはならない。
 4. メッセージ形式は言語や通信手段に依存しない概念として定義する。
+5. 複数の入力値・返却値は、必要に応じて Compresser により単一の通信単位へまとめてよい。
+6. Commander / Messenger は、原則として payload 内部の個々の値の業務的意味を解釈しない。
 
 ## 2. 推奨フィールド
 
@@ -23,6 +25,8 @@ error         : 失敗時情報
 ```
 
 すべてを常に必須とはしない。
+
+複数値を扱う場合でも、Messenger / Commander の引数として個別に並べるのではなく、可能な限り `payload` 等の単一の通信単位へまとめる。
 
 ## 3. Command
 
@@ -59,6 +63,10 @@ payload は層間で必要な最小限の情報とする。
   db_connection: <Connection>
 }
 ```
+
+payload の生成・展開を専用化する場合は `compresser-spec.md` に従う。
+
+Commander / Messenger は配送に必要な範囲を除き、payload の内部フィールドを読み、その意味に応じた判断を行ってはならない。
 
 ## 5. Request / Response 対応
 
@@ -107,6 +115,8 @@ error:
   code: data_not_found
   detail: character data not found
 ```
+
+複数の返却値を直接返す代わりに、Compresser によって1つの response package として構築してよい。
 
 ## 8. 型の共有
 
