@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from .config import load_config
+from .config import ConfigError, load_config
 from .scanner import scan_path
 
 
@@ -17,7 +17,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    config = load_config()
+    try:
+        config = load_config()
+    except ConfigError as exc:
+        print(f"CONFIG ERROR: {exc}")
+        return 2
     target = Path(args.target or config.input_path).resolve()
     output = args.output if args.output is not None else config.output_path
     ignores = tuple(config.ignore) + tuple(args.ignore)
@@ -46,9 +50,7 @@ def main() -> int:
         or attentions_as_errors and attention_count > 0
     )
     if failed:
-        lines.append(
-            f"FAIL e={error_count} w={warning_count} a={attention_count}"
-        )
+        lines.append(f"FAIL e={error_count} w={warning_count} a={attention_count}")
         return _finish(lines, output, 1)
 
     if warning_count or attention_count:
