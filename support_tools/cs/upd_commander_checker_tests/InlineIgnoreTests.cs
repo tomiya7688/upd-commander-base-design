@@ -19,7 +19,10 @@ public sealed class InlineIgnoreTests
     public void InlineIgnoreSuppressesUpd401()
     {
         using var project = new TempProject();
-        var methods = string.Join("\n", Enumerable.Range(0, 13).Select(index => $"internal void M{index}() {{ }}"));
+        var methods = string.Join(
+            "\n",
+            Enumerable.Range(0, 13).Select(index => $"internal void M{index}() {{ }}")
+        );
         project.Write(
             "large.cs",
             $"namespace Sample;\ninternal sealed class Large // upd: ignore UPD401 - intentional\n{{\n{methods}\n}}"
@@ -79,7 +82,10 @@ public sealed class InlineIgnoreTests
     public void InlineIgnoreDoesNotSuppressDifferentRule()
     {
         using var project = new TempProject();
-        var methods = string.Join("\n", Enumerable.Range(0, 13).Select(index => $"internal void M{index}() {{ }}"));
+        var methods = string.Join(
+            "\n",
+            Enumerable.Range(0, 13).Select(index => $"internal void M{index}() {{ }}")
+        );
         project.Write(
             "large.cs",
             $"namespace Sample;\ninternal sealed class Large // upd: ignore UPD402 - different rule\n{{\n{methods}\n}}"
