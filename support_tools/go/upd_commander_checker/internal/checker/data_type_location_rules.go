@@ -7,21 +7,6 @@ import (
 	"path/filepath"
 )
 
-type parsedDataFile struct {
-	path    string
-	rel     string
-	file    *ast.File
-	fset    *token.FileSet
-	packageName string
-}
-
-type dataOnlyType struct {
-	path string
-	rel  string
-	name string
-	line int
-}
-
 func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []Finding {
 	parsed := parseDataFiles(paths, root)
 	methodCounts := map[string]int{}
