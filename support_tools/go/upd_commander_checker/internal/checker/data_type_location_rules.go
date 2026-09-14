@@ -23,8 +23,9 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 		}
 	}
 
-	byFile := map[string][]dataOnlyType{}
+	var candidates []dataOnlyType
 	for _, item := range parsed {
+		var types []*ast.TypeSpec
 		for _, declaration := range item.file.Decls {
 			gen, ok := declaration.(*ast.GenDecl)
 			if !ok || gen.Tok != token.TYPE {
@@ -32,41 +33,41 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 			}
 			for _, spec := range gen.Specs {
 				typeSpec, ok := spec.(*ast.TypeSpec)
-				if !ok {
-					continue
+				if ok {
+					types = append(types, typeSpec)
 				}
-				if _, ok := typeSpec.Type.(*ast.StructType); !ok {
-					continue
-				}
-				if methodCounts[dataTypeKey(item.path, item.packageName, typeSpec.Name.Name)] != 0 {
-					continue
-				}
-				byFile[item.path] = append(byFile[item.path], dataOnlyType{
-					path: item.path,
-					rel: item.rel,
-					name: typeSpec.Name.Name,
-					line: item.fset.Position(typeSpec.Pos()).Line,
-				})
 			}
+		}
+		if len(types) < 2 {
+			continue
+		}
+		for _, typeSpec := range types {
+			if _, ok := typeSpec.Type.(*ast.StructType); !ok {
+				continue
+			}
+			if methodCounts[dataTypeKey(item.path, item.packageName, typeSpec.Name.Name)] != 0 {
+				continue
+			}
+			candidates = append(candidates, dataOnlyType{
+				path: item.path,
+				rel: item.rel,
+				name: typeSpec.Name.Name,
+				line: item.fset.Position(typeSpec.Pos()).Line,
+			})
 		}
 	}
 
 	var findings []Finding
-	for _, group := range byFile {
-		if len(group) < 2 {
-			continue
+	for _, item := range candidates {
+		code := "UPD403"
+		severity := "attention"
+		message := "data-only type " + item.name + " shares a file with another type"
+		if dataTypeReferencedElsewhere(item, parsed) {
+			code = "UPD404"
+			severity = "warning"
+			message = "data-only type " + item.name + " shares a file with another type and is referenced from another file"
 		}
-		for _, item := range group {
-			code := "UPD403"
-			severity := "attention"
-			message := "multiple data-only types share this file; " + item.name + " is local-only"
-			if dataTypeReferencedElsewhere(item, parsed) {
-				code = "UPD404"
-				severity = "warning"
-				message = "data-only type " + item.name + " shares a file and is referenced from another file"
-			}
-			addFinding(&findings, item.rel, item.line, code, message, severity, readLines(item.path), rules)
-		}
+		addFinding(&findings, item.rel, item.line, code, message, severity, readLines(item.path), rules)
 	}
 	return findings
 }

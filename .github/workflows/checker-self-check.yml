@@ -114,7 +114,10 @@ jobs:
       - name: Build
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet build UpdCommanderChecker.csproj -c Release
-      - name: Test
+      - name: Unit test
+        working-directory: support_tools/cs/upd_commander_checker_tests
+        run: dotnet test UpdCommanderChecker.Tests.csproj -c Release
+      - name: CLI integration test
         working-directory: support_tools/cs/upd_commander_checker
         shell: bash
         run: |

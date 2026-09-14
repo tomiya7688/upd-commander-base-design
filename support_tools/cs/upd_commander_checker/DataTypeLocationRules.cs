@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -16,19 +17,18 @@ internal static class DataTypeLocationRules
         var candidates = new List<DataTypeCandidate>();
         foreach (var source in sources)
         {
-            var dataTypes = source.Root.Members
-                .OfType<TypeDeclarationSyntax>()
-                .Where(IsDataOnly)
-                .ToList();
-            if (dataTypes.Count < 2)
+            var types = FileScopeTypes(source.Root).ToList();
+            if (types.Count < 2)
             {
                 continue;
             }
-            candidates.AddRange(dataTypes.Select(type => new DataTypeCandidate(
-                source.File,
-                source.Relative,
-                type.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                type.Identifier.ValueText)));
+            candidates.AddRange(types
+                .Where(IsDataOnly)
+                .Select(type => new DataTypeCandidate(
+                    source.File,
+                    source.Relative,
+                    type.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                    type.Identifier.ValueText)));
         }
 
         var findings = new List<Finding>();
@@ -51,11 +51,18 @@ internal static class DataTypeLocationRules
                 candidate.Line,
                 code,
                 external
-                    ? $"data-only type {candidate.Name} shares a file and is referenced from another file"
-                    : $"multiple data-only types share this file; {candidate.Name} is local-only",
+                    ? $"data-only type {candidate.Name} shares a file with another type and is referenced from another file"
+                    : $"data-only type {candidate.Name} shares a file with another type",
                 external ? "warning" : "attention"));
         }
         return findings;
+    }
+
+    private static IEnumerable<TypeDeclarationSyntax> FileScopeTypes(CompilationUnitSyntax root)
+    {
+        return root.DescendantNodes()
+            .OfType<TypeDeclarationSyntax>()
+            .Where(type => type.Parent is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax);
     }
 
     private static List<DataTypeSource> Parse(ParseInput input)
@@ -74,7 +81,7 @@ internal static class DataTypeLocationRules
             }
             var tree = CSharpSyntaxTree.ParseText(text, path: file);
             if (tree.GetDiagnostics().Any(diagnostic =>
-                    diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
+                    diagnostic.Severity == DiagnosticSeverity.Error))
             {
                 continue;
             }

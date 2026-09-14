@@ -14,13 +14,14 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
         except (OSError, UnicodeError, SyntaxError):
             continue
         trees[path] = tree
-        data_types = [
-            node
-            for node in getattr(tree, "body", [])
-            if isinstance(node, ast.ClassDef) and _is_data_only(node)
+        classes = [
+            node for node in getattr(tree, "body", []) if isinstance(node, ast.ClassDef)
         ]
-        if len(data_types) > 1:
-            candidates.extend((path, node.lineno, node.name) for node in data_types)
+        if len(classes) < 2:
+            continue
+        candidates.extend(
+            (path, node.lineno, node.name) for node in classes if _is_data_only(node)
+        )
 
     findings: list[Finding] = []
     for path, line, name in candidates:
@@ -35,7 +36,7 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     relative,
                     line,
                     "UPD404",
-                    f"data-only type {name} shares a file and is referenced from another file",
+                    f"data-only type {name} shares a file with another type and is referenced from another file",
                     "warning",
                 )
             )
@@ -45,7 +46,7 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     relative,
                     line,
                     "UPD403",
-                    f"multiple data-only types share this file; {name} is local-only",
+                    f"data-only type {name} shares a file with another type",
                     "attention",
                 )
             )

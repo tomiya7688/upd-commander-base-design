@@ -67,4 +67,8 @@ if(BUILD_TESTING)
     add_executable(upd_checker_responsibility_tests tests/responsibility_tests.cpp)
     target_link_libraries(upd_checker_responsibility_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_responsibility_tests COMMAND upd_checker_responsibility_tests)
+
+    add_executable(upd_checker_regression_matrix_tests tests/regression_matrix_tests.cpp)
+    target_link_libraries(upd_checker_regression_matrix_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_regression_matrix_tests COMMAND upd_checker_regression_matrix_tests)
 endif()
