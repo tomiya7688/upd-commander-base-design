@@ -20,6 +20,14 @@ internal static class Scanner
         @"\b(File|Directory|JsonSerializer|HttpClient|SqlConnection|DbConnection)\s*[.(]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex MethodPattern = new(
+        @"^\s*(?:public|protected|internal)\s+(?:static\s+|virtual\s+|override\s+|async\s+|sealed\s+)*[^=;]+?\s+[A-Za-z_][A-Za-z0-9_]*\s*\(([^()]*)\)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex TupleReturnPattern = new(
+        @"^\s*(?:public|protected|internal)\s+(?:static\s+|virtual\s+|override\s+|async\s+|sealed\s+)*\([^)]*,[^)]*\)\s+[A-Za-z_][A-Za-z0-9_]*\s*\(",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     internal static List<Finding> ScanPath(string target, IReadOnlyList<string> cliIgnore)
     {
         var root = Directory.Exists(target)
@@ -79,13 +87,34 @@ internal static class Scanner
                     var code = message == "cross-application internal dependency"
                         ? "UPD102"
                         : "UPD101";
+                    AddFinding(findings, relative, lineNumber, code, message, "error", lineText, ignoreRules);
+                }
+            }
+
+            if (IsComponentRole(source.Role))
+            {
+                var methodMatch = MethodPattern.Match(lineText);
+                if (methodMatch.Success && CountParameters(methodMatch.Groups[1].Value) > 1)
+                {
                     AddFinding(
                         findings,
                         relative,
                         lineNumber,
-                        code,
-                        message,
-                        "error",
+                        "UPD301",
+                        "class operation has multiple inputs; use one Input Container",
+                        "warning",
+                        lineText,
+                        ignoreRules);
+                }
+                if (TupleReturnPattern.IsMatch(lineText))
+                {
+                    AddFinding(
+                        findings,
+                        relative,
+                        lineNumber,
+                        "UPD302",
+                        "class operation returns multiple values; use one Output Container",
+                        "warning",
                         lineText,
                         ignoreRules);
                 }
@@ -109,6 +138,19 @@ internal static class Scanner
             }
         }
         return findings;
+    }
+
+    private static bool IsComponentRole(string role) =>
+        role is "commander" or "messenger" or "processing";
+
+    private static int CountParameters(string parameters)
+    {
+        var text = parameters.Trim();
+        if (text.Length == 0)
+        {
+            return 0;
+        }
+        return text.Count(ch => ch == ',') + 1;
     }
 
     private static void AddFinding(
