@@ -1,1 +1,2 @@
-# config error
+class ConfigError(Exception):
+    pass
