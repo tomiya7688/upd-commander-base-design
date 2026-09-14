@@ -36,27 +36,24 @@ internal static class IgnoreRules
         return rules;
     }
 
-    internal static bool IsIgnored(
-        string path,
-        string code,
-        string lineText,
-        IReadOnlyList<IgnoreRule> rules)
+    internal static bool IsIgnored(IgnoreCheckInput input)
     {
-        foreach (var rule in rules)
+        foreach (var rule in input.Rules)
         {
-            if (GlobMatch(path, rule.Pattern) && (rule.Code == "all" || rule.Code == code))
+            if (GlobMatch(new GlobMatchInput(input.Path, rule.Pattern)) &&
+                (rule.Code == "all" || rule.Code == input.Code))
             {
                 return true;
             }
         }
-        return lineText.Contains($"upd: ignore {code}", StringComparison.Ordinal) ||
-               lineText.Contains("upd: ignore all", StringComparison.Ordinal);
+        return input.LineText.Contains($"upd: ignore {input.Code}", StringComparison.Ordinal) ||
+               input.LineText.Contains("upd: ignore all", StringComparison.Ordinal);
     }
 
-    internal static bool GlobMatch(string path, string pattern)
+    internal static bool GlobMatch(GlobMatchInput input)
     {
-        var normalizedPath = path.Replace('\\', '/');
-        var normalizedPattern = pattern.Replace('\\', '/');
+        var normalizedPath = input.Path.Replace('\\', '/');
+        var normalizedPattern = input.Pattern.Replace('\\', '/');
         var regex = "^" + Regex.Escape(normalizedPattern)
             .Replace("\\*\\*", ".*")
             .Replace("\\*", "[^/]*")
