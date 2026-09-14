@@ -42,6 +42,18 @@ internal static class DependencyRules
         return null;
     }
 
+    internal static string? GetWarning(DependencyCheckInput input)
+    {
+        var source = input.Source;
+        var target = input.Target;
+        if (source.Layer == "data" && source.Role == "commander" &&
+            target.Layer == "data" && target.Role == "commander")
+        {
+            return "Data Commander should not communicate directly with another Data Commander";
+        }
+        return null;
+    }
+
     private static bool IsBoundaryApi(ModuleInfo target)
     {
         if (target.Role == "messenger")
