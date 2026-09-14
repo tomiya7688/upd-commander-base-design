@@ -10,6 +10,7 @@ add_library(upd_checker_core
     src/config.cpp
     src/dependency_rules.cpp
     src/ignore_rules.cpp
+    src/responsibility_rules.cpp
     src/scanner.cpp
 )
 target_include_directories(upd_checker_core PUBLIC include)
@@ -22,4 +23,8 @@ if(BUILD_TESTING)
     add_executable(upd_checker_tests tests/checker_tests.cpp)
     target_link_libraries(upd_checker_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_tests COMMAND upd_checker_tests)
+
+    add_executable(upd_checker_responsibility_tests tests/responsibility_tests.cpp)
+    target_link_libraries(upd_checker_responsibility_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_responsibility_tests COMMAND upd_checker_responsibility_tests)
 endif()

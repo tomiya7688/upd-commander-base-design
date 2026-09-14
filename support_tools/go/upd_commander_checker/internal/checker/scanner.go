@@ -22,23 +22,15 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			rel, relErr := filepath.Rel(root, path)
-			if relErr != nil {
-				rel = path
-			}
+			if relErr != nil { rel = path }
 			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed", Severity: "error"})
 			return nil
 		}
-		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" {
-			return nil
-		}
+		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" { return nil }
 		rel, relErr := filepath.Rel(root, path)
-		if relErr != nil {
-			rel = path
-		}
+		if relErr != nil { rel = path }
 		relText := filepath.ToSlash(rel)
-		if pathIgnored(relText, cliIgnore) {
-			return nil
-		}
+		if pathIgnored(relText, cliIgnore) { return nil }
 		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
@@ -85,6 +77,7 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 		})
 	}
 	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules)...)
+	findings = append(findings, checkResponsibilities(file, fset, rel, lines, rules)...)
 	return findings
 }
 

@@ -49,3 +49,8 @@ internal sealed record FindPathRoleInput(
 internal sealed record ResolvePathInput(
     string Root,
     string Value);
+
+internal sealed record ResponsibilityCheckInput(
+    IReadOnlyList<string> Lines,
+    string Path,
+    IReadOnlyList<IgnoreRule> IgnoreRules);

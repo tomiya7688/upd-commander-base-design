@@ -209,6 +209,11 @@ internal static class Scanner
                 input.IgnoreRules));
         }
 
+        findings.AddRange(ResponsibilityRules.Check(new ResponsibilityCheckInput(
+            lines,
+            input.Relative,
+            input.IgnoreRules)));
+
         return findings;
     }
 

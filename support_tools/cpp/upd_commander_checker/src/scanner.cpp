@@ -4,12 +4,14 @@
 #include <filesystem>
 #include <fstream>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
 
 #include "classifier.hpp"
 #include "dependency_rules.hpp"
 #include "ignore_rules.hpp"
+#include "responsibility_rules.hpp"
 
 namespace upd_checker {
 namespace {
@@ -196,6 +198,12 @@ std::vector<Finding> scan_path(
         }
         auto file_findings = scan_file(path, relative, rules);
         findings.insert(findings.end(), file_findings.begin(), file_findings.end());
+
+        std::ifstream source_file(path);
+        std::ostringstream source_stream;
+        source_stream << source_file.rdbuf();
+        auto responsibility_findings = check_responsibilities(source_stream.str(), relative, rules);
+        findings.insert(findings.end(), responsibility_findings.begin(), responsibility_findings.end());
     };
 
     if (std::filesystem::is_regular_file(target_path)) {
