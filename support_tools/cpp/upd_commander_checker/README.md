@@ -35,6 +35,8 @@ cmake --build build --config Release --target upd-commander-check
 
 libclangが見つからない場合、configure時に明示的にエラーにします。
 
+Windows向け成果物には `THIRD_PARTY_NOTICES.md` と `licenses/LLVM-LICENSE.txt` を同梱します。詳細は[リポジトリの第三者ライセンス一覧](../../../THIRD_PARTY_NOTICES.md)を参照してください。
+
 ## AST解析
 
 ソースコードに対する規則判定はlibclangのTranslation Unit / AST cursorを基準にします。

@@ -90,6 +90,7 @@ Process Messenger
 - [Data Flow](docs/data-flow.md) — 要求と返却の流れ
 - [Anti-patterns](docs/anti-patterns.md) — 禁止・非推奨構造
 - [Technical Specification](specification/README.md) — 実装時に従う規定
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md) — 配布チェッカーが含む第三者コンポーネントのライセンス
 
 ## スコープ
 

@@ -21,4 +21,6 @@ if defined LLVM_INSTALL_DIR if exist "%LLVM_INSTALL_DIR%\bin\libclang.dll" set "
 if not defined LLVM_BIN if exist "%ProgramFiles%\LLVM\bin\libclang.dll" set "LLVM_BIN=%ProgramFiles%\LLVM\bin"
 if defined LLVM_BIN copy /Y "%LLVM_BIN%\libclang.dll" "%OUTDIR%\libclang.dll" >nul
 if not exist "%OUTDIR%\libclang.dll" echo WARNING: libclang.dll was not copied. Ensure LLVM\bin is on PATH when running the checker.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\copy_third_party_licenses.ps1" -Component llvm -OutputDirectory "%CD%\%OUTDIR%"
+if errorlevel 1 exit /b %errorlevel%
 exit /b 0

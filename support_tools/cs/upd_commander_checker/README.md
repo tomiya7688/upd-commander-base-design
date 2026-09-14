@@ -106,6 +106,8 @@ dist/config/path.json
 
 self-contained のため.NETランタイム未導入環境でも実行できます。
 
+成果物には `THIRD_PARTY_NOTICES.md` と `licenses/ROSLYN-LICENSE.txt` を同梱します。詳細は[リポジトリの第三者ライセンス一覧](../../../THIRD_PARTY_NOTICES.md)を参照してください。
+
 ## 規則
 
 - `UPD001`: ソース読み込み失敗
