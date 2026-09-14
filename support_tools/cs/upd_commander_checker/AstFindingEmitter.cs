@@ -1,17 +1,4 @@
-using Microsoft.CodeAnalysis;
-
 namespace UpdCommanderChecker;
-
-internal sealed record AstRuleContext(
-    List<Finding> Findings,
-    AstAnalysisInput Analysis);
-
-internal sealed record NodeFindingInput(
-    AstRuleContext Context,
-    SyntaxNode Node,
-    string Code,
-    string Message,
-    string Severity);
 
 internal static class AstFindingEmitter
 {

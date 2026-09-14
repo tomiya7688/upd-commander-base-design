@@ -2,8 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace UpdCommanderChecker;
 
-internal sealed record IgnoreRule(string Code, string Pattern);
-
 internal static class IgnoreRules
 {
     internal static IReadOnlyList<IgnoreRule> Load(string root)
