@@ -60,24 +60,37 @@ int main(int argc, char* argv[]) {
     const auto findings = upd_checker::scan_path(target, ignores);
     int errors = 0;
     int warnings = 0;
+    int attentions = 0;
     std::vector<std::string> lines;
     for (const auto& finding : findings) {
-        const bool warning = finding.severity == "warning";
-        const std::string level = warning ? "W " : "E ";
+        std::string level = "A ";
+        if (finding.severity == "error") {
+            level = "E ";
+            ++errors;
+        } else if (finding.severity == "warning") {
+            level = "W ";
+            ++warnings;
+        } else {
+            ++attentions;
+        }
         lines.push_back(
             level + finding.code + " " + finding.path + ":" +
             std::to_string(finding.line) + " " + finding.message);
-        if (warning) {
-            ++warnings;
-        } else {
-            ++errors;
-        }
     }
 
     if (errors > 0 || (warnings_as_errors && warnings > 0)) {
-        lines.push_back("FAIL e=" + std::to_string(errors) + " w=" + std::to_string(warnings));
+        lines.push_back(
+            "FAIL e=" + std::to_string(errors) +
+            " w=" + std::to_string(warnings) +
+            " a=" + std::to_string(attentions));
         return finish(lines, output, 1);
     }
-    lines.push_back(warnings > 0 ? "OK w=" + std::to_string(warnings) : "OK");
+    if (warnings > 0 || attentions > 0) {
+        lines.push_back(
+            "OK w=" + std::to_string(warnings) +
+            " a=" + std::to_string(attentions));
+    } else {
+        lines.push_back("OK");
+    }
     return finish(lines, output, 0);
 }
