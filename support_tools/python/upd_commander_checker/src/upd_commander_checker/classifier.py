@@ -13,21 +13,23 @@ def classify_module(path: Path, root: Path | None = None) -> ModuleInfo:
     module_path = _relative_module_path(path, root)
     directory_parts = [part.lower() for part in module_path.parent.parts]
     stem = module_path.stem.lower().replace("-", "_")
+    scoped_parts = _application_scope(directory_parts)
 
-    layer = _find_name(reversed(directory_parts), _LAYER_NAMES)
-    role = _find_path_role(directory_parts, stem)
-    application = _find_nearest_application(directory_parts)
+    layer = _find_name(reversed(scoped_parts), _LAYER_NAMES)
+    role = _find_path_role(scoped_parts, stem)
+    application = _find_application(directory_parts)
     return ModuleInfo(path=path, layer=layer, role=role, application=application)
 
 
 def classify_import(module_name: str) -> tuple[str | None, str | None, str | None]:
     path_parts = module_name.lower().replace("-", "_").split(".")
+    scoped_parts = _application_scope(path_parts)
     token_parts: list[str] = []
-    for part in path_parts:
+    for part in scoped_parts:
         token_parts.extend(part.split("_"))
 
-    layer = _find_name(token_parts, _LAYER_NAMES)
-    role = _find_role(token_parts)
+    layer = _find_name(reversed(token_parts), _LAYER_NAMES)
+    role = _find_role(list(reversed(token_parts)))
     application = _find_application(path_parts)
     return layer, role, application
 
@@ -74,14 +76,14 @@ def _find_role(parts: list[str]) -> str | None:
 
 
 def _find_application(parts: list[str]) -> str | None:
-    for index, part in enumerate(parts[:-1]):
-        if part in _APPLICATION_MARKERS:
-            return parts[index + 1]
-    return None
-
-
-def _find_nearest_application(parts: list[str]) -> str | None:
     for index in range(len(parts) - 2, -1, -1):
         if parts[index] in _APPLICATION_MARKERS:
             return parts[index + 1]
     return None
+
+
+def _application_scope(parts: list[str]) -> list[str]:
+    for index in range(len(parts) - 2, -1, -1):
+        if parts[index] in _APPLICATION_MARKERS:
+            return parts[index + 2 :]
+    return parts
