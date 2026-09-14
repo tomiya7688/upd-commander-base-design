@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UpdCommanderChecker;
 
@@ -6,15 +6,42 @@ internal static class ResponsibilityRules
 {
     private const int MaxResponsibilityLines = 350;
 
-    private static readonly Regex ClassPattern = new(
-        @"^\s*(?:(?:public|internal|private|protected|static|sealed|abstract|partial)\s+)*class\s+[A-Za-z_][A-Za-z0-9_]*",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     internal static List<Finding> Check(ResponsibilityCheckInput input)
     {
         var findings = new List<Finding>();
-        var nonBlankLines = input.Lines.Count(line => !string.IsNullOrWhiteSpace(line));
-        if (nonBlankLines > MaxResponsibilityLines &&
+        var types = input.Root.DescendantNodes()
+            .OfType<TypeDeclarationSyntax>()
+            .Where(type => type is not InterfaceDeclarationSyntax)
+            .ToList();
+        var majorTypes = types.Where(HasBehavior).ToList();
+
+        foreach (var type in types)
+        {
+            var span = type.GetLocation().GetLineSpan();
+            var lineCount = span.EndLinePosition.Line - span.StartLinePosition.Line + 1;
+            if (lineCount <= MaxResponsibilityLines)
+            {
+                continue;
+            }
+            if (IgnoreRules.IsIgnored(new IgnoreCheckInput(
+                    input.Path,
+                    "UPD401",
+                    string.Empty,
+                    input.IgnoreRules)))
+            {
+                continue;
+            }
+
+            findings.Add(new Finding(
+                input.Path,
+                span.StartLinePosition.Line + 1,
+                "UPD401",
+                $"type {type.Identifier.ValueText} is too large for one responsibility (lines={lineCount})",
+                "warning"));
+        }
+
+        if (types.Count == 0 &&
+            input.Lines.Count(line => !string.IsNullOrWhiteSpace(line)) > MaxResponsibilityLines &&
             !IgnoreRules.IsIgnored(new IgnoreCheckInput(
                 input.Path,
                 "UPD401",
@@ -29,36 +56,29 @@ internal static class ResponsibilityRules
                 "warning"));
         }
 
-        var classCount = 0;
-        var secondClassLine = 0;
-        for (var index = 0; index < input.Lines.Count; index++)
-        {
-            if (!ClassPattern.IsMatch(input.Lines[index]))
-            {
-                continue;
-            }
-            classCount++;
-            if (classCount == 2)
-            {
-                secondClassLine = index + 1;
-            }
-        }
-
-        if (classCount > 1 &&
+        if (majorTypes.Count > 1 &&
             !IgnoreRules.IsIgnored(new IgnoreCheckInput(
                 input.Path,
                 "UPD402",
                 string.Empty,
                 input.IgnoreRules)))
         {
+            var second = majorTypes[1];
             findings.Add(new Finding(
                 input.Path,
-                secondClassLine,
+                second.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                 "UPD402",
-                "file contains multiple major classes",
+                "file contains multiple responsibility-bearing types",
                 "warning"));
         }
 
         return findings;
+    }
+
+    private static bool HasBehavior(TypeDeclarationSyntax type)
+    {
+        return type.Members.Any(member =>
+            member is MethodDeclarationSyntax or ConstructorDeclarationSyntax or
+            PropertyDeclarationSyntax or EventDeclarationSyntax);
     }
 }
