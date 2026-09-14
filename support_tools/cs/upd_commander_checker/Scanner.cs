@@ -4,6 +4,9 @@ namespace UpdCommanderChecker;
 
 internal static class Scanner
 {
+    private const int BloatOperationThreshold = 3;
+    private const int BloatExcessSlotThreshold = 6;
+
     private static readonly Regex UsingPattern = new(
         @"^\s*using\s+([A-Za-z0-9_.]+)\s*;",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -73,6 +76,10 @@ internal static class Scanner
 
         var source = Classifier.ClassifyPath(relative);
         var findings = new List<Finding>();
+        var offendingOperations = 0;
+        var excessSlots = 0;
+        var firstOffendingLine = 1;
+
         for (var index = 0; index < lines.Length; index++)
         {
             var lineNumber = index + 1;
@@ -93,30 +100,47 @@ internal static class Scanner
 
             if (IsComponentRole(source.Role))
             {
+                var operationOffends = false;
                 var methodMatch = MethodPattern.Match(lineText);
-                if (methodMatch.Success && CountParameters(methodMatch.Groups[1].Value) > 1)
+                if (methodMatch.Success)
                 {
-                    AddFinding(
-                        findings,
-                        relative,
-                        lineNumber,
-                        "UPD301",
-                        "class operation has multiple inputs; use one Input Container",
-                        "warning",
-                        lineText,
-                        ignoreRules);
+                    var parameterCount = CountParameters(methodMatch.Groups[1].Value);
+                    if (parameterCount > 1)
+                    {
+                        operationOffends = true;
+                        excessSlots += parameterCount - 1;
+                        AddFinding(
+                            findings,
+                            relative,
+                            lineNumber,
+                            "UPD301",
+                            "multiple inputs reduce readability; consider one Input Container",
+                            "attention",
+                            lineText,
+                            ignoreRules);
+                    }
                 }
                 if (TupleReturnPattern.IsMatch(lineText))
                 {
+                    operationOffends = true;
+                    excessSlots += 1;
                     AddFinding(
                         findings,
                         relative,
                         lineNumber,
                         "UPD302",
-                        "class operation returns multiple values; use one Output Container",
-                        "warning",
+                        "multiple return values reduce readability; consider one Output Container",
+                        "attention",
                         lineText,
                         ignoreRules);
+                }
+                if (operationOffends)
+                {
+                    if (offendingOperations == 0)
+                    {
+                        firstOffendingLine = lineNumber;
+                    }
+                    offendingOperations++;
                 }
             }
 
@@ -137,6 +161,21 @@ internal static class Scanner
                 AddFinding(findings, relative, lineNumber, "UPD203", "Commander direct I/O/API call", "error", lineText, ignoreRules);
             }
         }
+
+        if (source.Role is "commander" or "messenger" &&
+            (offendingOperations >= BloatOperationThreshold || excessSlots >= BloatExcessSlotThreshold))
+        {
+            AddFinding(
+                findings,
+                relative,
+                firstOffendingLine,
+                "UPD303",
+                "uncontainerized signatures contribute to Commander/Messenger bloat",
+                "warning",
+                lines.ElementAtOrDefault(firstOffendingLine - 1) ?? string.Empty,
+                ignoreRules);
+        }
+
         return findings;
     }
 
