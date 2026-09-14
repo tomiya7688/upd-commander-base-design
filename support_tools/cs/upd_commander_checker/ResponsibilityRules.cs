@@ -4,7 +4,8 @@ namespace UpdCommanderChecker;
 
 internal static class ResponsibilityRules
 {
-    private const int MaxResponsibilityLines = 350;
+    private const int MaxResponsibilityLines = 250;
+    private const int MaxResponsibilityMethods = 12;
 
     internal static List<Finding> Check(ResponsibilityCheckInput input)
     {
@@ -19,7 +20,8 @@ internal static class ResponsibilityRules
         {
             var span = type.GetLocation().GetLineSpan();
             var lineCount = span.EndLinePosition.Line - span.StartLinePosition.Line + 1;
-            if (lineCount <= MaxResponsibilityLines)
+            var methodCount = type.Members.OfType<MethodDeclarationSyntax>().Count();
+            if (lineCount <= MaxResponsibilityLines && methodCount <= MaxResponsibilityMethods)
             {
                 continue;
             }
@@ -36,12 +38,13 @@ internal static class ResponsibilityRules
                 input.Path,
                 span.StartLinePosition.Line + 1,
                 "UPD401",
-                $"type {type.Identifier.ValueText} is too large for one responsibility (lines={lineCount})",
+                $"type {type.Identifier.ValueText} is too large for one responsibility " +
+                $"(lines={lineCount}, methods={methodCount})",
                 "warning"));
         }
 
         if (types.Count == 0 &&
-            input.Lines.Count(line => !string.IsNullOrWhiteSpace(line)) > MaxResponsibilityLines &&
+            input.Lines.Count > MaxResponsibilityLines &&
             !IgnoreRules.IsIgnored(new IgnoreCheckInput(
                 input.Path,
                 "UPD401",
@@ -52,7 +55,7 @@ internal static class ResponsibilityRules
                 input.Path,
                 1,
                 "UPD401",
-                "file/module is too large for one responsibility",
+                "file/module approximation is too large for one responsibility",
                 "warning"));
         }
 
