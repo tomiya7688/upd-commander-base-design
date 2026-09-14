@@ -47,6 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install libclang
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev
       - name: Configure
         working-directory: support_tools/cpp/upd_commander_checker
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -78,6 +80,7 @@ jobs:
           mkdir -p "$target/applications/main/ui"
           mkdir -p "$target/applications/main/process"
           mkdir -p "$target/data"
+          mkdir -p "$target/process"
           cat > "$target/applications/main/ui/screen_processing.cs" <<'EOF'
           using Applications.Settings.Shared.Data.Storage;
           namespace Sample;
@@ -90,6 +93,23 @@ jobs:
           using Data.CacheCommander;
           namespace Sample;
           EOF
+          cat > "$target/process/ast_commander.cs" <<'EOF'
+          namespace Sample;
+          internal sealed class AstCommander
+          {
+              internal void SafeText(string value)
+              {
+                  var example = "for (var i = 0; i < 3; i++)";
+                  // while (true) must not be treated as syntax.
+              }
+
+              internal void NeedsContainer(
+                  int left,
+                  int right)
+              {
+              }
+          }
+          EOF
           set +e
           output="$(dotnet bin/Release/net8.0/upd-commander-check.dll "$target" 2>&1)"
           status=$?
@@ -99,6 +119,8 @@ jobs:
           grep -q "E UPD101" <<< "$output"
           grep -q "E UPD102" <<< "$output"
           grep -q "W UPD103" <<< "$output"
+          grep -q "A UPD301 process/ast_commander.cs" <<< "$output"
+          if grep -q "UPD201 process/ast_commander.cs" <<< "$output"; then exit 1; fi
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .
