@@ -3,22 +3,31 @@ namespace UpdCommanderChecker;
 internal static class DependencyRules
 {
     private static readonly HashSet<string> BoundaryApiNames =
-        ["contract", "contracts", "dto", "dtos", "shared"];
+    [
+        "contract",
+        "contracts",
+        "dto",
+        "dtos",
+        "shared",
+    ];
 
     internal static DependencyRuleResult? Evaluate(DependencyCheckInput input)
     {
         var source = input.Source;
         var target = input.Target;
 
-        if (!string.IsNullOrEmpty(source.ApplicationId) &&
-            !string.IsNullOrEmpty(target.ApplicationId) &&
-            source.ApplicationId != target.ApplicationId &&
-            !IsBoundaryApi(target))
+        if (
+            !string.IsNullOrEmpty(source.ApplicationId)
+            && !string.IsNullOrEmpty(target.ApplicationId)
+            && source.ApplicationId != target.ApplicationId
+            && !IsBoundaryApi(target)
+        )
         {
             return new DependencyRuleResult(
                 "UPD102",
                 "cross-application internal dependency",
-                "error");
+                "error"
+            );
         }
         if (source.Layer == "ui" && target.Layer == "data")
         {
@@ -30,28 +39,46 @@ internal static class DependencyRules
         }
         if (source.Role == "messenger" && target.Role == "processing")
         {
-            return new DependencyRuleResult("UPD101", "Messenger must not depend on Processing", "error");
+            return new DependencyRuleResult(
+                "UPD101",
+                "Messenger must not depend on Processing",
+                "error"
+            );
         }
         if (source.Role == "processing" && target.Role == "processing")
         {
-            return new DependencyRuleResult("UPD101", "Processing must not depend on Processing", "error");
+            return new DependencyRuleResult(
+                "UPD101",
+                "Processing must not depend on Processing",
+                "error"
+            );
         }
-        if (source.Role == "commander" && target.Role == "processing" &&
-            !string.IsNullOrEmpty(source.Layer) && !string.IsNullOrEmpty(target.Layer) &&
-            source.Layer != target.Layer)
+        if (
+            source.Role == "commander"
+            && target.Role == "processing"
+            && !string.IsNullOrEmpty(source.Layer)
+            && !string.IsNullOrEmpty(target.Layer)
+            && source.Layer != target.Layer
+        )
         {
             return new DependencyRuleResult(
                 "UPD101",
                 "Commander must not depend on Processing in another layer",
-                "error");
+                "error"
+            );
         }
-        if (source.Layer == "data" && source.Role == "commander" &&
-            target.Layer == "data" && target.Role == "commander")
+        if (
+            source.Layer == "data"
+            && source.Role == "commander"
+            && target.Layer == "data"
+            && target.Role == "commander"
+        )
         {
             return new DependencyRuleResult(
                 "UPD103",
                 "Data Commander should not communicate directly with another Data Commander",
-                "warning");
+                "warning"
+            );
         }
         return null;
     }
@@ -63,8 +90,8 @@ internal static class DependencyRules
             return true;
         }
 
-        var parts = target.Path
-            .ToLowerInvariant()
+        var parts = target
+            .Path.ToLowerInvariant()
             .Split(['.', '/', '\\', '-', '_'], StringSplitOptions.RemoveEmptyEntries);
         return parts.Any(BoundaryApiNames.Contains);
     }

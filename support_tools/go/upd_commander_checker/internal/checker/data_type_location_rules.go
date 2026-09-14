@@ -50,7 +50,7 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 			}
 			candidates = append(candidates, dataOnlyType{
 				path: item.path,
-				rel: item.rel,
+				rel:  item.rel,
 				name: typeSpec.Name.Name,
 				line: item.fset.Position(typeSpec.Pos()).Line,
 			})

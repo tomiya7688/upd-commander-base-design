@@ -7,4 +7,5 @@ internal sealed record AstAnalysisInput(
     ModuleInfo Source,
     string Relative,
     IReadOnlyList<string> Lines,
-    IReadOnlyList<IgnoreRule> IgnoreRules);
+    IReadOnlyList<IgnoreRule> IgnoreRules
+);

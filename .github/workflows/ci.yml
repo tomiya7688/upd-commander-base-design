@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m pip install -e .
+      - name: Compile
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m compileall -q upd_commander_checker
+      - name: Test
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m unittest discover -s tests
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - name: Format check
+        working-directory: support_tools/go/upd_commander_checker
+        shell: bash
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "gofmt required:"
+            echo "$unformatted"
+            exit 1
+          fi
+      - name: Vet
+        working-directory: support_tools/go/upd_commander_checker
+        run: go vet ./...
+      - name: Test
+        working-directory: support_tools/go/upd_commander_checker
+        run: go test ./...
+
+  cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev
+      - name: Configure
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: cmake --build build --config Release
+      - name: Test
+        working-directory: support_tools/cpp/upd_commander_checker
+        run: ctest --test-dir build --output-on-failure
+
+  csharp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Restore local tools
+        run: dotnet tool restore
+      - name: CSharpier check
+        run: dotnet csharpier check support_tools/cs
+      - name: Build
+        working-directory: support_tools/cs/upd_commander_checker
+        run: dotnet build UpdCommanderChecker.csproj -c Release
+      - name: Test
+        working-directory: support_tools/cs/upd_commander_checker_tests
+        run: dotnet test UpdCommanderChecker.Tests.csproj -c Release
+
+  required:
+    name: required
+    runs-on: ubuntu-latest
+    needs:
+      - python
+      - go
+      - cpp
+      - csharp
+    if: ${{ always() }}
+    steps:
+      - name: Require all CI jobs
+        shell: bash
+        run: |
+          test '${{ needs.python.result }}' = success
+          test '${{ needs.go.result }}' = success
+          test '${{ needs.cpp.result }}' = success
+          test '${{ needs.csharp.result }}' = success

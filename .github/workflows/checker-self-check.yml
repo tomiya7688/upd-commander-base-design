@@ -105,6 +105,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+      - name: Restore local tools
+        run: dotnet tool restore
+      - name: CSharpier check
+        run: dotnet csharpier check support_tools/cs
       - name: Build
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet build UpdCommanderChecker.csproj -c Release

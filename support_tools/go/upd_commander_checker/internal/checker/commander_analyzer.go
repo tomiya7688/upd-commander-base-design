@@ -74,11 +74,11 @@ func isDirectWorkCall(call *ast.CallExpr, imports map[string]string) bool {
 		return false
 	}
 	forbidden := map[string]bool{
-		"os": true,
-		"io/ioutil": true,
+		"os":            true,
+		"io/ioutil":     true,
 		"encoding/json": true,
-		"database/sql": true,
-		"net/http": true,
+		"database/sql":  true,
+		"net/http":      true,
 	}
 	return forbidden[importPath]
 }
