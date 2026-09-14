@@ -19,7 +19,9 @@ func checkCommander(file *ast.File, fset *token.FileSet, source ModuleInfo, rel 
 		case *ast.ForStmt, *ast.RangeStmt:
 			addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD201", "Commander loop", "warning", lines, rules)
 		case *ast.BinaryExpr:
-			addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD202", "Commander calculation", "warning", lines, rules)
+			if isArithmeticBinary(value.Op) {
+				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD202", "Commander calculation", "warning", lines, rules)
+			}
 		case *ast.CallExpr:
 			if isDirectWorkCall(value, imports) {
 				addFinding(&findings, rel, fset.Position(node.Pos()).Line, "UPD203", "Commander direct I/O/API call", "error", lines, rules)
@@ -28,6 +30,15 @@ func checkCommander(file *ast.File, fset *token.FileSet, source ModuleInfo, rel 
 		return true
 	})
 	return findings
+}
+
+func isArithmeticBinary(operator token.Token) bool {
+	switch operator {
+	case token.ADD, token.SUB, token.MUL, token.QUO, token.REM:
+		return true
+	default:
+		return false
+	}
 }
 
 func importAliases(file *ast.File) map[string]string {
