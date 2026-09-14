@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -34,38 +35,49 @@ bool is_boundary_api(const ModuleInfo& target) {
     return target.role == "messenger" || has_boundary_component(target.path);
 }
 
+DependencyRuleResult result(
+    const std::string& code,
+    const std::string& message,
+    const std::string& severity) {
+    return DependencyRuleResult{code, message, severity};
+}
+
 }  // namespace
 
-std::string dependency_error(const ModuleInfo& source, const ModuleInfo& target) {
+std::optional<DependencyRuleResult> dependency_result(
+    const ModuleInfo& source,
+    const ModuleInfo& target) {
     if (!source.application_id.empty() && !target.application_id.empty() &&
         source.application_id != target.application_id && !is_boundary_api(target)) {
-        return "cross-application internal dependency";
+        return result("UPD102", "cross-application internal dependency", "error");
     }
     if (source.layer == "ui" && target.layer == "data") {
-        return "UI must not depend on Data";
+        return result("UPD101", "UI must not depend on Data", "error");
     }
     if (source.layer == "data" && target.layer == "ui") {
-        return "Data must not depend on UI";
+        return result("UPD101", "Data must not depend on UI", "error");
     }
     if (source.role == "messenger" && target.role == "processing") {
-        return "Messenger must not depend on Processing";
+        return result("UPD101", "Messenger must not depend on Processing", "error");
     }
     if (source.role == "processing" && target.role == "processing") {
-        return "Processing must not depend on Processing";
+        return result("UPD101", "Processing must not depend on Processing", "error");
     }
     if (source.role == "commander" && target.role == "processing" &&
         !source.layer.empty() && !target.layer.empty() && source.layer != target.layer) {
-        return "Commander must not depend on Processing in another layer";
+        return result(
+            "UPD101",
+            "Commander must not depend on Processing in another layer",
+            "error");
     }
-    return {};
-}
-
-std::string data_commander_warning(const ModuleInfo& source, const ModuleInfo& target) {
     if (source.layer == "data" && source.role == "commander" &&
         target.layer == "data" && target.role == "commander") {
-        return "Data Commander should not communicate directly with another Data Commander";
+        return result(
+            "UPD103",
+            "Data Commander should not communicate directly with another Data Commander",
+            "warning");
     }
-    return {};
+    return std::nullopt;
 }
 
 }  // namespace upd_checker
