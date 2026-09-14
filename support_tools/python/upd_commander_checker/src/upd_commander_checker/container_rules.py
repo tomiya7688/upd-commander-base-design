@@ -4,18 +4,18 @@ from .models import Finding, ModuleInfo
 
 _COMPONENT_ROLES = {"commander", "messenger", "processing"}
 _BLOAT_ROLES = {"commander", "messenger"}
-_BLOAT_OPERATION_THRESHOLD = 3
-_BLOAT_EXCESS_SLOT_THRESHOLD = 6
+_MIN_REDUCIBLE_LINES = 10
+_MIN_REDUCTION_RATIO = 0.20
 
 
 def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     """Check the UPD one-class/one-container readability rule.
 
     Containerization is recommended rather than mandatory because packing and
-    unpacking has a runtime/implementation cost. A single unpacked signature is
-    therefore only an attention item. If unpacked signatures accumulate in a
-    Commander or Messenger enough to contribute to class bloat, an additional
-    warning is emitted.
+    unpacking has a cost. Individual unpacked signatures are therefore attention
+    items. Commander/Messenger receives a warning only when replacing those
+    signatures with Containers is projected to reduce a meaningful portion of the
+    class: at least 10 lines and about 20 percent of the class body.
 
     Compresser modules are intentionally excluded. A Compresser may accept several
     raw values while constructing class-specific Containers, and one Compresser may
@@ -26,9 +26,8 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
 
     findings: list[Finding] = []
     for class_node in (node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)):
-        offending_operations = 0
-        excess_slots = 0
-        first_line = class_node.lineno
+        reducible_lines = 0
+        class_lines = _node_lines(class_node)
 
         for node in class_node.body:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -36,11 +35,9 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
             if node.name.startswith("_"):
                 continue
 
-            operation_offends = False
             parameters = _payload_parameters(node.args)
-            if len(parameters) > 1:
-                operation_offends = True
-                excess_slots += len(parameters) - 1
+            input_violation = len(parameters) > 1
+            if input_violation:
                 findings.append(
                     Finding(
                         module.path,
@@ -52,9 +49,8 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                 )
 
             returned_values = _max_multi_value_return(node)
-            if returned_values > 1:
-                operation_offends = True
-                excess_slots += returned_values - 1
+            output_violation = returned_values > 1
+            if output_violation:
                 findings.append(
                     Finding(
                         module.path,
@@ -65,22 +61,18 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     )
                 )
 
-            if operation_offends:
-                offending_operations += 1
+            if input_violation or output_violation:
+                reducible_lines += _signature_reducible_lines(node)
 
-        if (
-            module.role in _BLOAT_ROLES
-            and (
-                offending_operations >= _BLOAT_OPERATION_THRESHOLD
-                or excess_slots >= _BLOAT_EXCESS_SLOT_THRESHOLD
-            )
+        if module.role in _BLOAT_ROLES and _large_compression_expected(
+            reducible_lines, class_lines
         ):
             findings.append(
                 Finding(
                     module.path,
-                    first_line,
+                    class_node.lineno,
                     "UPD303",
-                    "uncontainerized signatures contribute to Commander/Messenger bloat",
+                    "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
                     "warning",
                 )
             )
@@ -104,3 +96,21 @@ def _max_multi_value_return(function: ast.FunctionDef | ast.AsyncFunctionDef) ->
         if isinstance(node.value, (ast.Tuple, ast.List)):
             maximum = max(maximum, len(node.value.elts))
     return maximum
+
+
+def _signature_reducible_lines(function: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
+    if not function.body:
+        return 0
+    signature_lines = max(1, function.body[0].lineno - function.lineno)
+    return max(0, signature_lines - 1)
+
+
+def _node_lines(node: ast.AST) -> int:
+    end_line = getattr(node, "end_lineno", getattr(node, "lineno", 1))
+    return max(1, end_line - getattr(node, "lineno", 1) + 1)
+
+
+def _large_compression_expected(reducible_lines: int, class_lines: int) -> bool:
+    if reducible_lines < _MIN_REDUCIBLE_LINES:
+        return False
+    return reducible_lines / max(1, class_lines) >= _MIN_REDUCTION_RATIO
