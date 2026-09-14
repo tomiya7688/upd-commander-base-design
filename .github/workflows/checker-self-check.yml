@@ -58,7 +58,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Self check
         working-directory: support_tools/cpp/upd_commander_checker
-        run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors .
+        run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors --ignore "build/**" .
 
   csharp:
     runs-on: ubuntu-latest
