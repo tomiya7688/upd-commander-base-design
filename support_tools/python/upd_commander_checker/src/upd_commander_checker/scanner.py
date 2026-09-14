@@ -8,6 +8,7 @@ from .container_rules import check_containers
 from .dependency_rules import check_dependencies
 from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
+from .responsibility_rules import check_responsibilities
 
 
 def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Finding]:
@@ -64,6 +65,7 @@ def _scan_file(
     findings = check_dependencies(tree, module)
     findings.extend(check_commander(tree, module))
     findings.extend(check_containers(tree, module))
+    findings.extend(check_responsibilities(tree, module))
     return filter_findings(findings, source, _relative_text(path, root), ignore_rules)
 
 
