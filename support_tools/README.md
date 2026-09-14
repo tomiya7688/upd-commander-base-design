@@ -2,6 +2,8 @@
 
 UPD Commander 設計を補助する言語別ツール群です。
 
+Checker を AI / Codex / ChatGPT と開発する場合は、最初に [`AI_CONTEXT.md`](AI_CONTEXT.md) を読んでください。`ai-context-reducer` の方針に基づき、変更ruleから必要な source / tests / specification だけへ routing し、必要情報が揃ったら探索を止めます。`ai-context-reducer` 自体は Checker の runtime/build dependency ではありません。
+
 ```text
 support_tools/
 ├─ python/
@@ -28,7 +30,7 @@ Container 化は一般プロジェクトに対する必須規定ではありま�
 - `A UPD302`: クラス操作に複数返却値がある。Output Container 化を検討する Attention。
 - `W UPD303`: Commander / Messenger で、Compresser / Container 導入によりクラスを大幅に圧縮できると推定された場合の Warning。
 
-`UPD303` は単純な違反件数では出しません。初期ヒューリスティックでは、削減可能量が10行以上かつ対象クラス / コンポーネントの有効コード量のおおむね20%以上になる場合を「大幅な圧縮」とみなします。言語ごとの解析能力に応じてクラス単位またはファイル単位で近似します。
+`UPD303` は単純な違反件数では出しません。初期実装では、削減可能量が10行以上であり、かつ対象 Commander / Messenger の有効コード量のおおむね20%以上を削減できると推定される場合を「大幅な圧縮」とみなします。言語ごとの解析能力に応じてクラス単位またはファイル単位で近似します。
 
 Compresser 自体の粒度は固定しません。1クラスにつき1つの Compresser を置いても、関連する複数クラスを機能単位の Compresser にまとめても構いません。読みづらくなるほど大きくなった場合は分割します。
 
