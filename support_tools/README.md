@@ -20,22 +20,25 @@ support_tools/
 
 ## Compresser / Container 対応
 
-Compresser 仕様に合わせ、チェッカーはクラス相当の公開操作について次を確認します。
+Container 化は一般プロジェクトに対する必須規定ではありません。パッケージ化・取り出し・シリアライズ等にもコストがあるため、チェッカーは可読性改善候補として段階的に通知します。
 
-- `UPD301`: 1つのクラス操作へ複数の入力引数を直接渡している可能性。原則として1つの Input Container にまとめる。
-- `UPD302`: 複数の戻り値を直接返している可能性。原則として1つの Output Container にまとめる。
+- `A UPD301`: クラス操作に複数入力がある。Input Container 化を検討する Attention。
+- `A UPD302`: クラス操作に複数返却値がある。Output Container 化を検討する Attention。
+- `W UPD303`: Commander / Messenger で、Compresser / Container 導入によりクラスを大幅に圧縮できると推定された場合の Warning。
 
-Compresser 自体の粒度は固定しません。1クラスにつき1つの Compresser を置いても、関連する複数クラスを機能単位の Compresser にまとめても構いません。
+`UPD303` は単純な違反件数では出しません。初期ヒューリスティックでは、削減可能量が10行以上かつ対象クラス / コンポーネントの有効コード量のおおむね20%以上になる場合を「大幅な圧縮」とみなします。言語ごとの解析能力に応じてクラス単位またはファイル単位で近似します。
 
-ただし、Container の境界はクラス単位です。機能単位の Compresser が複数クラスを扱う場合も、異なるクラスの入力・出力を1つの共通 Container に混在させてはいけません。
+Compresser 自体の粒度は固定しません。1クラスにつき1つの Compresser を置いても、関連する複数クラスを機能単位の Compresser にまとめても構いません。読みづらくなるほど大きくなった場合は分割します。
 
-複数のクラス専用 Container を1つの Package / Message にまとめて送ることは許可されます。
+ただし、Container の境界はクラス単位です。機能単位の Compresser が複数クラスを扱う場合も、異なるクラスの入力・出力を1つの共通 Container に混在させてはいけません。複数のクラス専用 Container を1つの Package / Message にまとめて送ることは許可されます。
+
+通常実行では Attention は失敗条件ではありません。`--warnings-as-errors` は Warning を失敗扱いにし、`--attentions-as-errors` は Attention も失敗扱いにします。Checker 自身の Self Check では両方を有効にし、推奨している Container 化をツール自身が破らないようにします。
 
 Python は AST、Go は go/ast を利用して検出します。C++ / C# は軽量チェッカーのためシグネチャベースのヒューリスティック検出です。
 
 現在:
 
 - Python: ASTベースチェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、EXEビルド対応
-- Go: go/astベースチェッカー、短出力、Ignore、Application境界、Container境界チェック、単体EXEビルド対応
-- C++: 軽量静的チェッカー、短出力、Ignore、Application境界、Container境界チェック、CMake/EXEビルド対応
-- C#: 軽量静的チェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、単一EXE publish対応
+- Go: go/astベースチェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、単体EXEビルド対応
+- C++: 軽量静的チェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、CMake/EXEビルド対応
+- C#: 軽量静的チェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、Checker自身のContainer化、単一EXE publish対応
