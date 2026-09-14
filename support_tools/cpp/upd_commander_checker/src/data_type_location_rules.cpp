@@ -14,6 +14,7 @@ struct DataTypeCandidate {
     std::filesystem::path path;
     std::string relative;
     std::string name;
+    std::string usr;
     int line = 1;
 };
 
@@ -107,12 +108,13 @@ std::vector<DataTypeCandidate> data_types_in_file(
                  kind == CXCursor_ClassTemplate) &&
                 is_file_scope_type(cursor) && clang_isCursorDefinition(cursor)) {
                 const std::string name = cx_text(clang_getCursorSpelling(cursor));
+                const std::string usr = cx_text(clang_getCursorUSR(cursor));
                 if (has_behavior(cursor)) {
-                    state.result->push_back(
-                        DataTypeCandidate{state.path, state.relative, std::string{}, cursor_line(cursor)});
-                } else if (!name.empty()) {
-                    state.result->push_back(
-                        DataTypeCandidate{state.path, state.relative, name, cursor_line(cursor)});
+                    state.result->push_back(DataTypeCandidate{
+                        state.path, state.relative, std::string{}, std::string{}, cursor_line(cursor)});
+                } else if (!name.empty() && !usr.empty()) {
+                    state.result->push_back(DataTypeCandidate{
+                        state.path, state.relative, name, usr, cursor_line(cursor)});
                 }
             }
             return CXChildVisit_Recurse;
@@ -148,14 +150,17 @@ bool referenced_from_file(
     }
 
     struct RefState {
-        std::string declaration_path;
+        std::string candidate_usr;
         bool found = false;
-    } state{canonical_text(candidate.path), false};
+    } state{candidate.usr, false};
 
     clang_visitChildren(
         clang_getTranslationUnitCursor(unit),
         [](CXCursor cursor, CXCursor, CXClientData client_data) {
             auto& state = *static_cast<RefState*>(client_data);
+            if (clang_Location_isFromMainFile(clang_getCursorLocation(cursor)) == 0) {
+                return CXChildVisit_Continue;
+            }
             const auto kind = clang_getCursorKind(cursor);
             if (kind != CXCursor_TypeRef && kind != CXCursor_TemplateRef) {
                 return state.found ? CXChildVisit_Break : CXChildVisit_Recurse;
@@ -164,14 +169,8 @@ bool referenced_from_file(
             if (clang_Cursor_isNull(referenced)) {
                 return CXChildVisit_Continue;
             }
-            CXFile file = nullptr;
-            clang_getSpellingLocation(
-                clang_getCursorLocation(referenced), &file, nullptr, nullptr, nullptr);
-            if (file == nullptr) {
-                return CXChildVisit_Continue;
-            }
-            const std::string declaration = canonical_text(cx_text(clang_getFileName(file)));
-            if (declaration == state.declaration_path) {
+            const std::string usr = cx_text(clang_getCursorUSR(referenced));
+            if (!usr.empty() && usr == state.candidate_usr) {
                 state.found = true;
                 return CXChildVisit_Break;
             }

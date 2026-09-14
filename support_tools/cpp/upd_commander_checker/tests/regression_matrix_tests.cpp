@@ -23,6 +23,18 @@ bool has_code(const std::vector<upd_checker::Finding>& findings, const std::stri
     return false;
 }
 
+bool has_code_message(
+    const std::vector<upd_checker::Finding>& findings,
+    const std::string& code,
+    const std::string& text) {
+    for (const auto& finding : findings) {
+        if (finding.code == code && finding.message.find(text) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void test_commander_matrix() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_commander";
     std::filesystem::remove_all(root);
@@ -107,7 +119,32 @@ void test_data_type_location_matrix() {
 
     write_file(root / "consumer.cpp", "#include \"models.hpp\"\nFirst value;\n");
     findings = upd_checker::scan_path(root.string(), {});
-    assert(has_code(findings, "UPD404"));
+    assert(has_code_message(findings, "UPD404", "First"));
+    assert(has_code_message(findings, "UPD403", "Second"));
+    std::filesystem::remove_all(root);
+}
+
+void test_data_type_reference_uses_exact_declaration() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_data_identity";
+    std::filesystem::remove_all(root);
+    write_file(root / "models.hpp", "struct First { int value; }; struct Second { int value; };\n");
+    write_file(root / "consumer.cpp", "#include \"models.hpp\"\nSecond value;\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code_message(findings, "UPD403", "First"));
+    assert(has_code_message(findings, "UPD404", "Second"));
+    assert(!has_code_message(findings, "UPD404", "First"));
+    std::filesystem::remove_all(root);
+}
+
+void test_included_header_reference_is_not_main_file_reference() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_header_reference";
+    std::filesystem::remove_all(root);
+    write_file(root / "models.hpp", "struct First { int value; }; struct Second { int value; };\n");
+    write_file(root / "helper.inc", "#include \"models.hpp\"\nFirst helper_value;\n");
+    write_file(root / "consumer.cpp", "#include \"helper.inc\"\nint value = 0;\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code_message(findings, "UPD403", "First"));
+    assert(!has_code_message(findings, "UPD404", "First"));
     std::filesystem::remove_all(root);
 }
 
@@ -121,5 +158,7 @@ int main() {
     test_cli_ignore_matrix();
     test_ignore_file_matrix();
     test_data_type_location_matrix();
+    test_data_type_reference_uses_exact_declaration();
+    test_included_header_reference_is_not_main_file_reference();
     return 0;
 }

@@ -62,7 +62,7 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 		code := "UPD403"
 		severity := "attention"
 		message := "data-only type " + item.name + " shares a file with another type"
-		if dataTypeReferencedElsewhere(item, parsed) {
+		if dataTypeReferencedElsewhere(item, parsed, root) {
 			code = "UPD404"
 			severity = "warning"
 			message = "data-only type " + item.name + " shares a file with another type and is referenced from another file"
@@ -87,27 +87,6 @@ func parseDataFiles(paths []string, root string) []parsedDataFile {
 		result = append(result, parsedDataFile{path, filepath.ToSlash(rel), file, fset, file.Name.Name})
 	}
 	return result
-}
-
-func dataTypeReferencedElsewhere(item dataOnlyType, files []parsedDataFile) bool {
-	for _, other := range files {
-		if other.path == item.path {
-			continue
-		}
-		found := false
-		ast.Inspect(other.file, func(node ast.Node) bool {
-			identifier, ok := node.(*ast.Ident)
-			if ok && identifier.Name == item.name {
-				found = true
-				return false
-			}
-			return !found
-		})
-		if found {
-			return true
-		}
-	}
-	return false
 }
 
 func dataTypeKey(path string, packageName string, typeName string) string {
