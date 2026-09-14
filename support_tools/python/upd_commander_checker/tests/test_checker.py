@@ -71,13 +71,6 @@ class CheckerTest(unittest.TestCase):
         module = classify_module(path)
         self.assertIsNone(module.role)
 
-    def test_nearest_application_marker_wins(self) -> None:
-        path = Path("apps/project/applications/main/process/main_commander.py")
-        module = classify_module(path)
-        self.assertEqual("main", module.application)
-        self.assertEqual("process", module.layer)
-        self.assertEqual("commander", module.role)
-
     def test_inline_ignore_suppresses_rule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -43,6 +43,31 @@ void test_cross_application_dependency() {
     std::filesystem::remove_all(root);
 }
 
+void test_nested_application_dependency() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_nested_apps";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "apps" / "product" / "applications" / "settings" / "ui" /
+            "screen_processing.cpp",
+        "#include \"apps/product/applications/profile/process/profile_processing.hpp\"\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD102"));
+    std::filesystem::remove_all(root);
+}
+
+void test_nested_application_classifier_uses_nearest_scope() {
+    const auto module = upd_checker::classify_path(
+        "apps/product/ui/commander/applications/settings/data/screen.cpp");
+    assert(module.application_id == "settings");
+    assert(module.layer == "data");
+    assert(module.role.empty());
+
+    const auto dependency = upd_checker::classify_include(
+        "apps/product/ui/commander/applications/profile/process/profile_processing.hpp");
+    assert(dependency.application_id == "profile");
+    assert(dependency.layer == "process");
+    assert(dependency.role == "processing");
+}
+
 void test_data_commander_warning() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_data_commanders";
     std::filesystem::remove_all(root);
@@ -201,6 +226,8 @@ void test_inline_ignore() {
 int main() {
     test_ui_to_data_dependency();
     test_cross_application_dependency();
+    test_nested_application_dependency();
+    test_nested_application_classifier_uses_nearest_scope();
     test_data_commander_warning();
     test_boundary_like_directory_is_not_boundary_api();
     test_boundary_layer_violation_keeps_upd101();

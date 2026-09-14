@@ -23,11 +23,12 @@ internal static class Classifier
     internal static ModuleInfo ClassifyPath(string path)
     {
         var directories = PathDirectories(path);
+        var scope = ApplicationScope(directories);
         var stem = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
         return new ModuleInfo(
             path,
-            FindName(new FindNameInput(directories, Layers)),
-            FindPathRole(new FindPathRoleInput(directories, stem)),
+            FindName(new FindNameInput(scope, Layers)),
+            FindPathRole(new FindPathRoleInput(scope, stem)),
             FindApplication(directories)
         );
     }
@@ -35,10 +36,11 @@ internal static class Classifier
     internal static ModuleInfo ClassifyReference(string value)
     {
         var parts = SplitParts(value);
+        var scope = ApplicationScope(parts);
         return new ModuleInfo(
             value,
-            FindName(new FindNameInput(parts, Layers)),
-            FindRole(parts),
+            FindName(new FindNameInput(scope, Layers)),
+            FindRole(scope),
             FindApplication(parts)
         );
     }
@@ -67,7 +69,7 @@ internal static class Classifier
 
     private static string FindName(FindNameInput input)
     {
-        foreach (var part in input.Parts)
+        foreach (var part in input.Parts.Reverse())
         {
             if (input.Candidates.Contains(part))
             {
@@ -96,7 +98,7 @@ internal static class Classifier
 
     private static string FindRole(IEnumerable<string> parts)
     {
-        foreach (var part in parts)
+        foreach (var part in parts.Reverse())
         {
             if (Roles.Contains(part))
             {
@@ -124,7 +126,7 @@ internal static class Classifier
 
     private static string FindApplication(IReadOnlyList<string> parts)
     {
-        for (var index = 0; index + 1 < parts.Count; index++)
+        for (var index = parts.Count - 2; index >= 0; index--)
         {
             if (AppRoots.Contains(parts[index]))
             {
@@ -132,5 +134,17 @@ internal static class Classifier
             }
         }
         return string.Empty;
+    }
+
+    private static List<string> ApplicationScope(IReadOnlyList<string> parts)
+    {
+        for (var index = parts.Count - 2; index >= 0; index--)
+        {
+            if (AppRoots.Contains(parts[index]))
+            {
+                return parts.Skip(index + 2).ToList();
+            }
+        }
+        return parts.ToList();
     }
 }
