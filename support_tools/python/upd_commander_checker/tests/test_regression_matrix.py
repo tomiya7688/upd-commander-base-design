@@ -19,6 +19,30 @@ class RegressionMatrixTests(unittest.TestCase):
             self.assertTrue(any(item.code == "UPD201" for item in findings))
             self.assertTrue(any(item.code == "UPD203" for item in findings))
 
+    def test_upd203_resolves_import_alias(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "process" / "alias_commander.py"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "import json as payload_json\n\ndef run():\n    return payload_json.dumps({'ok': True})\n",
+                encoding="utf-8",
+            )
+            findings = scan_path(root)
+            self.assertTrue(any(item.code == "UPD203" for item in findings))
+
+    def test_upd203_ignores_similar_user_function_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "process" / "name_commander.py"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "def reopen_connection():\n    return None\n\ndef run():\n    reopen_connection()\n",
+                encoding="utf-8",
+            )
+            findings = scan_path(root)
+            self.assertFalse(any(item.code == "UPD203" for item in findings))
+
     def test_container_rules(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

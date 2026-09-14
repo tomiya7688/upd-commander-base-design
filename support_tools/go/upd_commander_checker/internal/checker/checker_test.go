@@ -62,6 +62,22 @@ func TestInlineIgnoreSuppressesCommanderCalculation(t *testing.T) {
 	assertNoCode(t, findings, "UPD202")
 }
 
+func TestUPD203ResolvesImportAlias(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "process", "alias_commander.go")
+	writeTestFile(t, path, "package process\nimport nethttp \"net/http\"\nfunc run() { _, _ = nethttp.Get(\"https://example.com\") }\n")
+	findings := ScanPath(root, nil)
+	assertHasCode(t, findings, "UPD203")
+}
+
+func TestUPD203IgnoresSameNamedLocalValue(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "process", "local_commander.go")
+	writeTestFile(t, path, "package process\ntype fakeOS struct{}\nfunc (fakeOS) Open(string) {}\nfunc run() { os := fakeOS{}; os.Open(\"sample.txt\") }\n")
+	findings := ScanPath(root, nil)
+	assertNoCode(t, findings, "UPD203")
+}
+
 func writeTestFile(t *testing.T, path string, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

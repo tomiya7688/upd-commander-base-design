@@ -7,7 +7,15 @@ namespace UpdCommanderChecker;
 internal static class CommanderAnalyzer
 {
     private static readonly HashSet<string> DirectWorkTypes =
-        ["File", "Directory", "JsonSerializer", "HttpClient", "SqlConnection", "DbConnection"];
+    [
+        "System.IO.File",
+        "System.IO.Directory",
+        "System.Text.Json.JsonSerializer",
+        "System.Net.Http.HttpClient",
+        "System.Data.Common.DbConnection",
+    ];
+
+    private static readonly IReadOnlyList<MetadataReference> RuntimeReferences = LoadRuntimeReferences();
 
     internal static void Analyze(AstRuleContext context)
     {
@@ -16,6 +24,7 @@ internal static class CommanderAnalyzer
             return;
         }
 
+        var semanticModel = CreateSemanticModel(context.Analysis.Root.SyntaxTree);
         foreach (var node in context.Analysis.Root.DescendantNodes())
         {
             if (node is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
@@ -30,7 +39,8 @@ internal static class CommanderAnalyzer
                 continue;
             }
 
-            if (node is InvocationExpressionSyntax or ObjectCreationExpressionSyntax && IsDirectWork(node))
+            if (node is InvocationExpressionSyntax or ObjectCreationExpressionSyntax &&
+                IsDirectWork(new DirectWorkCheckInput(node, semanticModel)))
             {
                 AstFindingEmitter.Add(new NodeFindingInput(
                     context,
@@ -51,21 +61,53 @@ internal static class CommanderAnalyzer
                expression.IsKind(SyntaxKind.ModuloExpression);
     }
 
-    private static bool IsDirectWork(SyntaxNode node)
+    private static bool IsDirectWork(DirectWorkCheckInput input)
     {
-        var owner = node switch
+        ITypeSymbol? type = input.Node switch
         {
-            InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax member
-                => member.Expression.ToString(),
-            ObjectCreationExpressionSyntax creation => creation.Type.ToString(),
-            _ => string.Empty,
+            InvocationExpressionSyntax invocation =>
+                (input.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.ContainingType,
+            ObjectCreationExpressionSyntax creation => input.SemanticModel.GetTypeInfo(creation).Type,
+            _ => null,
         };
-        if (owner.Length == 0)
+        return IsDirectWorkType(type);
+    }
+
+    private static bool IsDirectWorkType(ITypeSymbol? type)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
         {
-            return false;
+            var qualifiedName = current.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+            if (DirectWorkTypes.Contains(qualifiedName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static SemanticModel CreateSemanticModel(SyntaxTree syntaxTree)
+    {
+        var compilation = CSharpCompilation.Create(
+            "UpdCommanderCheckerSemanticAnalysis",
+            [syntaxTree],
+            RuntimeReferences,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        return compilation.GetSemanticModel(syntaxTree, ignoreAccessibility: true);
+    }
+
+    private static IReadOnlyList<MetadataReference> LoadRuntimeReferences()
+    {
+        var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
+        if (string.IsNullOrWhiteSpace(trustedAssemblies))
+        {
+            return [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)];
         }
 
-        return DirectWorkTypes.Any(type =>
-            owner == type || owner.EndsWith("." + type, StringComparison.Ordinal));
+        return trustedAssemblies
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(path => MetadataReference.CreateFromFile(path))
+            .ToArray();
     }
 }
