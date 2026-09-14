@@ -38,10 +38,7 @@ internal static class IgnoreRules
     {
         foreach (var rule in input.Rules)
         {
-            if (
-                rule.Code == "all"
-                && GlobMatch(new GlobMatchInput(input.Path, rule.Pattern))
-            )
+            if (rule.Code == "all" && GlobMatch(new GlobMatchInput(input.Path, rule.Pattern)))
             {
                 return true;
             }
