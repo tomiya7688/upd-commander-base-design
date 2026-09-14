@@ -36,7 +36,7 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 			rel = path
 		}
 		relText := filepath.ToSlash(rel)
-		if pathIgnored(relText, cliIgnore) {
+		if pathIgnored(relText, cliIgnore) || IsPathIgnored(relText, rules) {
 			return nil
 		}
 		paths = append(paths, path)
