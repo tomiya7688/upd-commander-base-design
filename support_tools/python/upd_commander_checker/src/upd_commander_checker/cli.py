@@ -28,19 +28,27 @@ def main() -> int:
     findings = scan_path(target, ignores)
     lines = []
     for finding in findings:
-        level = "E" if finding.severity == "error" else "W"
+        level = {"error": "E", "warning": "W", "attention": "A"}.get(
+            finding.severity, "A"
+        )
         lines.append(
             f"{level} {finding.code} {_display_path(finding.path, target)}:{finding.line} {finding.message}"
         )
 
     error_count = sum(item.severity == "error" for item in findings)
     warning_count = sum(item.severity == "warning" for item in findings)
+    attention_count = sum(item.severity == "attention" for item in findings)
     failed = error_count > 0 or warnings_as_errors and warning_count > 0
     if failed:
-        lines.append(f"FAIL e={error_count} w={warning_count}")
+        lines.append(
+            f"FAIL e={error_count} w={warning_count} a={attention_count}"
+        )
         return _finish(lines, output, 1)
 
-    lines.append(f"OK w={warning_count}" if warning_count else "OK")
+    if warning_count or attention_count:
+        lines.append(f"OK w={warning_count} a={attention_count}")
+    else:
+        lines.append("OK")
     return _finish(lines, output, 0)
 
 
