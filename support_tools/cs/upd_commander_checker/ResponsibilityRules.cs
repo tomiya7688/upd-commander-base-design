@@ -29,7 +29,12 @@ internal static class ResponsibilityRules
             }
             if (
                 IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(input.Path, "UPD401", LineText(input.Lines, line), input.IgnoreRules)
+                    new IgnoreCheckInput(
+                        input.Path,
+                        "UPD401",
+                        LineText(input.Lines, line),
+                        input.IgnoreRules
+                    )
                 )
             )
             {
@@ -52,7 +57,12 @@ internal static class ResponsibilityRules
             types.Count == 0
             && input.Lines.Count > MaxResponsibilityLines
             && !IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(input.Path, "UPD401", LineText(input.Lines, 1), input.IgnoreRules)
+                new IgnoreCheckInput(
+                    input.Path,
+                    "UPD401",
+                    LineText(input.Lines, 1),
+                    input.IgnoreRules
+                )
             )
         )
         {
@@ -73,7 +83,12 @@ internal static class ResponsibilityRules
             var line = second.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
             if (
                 !IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(input.Path, "UPD402", LineText(input.Lines, line), input.IgnoreRules)
+                    new IgnoreCheckInput(
+                        input.Path,
+                        "UPD402",
+                        LineText(input.Lines, line),
+                        input.IgnoreRules
+                    )
                 )
             )
             {
