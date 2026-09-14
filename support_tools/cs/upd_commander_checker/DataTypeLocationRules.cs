@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -16,7 +17,7 @@ internal static class DataTypeLocationRules
         var candidates = new List<DataTypeCandidate>();
         foreach (var source in sources)
         {
-            var types = source.Root.Members.OfType<TypeDeclarationSyntax>().ToList();
+            var types = FileScopeTypes(source.Root).ToList();
             if (types.Count < 2)
             {
                 continue;
@@ -57,6 +58,13 @@ internal static class DataTypeLocationRules
         return findings;
     }
 
+    private static IEnumerable<TypeDeclarationSyntax> FileScopeTypes(CompilationUnitSyntax root)
+    {
+        return root.DescendantNodes()
+            .OfType<TypeDeclarationSyntax>()
+            .Where(type => type.Parent is CompilationUnitSyntax or BaseNamespaceDeclarationSyntax);
+    }
+
     private static List<DataTypeSource> Parse(ParseInput input)
     {
         var result = new List<DataTypeSource>();
@@ -73,7 +81,7 @@ internal static class DataTypeLocationRules
             }
             var tree = CSharpSyntaxTree.ParseText(text, path: file);
             if (tree.GetDiagnostics().Any(diagnostic =>
-                    diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
+                    diagnostic.Severity == DiagnosticSeverity.Error))
             {
                 continue;
             }
