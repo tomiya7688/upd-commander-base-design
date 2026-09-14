@@ -14,3 +14,9 @@ type ModuleInfo struct {
 	Role          string
 	ApplicationID string
 }
+
+type DependencyRuleResult struct {
+	Code     string
+	Message  string
+	Severity string
+}
