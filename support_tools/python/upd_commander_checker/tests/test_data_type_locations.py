@@ -63,7 +63,7 @@ class DataTypeLocationTests(unittest.TestCase):
                 encoding="utf-8",
             )
             findings = scan_path(root)
-            first = [item for item in findings if item.relative == Path("models.py") and "First" in item.message]
+            first = [item for item in findings if item.path == Path("models.py") and "First" in item.message]
             self.assertEqual(len(first), 1)
             self.assertEqual(first[0].code, "UPD403")
 
