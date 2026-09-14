@@ -56,16 +56,17 @@ std::vector<std::string> path_directories(const std::string& value) {
 std::string find_name(
     const std::vector<std::string>& parts,
     const std::unordered_set<std::string>& candidates) {
-    for (const auto& part : parts) {
-        if (candidates.count(part) != 0U) {
-            return part;
+    for (auto part = parts.rbegin(); part != parts.rend(); ++part) {
+        if (candidates.count(*part) != 0U) {
+            return *part;
         }
     }
     return {};
 }
 
 std::string find_role(const std::vector<std::string>& parts) {
-    for (const auto& part : parts) {
+    for (auto value = parts.rbegin(); value != parts.rend(); ++value) {
+        const auto& part = *value;
         if (kRoles.count(part) != 0U) {
             return part;
         }
@@ -100,20 +101,32 @@ std::string find_path_role(const std::vector<std::string>& directories, const st
 }
 
 std::string find_application(const std::vector<std::string>& parts) {
-    for (std::size_t index = 0; index + 1 < parts.size(); ++index) {
-        if (kAppRoots.count(parts[index]) != 0U) {
-            return parts[index + 1];
+    for (int index = static_cast<int>(parts.size()) - 2; index >= 0; --index) {
+        const auto position = static_cast<std::size_t>(index);
+        if (kAppRoots.count(parts[position]) != 0U) {
+            return parts[position + 1];
         }
     }
     return {};
 }
 
+std::vector<std::string> application_scope(const std::vector<std::string>& parts) {
+    for (int index = static_cast<int>(parts.size()) - 2; index >= 0; --index) {
+        const auto position = static_cast<std::size_t>(index);
+        if (kAppRoots.count(parts[position]) != 0U) {
+            return {parts.begin() + static_cast<std::ptrdiff_t>(position + 2), parts.end()};
+        }
+    }
+    return parts;
+}
+
 ModuleInfo classify_reference(const std::string& value) {
     const auto parts = split_parts(value);
+    const auto scope = application_scope(parts);
     return ModuleInfo{
         value,
-        find_name(parts, kLayers),
-        find_role(parts),
+        find_name(scope, kLayers),
+        find_role(scope),
         find_application(parts),
     };
 }
@@ -122,11 +135,12 @@ ModuleInfo classify_reference(const std::string& value) {
 
 ModuleInfo classify_path(const std::string& path) {
     const auto directories = path_directories(path);
+    const auto scope = application_scope(directories);
     const std::string stem = lower(std::filesystem::path(path).stem().string());
     return ModuleInfo{
         path,
-        find_name(directories, kLayers),
-        find_path_role(directories, stem),
+        find_name(scope, kLayers),
+        find_path_role(scope, stem),
         find_application(directories),
     };
 }
