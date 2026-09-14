@@ -36,6 +36,31 @@ void test_commander_matrix() {
     std::filesystem::remove_all(root);
 }
 
+void test_upd203_namespace_alias() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_alias";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "alias_commander.cpp",
+        "#include <fstream>\n"
+        "namespace io = std;\n"
+        "void run() { io::ifstream input(\"sample.txt\"); }\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code(findings, "UPD203"));
+    std::filesystem::remove_all(root);
+}
+
+void test_upd203_ignores_user_symbol_with_similar_name() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_user_symbol";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "local_commander.cpp",
+        "void sqlite_helper() {}\n"
+        "void run() { sqlite_helper(); }\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(!has_code(findings, "UPD203"));
+    std::filesystem::remove_all(root);
+}
+
 void test_container_matrix() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_container";
     std::filesystem::remove_all(root);
@@ -90,6 +115,8 @@ void test_data_type_location_matrix() {
 
 int main() {
     test_commander_matrix();
+    test_upd203_namespace_alias();
+    test_upd203_ignores_user_symbol_with_similar_name();
     test_container_matrix();
     test_cli_ignore_matrix();
     test_ignore_file_matrix();
