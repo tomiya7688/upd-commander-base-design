@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
     std::string output = config.output;
     std::vector<std::string> ignores = config.ignore;
     bool warnings_as_errors = config.warnings_as_errors;
+    bool attentions_as_errors = false;
 
     for (int index = 1; index < argc; ++index) {
         const std::string argument = argv[index];
@@ -48,6 +49,8 @@ int main(int argc, char* argv[]) {
             output = argv[++index];
         } else if (argument == "--warnings-as-errors") {
             warnings_as_errors = true;
+        } else if (argument == "--attentions-as-errors") {
+            attentions_as_errors = true;
         } else {
             target = argument;
         }
@@ -78,7 +81,9 @@ int main(int argc, char* argv[]) {
             std::to_string(finding.line) + " " + finding.message);
     }
 
-    if (errors > 0 || (warnings_as_errors && warnings > 0)) {
+    if (errors > 0 ||
+        (warnings_as_errors && warnings > 0) ||
+        (attentions_as_errors && attentions > 0)) {
         lines.push_back(
             "FAIL e=" + std::to_string(errors) +
             " w=" + std::to_string(warnings) +
