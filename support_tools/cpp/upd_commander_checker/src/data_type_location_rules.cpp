@@ -105,10 +105,12 @@ std::vector<DataTypeCandidate> data_types_in_file(
             const auto kind = clang_getCursorKind(cursor);
             if ((kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl ||
                  kind == CXCursor_ClassTemplate) &&
-                is_file_scope_type(cursor) && clang_isCursorDefinition(cursor) &&
-                !has_behavior(cursor)) {
+                is_file_scope_type(cursor) && clang_isCursorDefinition(cursor)) {
                 const std::string name = cx_text(clang_getCursorSpelling(cursor));
-                if (!name.empty()) {
+                if (has_behavior(cursor)) {
+                    state.result->push_back(
+                        DataTypeCandidate{state.path, state.relative, std::string{}, cursor_line(cursor)});
+                } else if (!name.empty()) {
                     state.result->push_back(
                         DataTypeCandidate{state.path, state.relative, name, cursor_line(cursor)});
                 }
@@ -202,8 +204,13 @@ std::vector<Finding> check_data_type_locations(
     std::vector<DataTypeCandidate> candidates;
     for (const auto& path : paths) {
         auto local = data_types_in_file(path, root);
-        if (local.size() > 1) {
-            candidates.insert(candidates.end(), local.begin(), local.end());
+        if (local.size() < 2) {
+            continue;
+        }
+        for (const auto& item : local) {
+            if (!item.name.empty()) {
+                candidates.push_back(item);
+            }
         }
     }
 
@@ -233,9 +240,8 @@ std::vector<Finding> check_data_type_locations(
             code,
             external
                 ? "data-only type " + candidate.name +
-                      " shares a file and is referenced from another file"
-                : "multiple data-only types share this file; " + candidate.name +
-                      " is local-only",
+                      " shares a file with another type and is referenced from another file"
+                : "data-only type " + candidate.name + " shares a file with another type",
             external ? "warning" : "attention"});
     }
     return findings;
