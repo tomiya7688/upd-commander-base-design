@@ -21,6 +21,7 @@ internal static class ResponsibilityRules
         {
             var span = type.GetLocation().GetLineSpan();
             var line = span.StartLinePosition.Line + 1;
+            var lineText = line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
             var lineCount = span.EndLinePosition.Line - span.StartLinePosition.Line + 1;
             var methodCount = type.Members.OfType<MethodDeclarationSyntax>().Count();
             if (lineCount <= MaxResponsibilityLines && methodCount <= MaxResponsibilityMethods)
@@ -29,12 +30,7 @@ internal static class ResponsibilityRules
             }
             if (
                 IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(
-                        input.Path,
-                        "UPD401",
-                        LineText(input.Lines, line),
-                        input.IgnoreRules
-                    )
+                    new IgnoreCheckInput(input.Path, "UPD401", lineText, input.IgnoreRules)
                 )
             )
             {
@@ -53,16 +49,12 @@ internal static class ResponsibilityRules
             );
         }
 
+        var firstLineText = input.Lines.Count > 0 ? input.Lines[0] : string.Empty;
         if (
             types.Count == 0
             && input.Lines.Count > MaxResponsibilityLines
             && !IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(
-                    input.Path,
-                    "UPD401",
-                    LineText(input.Lines, 1),
-                    input.IgnoreRules
-                )
+                new IgnoreCheckInput(input.Path, "UPD401", firstLineText, input.IgnoreRules)
             )
         )
         {
@@ -81,14 +73,10 @@ internal static class ResponsibilityRules
         {
             var second = majorTypes[1];
             var line = second.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            var lineText = line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
             if (
                 !IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(
-                        input.Path,
-                        "UPD402",
-                        LineText(input.Lines, line),
-                        input.IgnoreRules
-                    )
+                    new IgnoreCheckInput(input.Path, "UPD402", lineText, input.IgnoreRules)
                 )
             )
             {
@@ -105,11 +93,6 @@ internal static class ResponsibilityRules
         }
 
         return findings;
-    }
-
-    private static string LineText(IReadOnlyList<string> lines, int line)
-    {
-        return line > 0 && line <= lines.Count ? lines[line - 1] : string.Empty;
     }
 
     private static bool HasBehavior(TypeDeclarationSyntax type)
