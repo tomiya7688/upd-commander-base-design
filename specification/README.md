@@ -1,5 +1,7 @@
 # UPD Commander Technical Specification
 
+**日本語** | [English](README.en.md)
+
 このフォルダは UPD Commander 設計の詳細な技術規定を格納するための領域です。
 
 `docs/` が設計の説明・概要を扱うのに対し、`specification/` は実装時に従う規定そのものを扱います。
