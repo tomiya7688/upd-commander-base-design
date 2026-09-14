@@ -22,23 +22,15 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			rel, relErr := filepath.Rel(root, path)
-			if relErr != nil {
-				rel = path
-			}
+			if relErr != nil { rel = path }
 			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed", Severity: "error"})
 			return nil
 		}
-		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" {
-			return nil
-		}
+		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" { return nil }
 		rel, relErr := filepath.Rel(root, path)
-		if relErr != nil {
-			rel = path
-		}
+		if relErr != nil { rel = path }
 		relText := filepath.ToSlash(rel)
-		if pathIgnored(relText, cliIgnore) {
-			return nil
-		}
+		if pathIgnored(relText, cliIgnore) { return nil }
 		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
@@ -62,13 +54,13 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 	for _, spec := range file.Imports {
 		name := strings.Trim(spec.Path.Value, "\"")
 		target := ClassifyImport(name)
+		line := fset.Position(spec.Pos()).Line
 		if message := DependencyError(source, target); message != "" {
 			code := "UPD101"
 			if message == "cross-application internal dependency" { code = "UPD102" }
-			line := fset.Position(spec.Pos()).Line
-			if !IsIgnored(rel, code, lineAt(lines, line), rules) {
-				findings = append(findings, Finding{Path: rel, Line: line, Code: code, Message: message, Severity: "error"})
-			}
+			addFinding(&findings, rel, line, code, message, "error", lines, rules)
+		} else if warning := DataCommanderWarning(source, target); warning != "" {
+			addFinding(&findings, rel, line, "UPD103", warning, "warning", lines, rules)
 		}
 	}
 	if source.Role == "commander" {
