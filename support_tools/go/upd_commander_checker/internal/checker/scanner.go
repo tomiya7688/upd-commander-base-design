@@ -18,6 +18,7 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	}
 	rules := LoadIgnoreRules(root)
 	var findings []Finding
+	var paths []string
 	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			rel, relErr := filepath.Rel(root, path)
@@ -38,9 +39,11 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 		if pathIgnored(relText, cliIgnore) {
 			return nil
 		}
+		paths = append(paths, path)
 		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
+	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
 	sort.Slice(findings, func(i, j int) bool {
 		if findings[i].Path != findings[j].Path {
 			return findings[i].Path < findings[j].Path

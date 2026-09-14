@@ -16,7 +16,8 @@ namespace {
 
 constexpr int kMinReducibleLines = 10;
 constexpr double kMinReductionRatio = 0.20;
-constexpr int kMaxResponsibilityLines = 350;
+constexpr int kMaxResponsibilityLines = 250;
+constexpr int kMaxResponsibilityMethods = 12;
 
 struct AnalysisState {
     ModuleInfo source;
@@ -207,6 +208,37 @@ int signature_reducible_lines(CXCursor cursor) {
     return std::max(0, end - start);
 }
 
+int direct_method_count(CXCursor cursor) {
+    int count = 0;
+    clang_visitChildren(
+        cursor,
+        [](CXCursor child, CXCursor, CXClientData client_data) {
+            if (clang_getCursorKind(child) == CXCursor_CXXMethod) {
+                ++(*static_cast<int*>(client_data));
+            }
+            return CXChildVisit_Continue;
+        },
+        &count);
+    return count;
+}
+
+bool has_direct_behavior(CXCursor cursor) {
+    bool has_behavior = false;
+    clang_visitChildren(
+        cursor,
+        [](CXCursor child, CXCursor, CXClientData client_data) {
+            const auto kind = clang_getCursorKind(child);
+            if (kind == CXCursor_CXXMethod || kind == CXCursor_Constructor ||
+                kind == CXCursor_Destructor || kind == CXCursor_FunctionTemplate) {
+                *static_cast<bool*>(client_data) = true;
+                return CXChildVisit_Break;
+            }
+            return CXChildVisit_Continue;
+        },
+        &has_behavior);
+    return has_behavior;
+}
+
 void analyze_dependency(AnalysisState& state, CXCursor cursor) {
     const std::string include_name = cx_text(clang_getCursorSpelling(cursor));
     if (include_name.empty()) {
@@ -267,18 +299,26 @@ void analyze_class(AnalysisState& state, CXCursor cursor) {
     if (!clang_isCursorDefinition(cursor)) {
         return;
     }
-    ++state.major_class_count;
-    const int line = cursor_line(cursor);
-    if (state.major_class_count == 2) {
-        state.second_class_line = line;
+    const bool responsibility_bearing = has_direct_behavior(cursor);
+    if (responsibility_bearing) {
+        ++state.major_class_count;
+        const int line = cursor_line(cursor);
+        if (state.major_class_count == 2) {
+            state.second_class_line = line;
+        }
     }
+
+    const int line = cursor_line(cursor);
     const int lines = std::max(1, cursor_end_line(cursor) - line + 1);
-    if (lines > kMaxResponsibilityLines) {
+    const int methods = direct_method_count(cursor);
+    if (lines > kMaxResponsibilityLines || methods > kMaxResponsibilityMethods) {
+        const std::string name = cx_text(clang_getCursorSpelling(cursor));
         add_finding(
             state,
             line,
             "UPD401",
-            "class is too large for one responsibility",
+            "type " + name + " is too large for one responsibility (lines=" +
+                std::to_string(lines) + ", methods=" + std::to_string(methods) + ")",
             "warning");
     }
 }
@@ -293,7 +333,8 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     if (kind == CXCursor_InclusionDirective) {
         analyze_dependency(state, cursor);
     }
-    if (kind == CXCursor_ClassDecl || kind == CXCursor_ClassTemplate) {
+    if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl ||
+        kind == CXCursor_ClassTemplate) {
         analyze_class(state, cursor);
     }
     if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod ||
@@ -368,7 +409,7 @@ std::vector<Finding> analyze_cpp_ast(
             state,
             state.second_class_line,
             "UPD402",
-            "file contains multiple major classes",
+            "file contains multiple responsibility-bearing types",
             "warning");
     }
     const bool substantial_compression =

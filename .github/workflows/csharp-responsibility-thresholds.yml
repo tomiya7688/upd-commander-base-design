@@ -1,0 +1,73 @@
+name: CSharp Responsibility Thresholds
+
+on:
+  pull_request:
+    paths:
+      - "support_tools/cs/upd_commander_checker/**"
+      - "specification/responsibility-check-rules.md"
+      - ".github/workflows/csharp-responsibility-thresholds.yml"
+  push:
+    branches: [main]
+    paths:
+      - "support_tools/cs/upd_commander_checker/**"
+      - "specification/responsibility-check-rules.md"
+      - ".github/workflows/csharp-responsibility-thresholds.yml"
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        working-directory: support_tools/cs/upd_commander_checker
+        run: dotnet build UpdCommanderChecker.csproj -c Release
+      - name: Verify 250/251 lines and 12/13 methods
+        working-directory: support_tools/cs/upd_commander_checker
+        shell: bash
+        run: |
+          target="$(mktemp -d)"
+          {
+            echo 'internal sealed class AllowedLines'
+            echo '{'
+            for i in $(seq 1 247); do echo "// $i"; done
+            echo '}'
+          } > "$target/allowed_lines.cs"
+          {
+            echo 'internal sealed class WarnLines'
+            echo '{'
+            for i in $(seq 1 248); do echo "// $i"; done
+            echo '}'
+          } > "$target/warn_lines.cs"
+          {
+            echo 'internal sealed class AllowedMethods'
+            echo '{'
+            for i in $(seq 1 12); do echo "internal void Method$i() {}"; done
+            echo '}'
+          } > "$target/allowed_methods.cs"
+          {
+            echo 'internal sealed class WarnMethods'
+            echo '{'
+            for i in $(seq 1 13); do echo "internal void Method$i() {}"; done
+            echo '}'
+          } > "$target/warn_methods.cs"
+
+          checker=(dotnet bin/Release/net8.0/upd-commander-check.dll --warnings-as-errors)
+          "${checker[@]}" "$target/allowed_lines.cs"
+          "${checker[@]}" "$target/allowed_methods.cs"
+
+          set +e
+          line_output="$("${checker[@]}" "$target/warn_lines.cs" 2>&1)"
+          line_status=$?
+          method_output="$("${checker[@]}" "$target/warn_methods.cs" 2>&1)"
+          method_status=$?
+          set -e
+
+          echo "$line_output"
+          echo "$method_output"
+          test "$line_status" -eq 1
+          test "$method_status" -eq 1
+          grep -q "W UPD401" <<< "$line_output"
+          grep -q "W UPD401" <<< "$method_output"

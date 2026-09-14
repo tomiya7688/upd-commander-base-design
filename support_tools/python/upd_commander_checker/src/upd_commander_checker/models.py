@@ -1,26 +1,5 @@
-from dataclasses import dataclass
-from pathlib import Path
+from .dependency_rule_result import DependencyRuleResult
+from .finding import Finding
+from .module_info import ModuleInfo
 
-
-@dataclass(frozen=True)
-class Finding:
-    path: Path
-    line: int
-    code: str
-    message: str
-    severity: str = "error"
-
-
-@dataclass(frozen=True)
-class ModuleInfo:
-    path: Path
-    layer: str | None
-    role: str | None
-    application: str | None = None
-
-
-@dataclass(frozen=True)
-class DependencyRuleResult:
-    code: str
-    message: str
-    severity: str
+__all__ = ["DependencyRuleResult", "Finding", "ModuleInfo"]

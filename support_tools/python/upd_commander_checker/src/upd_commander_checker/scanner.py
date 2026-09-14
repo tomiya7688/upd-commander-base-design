@@ -5,6 +5,7 @@ from pathlib import Path
 from .classifier import classify_module
 from .commander_rules import check_commander
 from .container_rules import check_containers
+from .data_type_location_rules import check_data_type_locations
 from .dependency_rules import check_dependencies
 from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
@@ -16,8 +17,10 @@ def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Findi
     classification_root = root if target.is_dir() else None
     ignore_rules = load_ignore_rules(root)
     findings: list[Finding] = []
-    for path in _python_files(target, root, ignore_patterns, ignore_rules):
+    paths = _python_files(target, root, ignore_patterns, ignore_rules)
+    for path in paths:
         findings.extend(_scan_file(path, root, classification_root, ignore_rules))
+    findings.extend(_filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules))
     return sorted(findings, key=lambda item: (str(item.path), item.line, item.code))
 
 
@@ -67,6 +70,22 @@ def _scan_file(
     findings.extend(check_containers(tree, module))
     findings.extend(check_responsibilities(tree, module))
     return filter_findings(findings, source, _relative_text(path, root), ignore_rules)
+
+
+def _filter_location_findings(
+    findings: list[Finding],
+    root: Path,
+    ignore_rules: tuple[IgnoreRule, ...],
+) -> list[Finding]:
+    filtered: list[Finding] = []
+    for finding in findings:
+        source_path = root / finding.path
+        try:
+            source = source_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            continue
+        filtered.extend(filter_findings([finding], source, finding.path.as_posix(), ignore_rules))
+    return filtered
 
 
 def _relative_text(path: Path, root: Path) -> str:

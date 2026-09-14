@@ -1,19 +1,9 @@
 import json
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
-
-class ConfigError(Exception):
-    pass
-
-
-@dataclass(frozen=True)
-class CheckerConfig:
-    input_path: str = "."
-    output_path: str = ""
-    ignore: tuple[str, ...] = ()
-    warnings_as_errors: bool = False
+from .config_error import ConfigError
+from .config_model import CheckerConfig
 
 
 def load_config() -> CheckerConfig:

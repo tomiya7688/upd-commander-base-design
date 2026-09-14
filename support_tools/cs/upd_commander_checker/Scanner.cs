@@ -16,6 +16,7 @@ internal static class Scanner
             : Directory.EnumerateFiles(input.Target, "*.cs", SearchOption.AllDirectories).ToList();
 
         var findings = new List<Finding>();
+        var includedFiles = new List<string>();
         foreach (var file in files)
         {
             var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
@@ -24,8 +25,13 @@ internal static class Scanner
             {
                 continue;
             }
+            includedFiles.Add(file);
             findings.AddRange(ScanFile(new ScanFileInput(file, relative, ignoreRules)));
         }
+        findings.AddRange(DataTypeLocationRules.Check(new DataTypeLocationRuleContext(
+            includedFiles,
+            root,
+            ignoreRules)));
 
         return findings
             .OrderBy(item => item.Path, StringComparer.Ordinal)

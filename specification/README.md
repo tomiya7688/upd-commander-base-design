@@ -12,6 +12,7 @@
 - [Messenger Specification](messenger-spec.md) — 層間通信の責務と正式経路
 - [Compresser Specification](compresser-spec.md) — 複数の引数・返却値をクラス単位の Container としてまとめる責務
 - [Compresser / Container Checker Rules](compresser-check-rules.md) — Container 化の Attention / Warning 判定と Self Check 規定
+- [Responsibility Check Rules](responsibility-check-rules.md) — UPD401 の共通責務単位・250行 / 12メソッド境界
 - [Processing Specification](processing-spec.md) — 各層の実処理の責務
 - [Dependency Rules](dependency-rules.md) — 許可・禁止される依存関係
 - [Data Commander Communication](data-commander-communication.md) — Data Commander 同士の直接通信に対する警告規定

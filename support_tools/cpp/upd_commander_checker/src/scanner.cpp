@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "ast_analyzer.hpp"
+#include "data_type_location_rules.hpp"
 #include "ignore_rules.hpp"
 
 namespace upd_checker {
@@ -38,6 +39,7 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
         : target_path.parent_path();
     const auto rules = load_ignore_rules(root.string());
     std::vector<Finding> findings;
+    std::vector<std::filesystem::path> paths;
 
     auto scan_one = [&](const std::filesystem::path& path) {
         if (!is_source_file(path)) {
@@ -47,6 +49,7 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
         if (ignored_by_cli(relative, cli_ignore)) {
             return;
         }
+        paths.push_back(path);
         auto current = analyze_cpp_ast(path, root, relative, rules);
         findings.insert(findings.end(), current.begin(), current.end());
     };
@@ -60,6 +63,9 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
             }
         }
     }
+
+    auto location_findings = check_data_type_locations(paths, root, rules);
+    findings.insert(findings.end(), location_findings.begin(), location_findings.end());
 
     std::sort(findings.begin(), findings.end(), [](const Finding& left, const Finding& right) {
         if (left.path != right.path) {
