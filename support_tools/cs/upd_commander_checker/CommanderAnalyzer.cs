@@ -40,7 +40,7 @@ internal static class CommanderAnalyzer
             }
 
             if (node is InvocationExpressionSyntax or ObjectCreationExpressionSyntax &&
-                IsDirectWork(node, semanticModel))
+                IsDirectWork(new DirectWorkCheckInput(node, semanticModel)))
             {
                 AstFindingEmitter.Add(new NodeFindingInput(
                     context,
@@ -61,13 +61,13 @@ internal static class CommanderAnalyzer
                expression.IsKind(SyntaxKind.ModuloExpression);
     }
 
-    private static bool IsDirectWork(SyntaxNode node, SemanticModel semanticModel)
+    private static bool IsDirectWork(DirectWorkCheckInput input)
     {
-        ITypeSymbol? type = node switch
+        ITypeSymbol? type = input.Node switch
         {
             InvocationExpressionSyntax invocation =>
-                (semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.ContainingType,
-            ObjectCreationExpressionSyntax creation => semanticModel.GetTypeInfo(creation).Type,
+                (input.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.ContainingType,
+            ObjectCreationExpressionSyntax creation => input.SemanticModel.GetTypeInfo(creation).Type,
             _ => null,
         };
         return IsDirectWorkType(type);
