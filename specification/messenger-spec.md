@@ -9,6 +9,8 @@ Messenger は UPD Commander における層間通信専用コンポーネント�
 3. Messenger は受信した内容を対象層の Messenger または Commander へ渡す。
 4. Messenger はゲームルール、UI 表示ルール、保存ルールを判断してはならない。
 5. Messenger は通信形式の変換など、通信成立に必要な最小限の処理のみ許可する。
+6. 複数の引数・返却値が存在する場合、それらを個別に理解して運ぶのではなく、Compresser により単一の通信単位へまとめて扱うことを推奨する。
+7. Messenger は Compresser が生成した payload 内部の業務的意味を原則として解釈してはならない。
 
 ## 2. Messenger が行ってよいこと
 
@@ -20,6 +22,7 @@ Messenger は UPD Commander における層間通信専用コンポーネント�
 - 同期 / 非同期送信
 - 通信失敗の検出
 - 通信契約に沿った最低限のラップ / アンラップ
+- Compresser によって生成された単一の通信単位の配送
 
 ## 3. Messenger が行ってはならないこと
 
@@ -31,6 +34,7 @@ Messenger は UPD Commander における層間通信専用コンポーネント�
 - ゲーム状態更新
 - DB クエリ組み立てを含む Data Processing
 - Process Processing の代替
+- payload 内部の個々の値を読み、その意味に応じて業務判断すること
 
 ## 4. 正式な通信経路
 
@@ -93,16 +97,24 @@ Messenger は原則としてフレームワーク非依存・層外実装非依�
 ```text
 {
   command: "move_player",
-  direction: "left"
+  payload: {
+    direction: "left"
+  }
 }
 ```
 
 ```text
 {
   command: "load_character",
-  character_id: "abc123"
+  payload: {
+    character_id: "abc123"
+  }
 }
 ```
+
+複数値を扱う場合でも Messenger の引数を増やすのではなく、可能な限り Message Contract に従った単一の通信単位へまとめる。
+
+パッケージ化・展開そのものの責務は `compresser-spec.md` に従う。
 
 ## 7. 通信方式
 
