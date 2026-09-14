@@ -2,7 +2,6 @@ import ast
 
 from .models import Finding, ModuleInfo
 
-_COMPONENT_ROLES = {"commander", "messenger", "processing"}
 _BLOAT_ROLES = {"commander", "messenger"}
 _MIN_REDUCIBLE_LINES = 10
 _MIN_REDUCTION_RATIO = 0.20
@@ -12,18 +11,16 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     """Check the UPD one-class/one-container readability rule.
 
     Containerization is recommended rather than mandatory because packing and
-    unpacking has a cost. Individual unpacked signatures are therefore attention
-    items. Commander/Messenger receives a warning only when replacing those
-    signatures with Containers is projected to reduce a meaningful portion of the
-    class: at least 10 lines and about 20 percent of the class body.
+    unpacking has a cost. Individual unpacked class signatures are therefore
+    attention items. Commander/Messenger receives a warning only when replacing
+    those signatures with Containers is projected to reduce a meaningful portion
+    of the class: at least 10 lines and about 20 percent of the class body.
 
-    Compresser modules are intentionally excluded. A Compresser may accept several
-    raw values while constructing class-specific Containers, and one Compresser may
-    serve several related classes as long as readability is preserved.
+    Compresser modules are not treated as ordinary class boundaries for warning
+    escalation: a Compresser may accept several raw values while constructing
+    class-specific Containers, and one Compresser may serve several related classes
+    as long as readability is preserved.
     """
-    if module.role not in _COMPONENT_ROLES:
-        return []
-
     findings: list[Finding] = []
     for class_node in (node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)):
         reducible_lines = 0
