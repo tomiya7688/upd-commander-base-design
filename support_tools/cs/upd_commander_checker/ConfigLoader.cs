@@ -21,13 +21,17 @@ internal static class ConfigLoader
                 throw new ConfigException($"invalid config: {path}");
             }
             var enabledRules = RuleSelection.ReadEnabledRules(document.RootElement);
-            var config = JsonSerializer.Deserialize<CheckerConfig>(text)
+            var config =
+                JsonSerializer.Deserialize<CheckerConfig>(text)
                 ?? throw new ConfigException($"invalid config: {path}");
             config.EnabledRules = enabledRules;
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
-            config.Input = Resolve(new ResolvePathInput(
-                root,
-                string.IsNullOrWhiteSpace(config.Input) ? "." : config.Input));
+            config.Input = Resolve(
+                new ResolvePathInput(
+                    root,
+                    string.IsNullOrWhiteSpace(config.Input) ? "." : config.Input
+                )
+            );
             if (!string.IsNullOrWhiteSpace(config.Output))
             {
                 config.Output = Resolve(new ResolvePathInput(root, config.Output));

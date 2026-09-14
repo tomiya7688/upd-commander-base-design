@@ -8,11 +8,16 @@ internal static class CSharpAstAnalyzer
         DependencyAnalyzer.Analyze(context);
         CommanderAnalyzer.Analyze(context);
         ContainerAnalyzer.Analyze(context);
-        context.Findings.AddRange(ResponsibilityRules.Check(new ResponsibilityCheckInput(
-            input.Root,
-            input.Lines,
-            input.Relative,
-            input.IgnoreRules)));
+        context.Findings.AddRange(
+            ResponsibilityRules.Check(
+                new ResponsibilityCheckInput(
+                    input.Root,
+                    input.Lines,
+                    input.Relative,
+                    input.IgnoreRules
+                )
+            )
+        );
         return context.Findings;
     }
 }

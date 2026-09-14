@@ -18,11 +18,16 @@ internal static class ContainerAnalyzer
         var reducibleLines = 0;
         SyntaxNode? firstOffendingNode = null;
 
-        foreach (var method in context.Analysis.Root.DescendantNodes().OfType<BaseMethodDeclarationSyntax>())
+        foreach (
+            var method in context
+                .Analysis.Root.DescendantNodes()
+                .OfType<BaseMethodDeclarationSyntax>()
+        )
         {
             var parameterCount = method.ParameterList.Parameters.Count;
-            var outputCount = method is MethodDeclarationSyntax declaration &&
-                declaration.ReturnType is TupleTypeSyntax tuple
+            var outputCount =
+                method is MethodDeclarationSyntax declaration
+                && declaration.ReturnType is TupleTypeSyntax tuple
                     ? tuple.Elements.Count
                     : 0;
             var inputViolation = parameterCount > 1;
@@ -31,22 +36,28 @@ internal static class ContainerAnalyzer
             if (inputViolation)
             {
                 firstOffendingNode ??= method;
-                AstFindingEmitter.Add(new NodeFindingInput(
-                    context,
-                    method,
-                    "UPD301",
-                    "multiple inputs reduce readability; consider one Input Container",
-                    "attention"));
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(
+                        context,
+                        method,
+                        "UPD301",
+                        "multiple inputs reduce readability; consider one Input Container",
+                        "attention"
+                    )
+                );
             }
             if (outputViolation)
             {
                 firstOffendingNode ??= method;
-                AstFindingEmitter.Add(new NodeFindingInput(
-                    context,
-                    method,
-                    "UPD302",
-                    "multiple return values reduce readability; consider one Output Container",
-                    "attention"));
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(
+                        context,
+                        method,
+                        "UPD302",
+                        "multiple return values reduce readability; consider one Output Container",
+                        "attention"
+                    )
+                );
             }
 
             if (inputViolation || outputViolation)
@@ -58,17 +69,24 @@ internal static class ContainerAnalyzer
         }
 
         var effectiveLines = context.Analysis.Lines.Count(line => !string.IsNullOrWhiteSpace(line));
-        var substantialCompression = reducibleLines >= MinReducibleLines &&
-            (double)reducibleLines / Math.Max(1, effectiveLines) >= MinReductionRatio;
-        if (context.Analysis.Source.Role is "commander" or "messenger" &&
-            substantialCompression && firstOffendingNode is not null)
+        var substantialCompression =
+            reducibleLines >= MinReducibleLines
+            && (double)reducibleLines / Math.Max(1, effectiveLines) >= MinReductionRatio;
+        if (
+            context.Analysis.Source.Role is "commander" or "messenger"
+            && substantialCompression
+            && firstOffendingNode is not null
+        )
         {
-            AstFindingEmitter.Add(new NodeFindingInput(
-                context,
-                firstOffendingNode,
-                "UPD303",
-                "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
-                "warning"));
+            AstFindingEmitter.Add(
+                new NodeFindingInput(
+                    context,
+                    firstOffendingNode,
+                    "UPD303",
+                    "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
+                    "warning"
+                )
+            );
         }
     }
 

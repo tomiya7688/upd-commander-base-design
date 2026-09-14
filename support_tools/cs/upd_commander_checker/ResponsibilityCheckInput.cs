@@ -6,4 +6,5 @@ internal sealed record ResponsibilityCheckInput(
     CompilationUnitSyntax Root,
     IReadOnlyList<string> Lines,
     string Path,
-    IReadOnlyList<IgnoreRule> IgnoreRules);
+    IReadOnlyList<IgnoreRule> IgnoreRules
+);

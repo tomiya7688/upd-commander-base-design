@@ -3,8 +3,22 @@ namespace UpdCommanderChecker;
 internal static class Classifier
 {
     private static readonly HashSet<string> Layers = ["ui", "process", "data"];
-    private static readonly HashSet<string> Roles = ["commander", "messenger", "processing", "compresser"];
-    private static readonly HashSet<string> AppRoots = ["app", "apps", "application", "applications", "feature", "features"];
+    private static readonly HashSet<string> Roles =
+    [
+        "commander",
+        "messenger",
+        "processing",
+        "compresser",
+    ];
+    private static readonly HashSet<string> AppRoots =
+    [
+        "app",
+        "apps",
+        "application",
+        "applications",
+        "feature",
+        "features",
+    ];
 
     internal static ModuleInfo ClassifyPath(string path)
     {
@@ -14,7 +28,8 @@ internal static class Classifier
             path,
             FindName(new FindNameInput(directories, Layers)),
             FindPathRole(new FindPathRoleInput(directories, stem)),
-            FindApplication(directories));
+            FindApplication(directories)
+        );
     }
 
     internal static ModuleInfo ClassifyReference(string value)
@@ -24,7 +39,8 @@ internal static class Classifier
             value,
             FindName(new FindNameInput(parts, Layers)),
             FindRole(parts),
-            FindApplication(parts));
+            FindApplication(parts)
+        );
     }
 
     private static List<string> PathDirectories(string value)
@@ -40,7 +56,8 @@ internal static class Classifier
 
     private static List<string> SplitParts(string value)
     {
-        var normalized = value.ToLowerInvariant()
+        var normalized = value
+            .ToLowerInvariant()
             .Replace('\\', '/')
             .Replace('.', '/')
             .Replace('-', '/')

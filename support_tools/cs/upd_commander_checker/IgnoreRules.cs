@@ -38,24 +38,30 @@ internal static class IgnoreRules
     {
         foreach (var rule in input.Rules)
         {
-            if (GlobMatch(new GlobMatchInput(input.Path, rule.Pattern)) &&
-                (rule.Code == "all" || rule.Code == input.Code))
+            if (
+                GlobMatch(new GlobMatchInput(input.Path, rule.Pattern))
+                && (rule.Code == "all" || rule.Code == input.Code)
+            )
             {
                 return true;
             }
         }
-        return input.LineText.Contains($"upd: ignore {input.Code}", StringComparison.Ordinal) ||
-               input.LineText.Contains("upd: ignore all", StringComparison.Ordinal);
+        return input.LineText.Contains($"upd: ignore {input.Code}", StringComparison.Ordinal)
+            || input.LineText.Contains("upd: ignore all", StringComparison.Ordinal);
     }
 
     internal static bool GlobMatch(GlobMatchInput input)
     {
         var normalizedPath = input.Path.Replace('\\', '/');
         var normalizedPattern = input.Pattern.Replace('\\', '/');
-        var regex = "^" + Regex.Escape(normalizedPattern)
-            .Replace("\\*\\*", ".*")
-            .Replace("\\*", "[^/]*")
-            .Replace("\\?", "[^/]") + "$";
+        var regex =
+            "^"
+            + Regex
+                .Escape(normalizedPattern)
+                .Replace("\\*\\*", ".*")
+                .Replace("\\*", "[^/]*")
+                .Replace("\\?", "[^/]")
+            + "$";
         return Regex.IsMatch(normalizedPath, regex, RegexOptions.CultureInvariant);
     }
 }
