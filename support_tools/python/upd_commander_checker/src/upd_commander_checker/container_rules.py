@@ -16,11 +16,13 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     those signatures with Containers is projected to reduce a meaningful portion
     of the class: at least 10 lines and about 20 percent of the class body.
 
-    Compresser modules are not treated as ordinary class boundaries for warning
-    escalation: a Compresser may accept several raw values while constructing
-    class-specific Containers, and one Compresser may serve several related classes
-    as long as readability is preserved.
+    Compresser modules are packing boundaries and may intentionally accept several
+    raw values while constructing class-specific Containers, so they are exempt
+    from the ordinary class-signature attention rule.
     """
+    if module.role == "compresser":
+        return []
+
     findings: list[Finding] = []
     for class_node in (node for node in ast.walk(tree) if isinstance(node, ast.ClassDef)):
         reducible_lines = 0
