@@ -9,7 +9,7 @@ const containerMinReducibleLines = 10
 const containerMinReductionRatio = 0.20
 
 func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source ModuleInfo, rel string, lines []string, rules []IgnoreRule) []Finding {
-	if source.Role != "commander" && source.Role != "messenger" && source.Role != "processing" {
+	if source.Role == "compresser" {
 		return nil
 	}
 
@@ -19,7 +19,7 @@ func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source Module
 
 	for _, decl := range file.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
-		if !ok || fn.Recv == nil || !ast.IsExported(fn.Name.Name) {
+		if !ok || fn.Recv == nil {
 			continue
 		}
 		line := fset.Position(fn.Pos()).Line
