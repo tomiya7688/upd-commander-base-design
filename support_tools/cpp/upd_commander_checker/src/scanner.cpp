@@ -14,6 +14,9 @@
 namespace upd_checker {
 namespace {
 
+constexpr int kMinReducibleLines = 10;
+constexpr double kMinReductionRatio = 0.20;
+
 bool is_source_file(const std::filesystem::path& path) {
     const auto ext = path.extension().string();
     return ext == ".cpp" || ext == ".cc" || ext == ".cxx" ||
@@ -91,8 +94,15 @@ std::vector<Finding> scan_file(
     std::vector<Finding> findings;
     std::string line_text;
     int line_number = 0;
+    int effective_lines = 0;
+    int reducible_lines = 0;
+    int first_offending_line = 1;
+    std::string first_offending_text;
     while (std::getline(file, line_text)) {
         ++line_number;
+        if (line_text.find_first_not_of(" \t\r\n") != std::string::npos) {
+            ++effective_lines;
+        }
         std::smatch match;
         if (std::regex_search(line_text, match, include_pattern)) {
             const ModuleInfo target = classify_include(match[1].str());
@@ -105,11 +115,30 @@ std::vector<Finding> scan_file(
 
         if (is_component_role(source.role)) {
             std::smatch method_match;
-            if (std::regex_search(line_text, method_match, method_pattern) && count_parameters(method_match[1].str()) > 1) {
-                add_finding(findings, relative, line_number, "UPD301", "class operation has multiple inputs; use one Input Container", "warning", line_text, rules);
+            int parameter_count = 0;
+            bool input_violation = false;
+            if (std::regex_search(line_text, method_match, method_pattern)) {
+                parameter_count = count_parameters(method_match[1].str());
+                input_violation = parameter_count > 1;
             }
-            if (std::regex_search(line_text, tuple_return_pattern)) {
-                add_finding(findings, relative, line_number, "UPD302", "class operation returns multiple values; use one Output Container", "warning", line_text, rules);
+            const bool output_violation = std::regex_search(line_text, tuple_return_pattern);
+
+            if (input_violation) {
+                if (reducible_lines == 0) {
+                    first_offending_line = line_number;
+                    first_offending_text = line_text;
+                }
+                add_finding(findings, relative, line_number, "UPD301", "multiple inputs reduce readability; consider one Input Container", "attention", line_text, rules);
+            }
+            if (output_violation) {
+                if (reducible_lines == 0) {
+                    first_offending_line = line_number;
+                    first_offending_text = line_text;
+                }
+                add_finding(findings, relative, line_number, "UPD302", "multiple return values reduce readability; consider one Output Container", "attention", line_text, rules);
+            }
+            if (input_violation || output_violation) {
+                reducible_lines += std::max(0, parameter_count - 1) + (output_violation ? 1 : 0);
             }
         }
 
@@ -125,6 +154,23 @@ std::vector<Finding> scan_file(
         if (std::regex_search(line_text, io_pattern)) {
             add_finding(findings, relative, line_number, "UPD203", "Commander direct I/O/API call", "error", line_text, rules);
         }
+    }
+
+    const bool substantial_compression =
+        reducible_lines >= kMinReducibleLines &&
+        static_cast<double>(reducible_lines) /
+                static_cast<double>(std::max(1, effective_lines)) >=
+            kMinReductionRatio;
+    if ((source.role == "commander" || source.role == "messenger") && substantial_compression) {
+        add_finding(
+            findings,
+            relative,
+            first_offending_line,
+            "UPD303",
+            "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
+            "warning",
+            first_offending_text,
+            rules);
     }
     return findings;
 }
