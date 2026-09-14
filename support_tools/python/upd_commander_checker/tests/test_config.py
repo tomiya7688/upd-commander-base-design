@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from upd_commander_checker.config import load_config
+from upd_commander_checker.config import ConfigError, load_config
 
 
 class ConfigTest(unittest.TestCase):
@@ -35,6 +35,34 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(str((root / "reports" / "check.txt").resolve()), config.output_path)
             self.assertEqual(("generated/**",), config.ignore)
             self.assertTrue(config.warnings_as_errors)
+
+    def test_invalid_json_raises_config_error(self) -> None:
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_dir = root / "config"
+            config_dir.mkdir()
+            (config_dir / "path.json").write_text("{ invalid", encoding="utf-8")
+            try:
+                os.chdir(root)
+                with self.assertRaises(ConfigError):
+                    load_config()
+            finally:
+                os.chdir(original)
+
+    def test_invalid_field_type_raises_config_error(self) -> None:
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_dir = root / "config"
+            config_dir.mkdir()
+            (config_dir / "path.json").write_text('{"ignore": [1]}', encoding="utf-8")
+            try:
+                os.chdir(root)
+                with self.assertRaises(ConfigError):
+                    load_config()
+            finally:
+                os.chdir(original)
 
 
 if __name__ == "__main__":
