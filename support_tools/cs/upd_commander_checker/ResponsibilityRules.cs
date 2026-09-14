@@ -80,8 +80,24 @@ internal static class ResponsibilityRules
 
     private static bool HasBehavior(TypeDeclarationSyntax type)
     {
-        return type.Members.Any(member =>
-            member is MethodDeclarationSyntax or ConstructorDeclarationSyntax or
-            PropertyDeclarationSyntax or EventDeclarationSyntax);
+        return type.Members.Any(MemberHasBehavior);
+    }
+
+    private static bool MemberHasBehavior(MemberDeclarationSyntax member)
+    {
+        if (member is MethodDeclarationSyntax or ConstructorDeclarationSyntax or
+            DestructorDeclarationSyntax or OperatorDeclarationSyntax or
+            ConversionOperatorDeclarationSyntax or IndexerDeclarationSyntax or
+            EventDeclarationSyntax)
+        {
+            return true;
+        }
+        if (member is PropertyDeclarationSyntax property)
+        {
+            return property.ExpressionBody is not null ||
+                property.AccessorList?.Accessors.Any(accessor =>
+                    accessor.Body is not null || accessor.ExpressionBody is not null) == true;
+        }
+        return false;
     }
 }
