@@ -11,13 +11,15 @@ var appRoots = map[string]bool{"app": true, "apps": true, "application": true, "
 
 func ClassifyPath(path string) ModuleInfo {
 	directories := pathDirectories(path)
+	scope := applicationScope(directories)
 	stem := fileStem(path)
-	return ModuleInfo{Path: path, Layer: findName(directories, layerNames), Role: findPathRole(directories, stem), ApplicationID: findApplication(directories)}
+	return ModuleInfo{Path: path, Layer: findName(scope, layerNames), Role: findPathRole(scope, stem), ApplicationID: findApplication(directories)}
 }
 
 func ClassifyImport(name string) ModuleInfo {
 	parts := splitParts(name)
-	return ModuleInfo{Path: name, Layer: findName(parts, layerNames), Role: findRole(parts), ApplicationID: findApplication(parts)}
+	scope := applicationScope(parts)
+	return ModuleInfo{Path: name, Layer: findName(scope, layerNames), Role: findRole(scope), ApplicationID: findApplication(parts)}
 }
 
 func pathDirectories(value string) []string {
@@ -42,9 +44,9 @@ func splitParts(value string) []string {
 }
 
 func findName(parts []string, candidates map[string]bool) string {
-	for _, part := range parts {
-		if candidates[part] {
-			return part
+	for index := len(parts) - 1; index >= 0; index-- {
+		if candidates[parts[index]] {
+			return parts[index]
 		}
 	}
 	return ""
@@ -63,7 +65,8 @@ func findPathRole(directories []string, stem string) string {
 }
 
 func findRole(parts []string) string {
-	for _, part := range parts {
+	for index := len(parts) - 1; index >= 0; index-- {
+		part := parts[index]
 		if roleNames[part] {
 			return part
 		}
@@ -84,10 +87,19 @@ func findRole(parts []string) string {
 }
 
 func findApplication(parts []string) string {
-	for index, part := range parts {
-		if appRoots[part] && index+1 < len(parts) {
+	for index := len(parts) - 2; index >= 0; index-- {
+		if appRoots[parts[index]] {
 			return parts[index+1]
 		}
 	}
 	return ""
+}
+
+func applicationScope(parts []string) []string {
+	for index := len(parts) - 2; index >= 0; index-- {
+		if appRoots[parts[index]] {
+			return parts[index+2:]
+		}
+	}
+	return parts
 }
