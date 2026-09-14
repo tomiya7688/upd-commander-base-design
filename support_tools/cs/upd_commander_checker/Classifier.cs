@@ -12,8 +12,8 @@ internal static class Classifier
         var stem = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
         return new ModuleInfo(
             path,
-            FindName(directories, Layers),
-            FindPathRole(directories, stem),
+            FindName(new FindNameInput(directories, Layers)),
+            FindPathRole(new FindPathRoleInput(directories, stem)),
             FindApplication(directories));
     }
 
@@ -22,7 +22,7 @@ internal static class Classifier
         var parts = SplitParts(value);
         return new ModuleInfo(
             value,
-            FindName(parts, Layers),
+            FindName(new FindNameInput(parts, Layers)),
             FindRole(parts),
             FindApplication(parts));
     }
@@ -48,11 +48,11 @@ internal static class Classifier
         return normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 
-    private static string FindName(IEnumerable<string> parts, HashSet<string> candidates)
+    private static string FindName(FindNameInput input)
     {
-        foreach (var part in parts)
+        foreach (var part in input.Parts)
         {
-            if (candidates.Contains(part))
+            if (input.Candidates.Contains(part))
             {
                 return part;
             }
@@ -60,16 +60,16 @@ internal static class Classifier
         return string.Empty;
     }
 
-    private static string FindPathRole(IEnumerable<string> directories, string stem)
+    private static string FindPathRole(FindPathRoleInput input)
     {
-        var directoryRole = FindName(directories, Roles);
+        var directoryRole = FindName(new FindNameInput(input.Directories, Roles));
         if (!string.IsNullOrEmpty(directoryRole))
         {
             return directoryRole;
         }
         foreach (var role in Roles)
         {
-            if (stem == role || stem.EndsWith("_" + role, StringComparison.Ordinal))
+            if (input.Stem == role || input.Stem.EndsWith("_" + role, StringComparison.Ordinal))
             {
                 return role;
             }
