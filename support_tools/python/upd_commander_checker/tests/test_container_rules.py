@@ -32,7 +32,15 @@ class Worker:
             ModuleInfo(Path("worker.py"), "process", "processing"),
         )
 
-        self.assertFalse(any(finding.code == "UPD302" for finding in findings))
+        outer_upd302 = [
+            finding
+            for finding in findings
+            if finding.code == "UPD302" and finding.line == 3
+        ]
+        self.assertEqual([], outer_upd302)
+
+        nested_upd302 = [finding for finding in findings if finding.code == "UPD302"]
+        self.assertEqual(1, len(nested_upd302))
 
     def test_outer_tuple_return_still_triggers_upd302(self) -> None:
         tree = ast.parse(
