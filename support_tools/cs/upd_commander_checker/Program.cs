@@ -4,7 +4,17 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        var config = ConfigLoader.Load();
+        CheckerConfig config;
+        try
+        {
+            config = ConfigLoader.Load();
+        }
+        catch (ConfigException exception)
+        {
+            Console.WriteLine($"CONFIG ERROR: {exception.Message}");
+            return 2;
+        }
+
         var target = config.Input;
         var output = config.Output;
         var ignores = new List<string>(config.Ignore);

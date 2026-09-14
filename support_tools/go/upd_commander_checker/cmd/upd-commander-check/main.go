@@ -19,7 +19,11 @@ func (items *stringList) Set(value string) error {
 }
 
 func main() {
-	config := checker.LoadConfig()
+	config, configErr := checker.LoadConfig()
+	if configErr != nil {
+		fmt.Printf("CONFIG ERROR: %s\n", configErr)
+		os.Exit(2)
+	}
 	var ignores stringList
 	var output string
 	var warningsAsErrors bool

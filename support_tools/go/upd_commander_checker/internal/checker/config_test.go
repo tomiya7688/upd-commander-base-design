@@ -25,7 +25,10 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(original) }()
 
-	config := LoadConfig()
+	config, err := LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if config.Input != filepath.Join(root, "project") {
 		t.Fatalf("unexpected input: %s", config.Input)
 	}
@@ -37,5 +40,25 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	}
 	if !config.WarningsAsErrors {
 		t.Fatal("warnings_as_errors was not loaded")
+	}
+}
+
+func TestInvalidConfigReturnsError(t *testing.T) {
+	original, _ := os.Getwd()
+	root := t.TempDir()
+	configDir := filepath.Join(root, "config")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(`{"ignore":[1]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(original) }()
+
+	if _, err := LoadConfig(); err == nil {
+		t.Fatal("expected config error")
 	}
 }

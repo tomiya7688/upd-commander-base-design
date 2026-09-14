@@ -2,6 +2,7 @@ package checker
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -13,15 +14,31 @@ type Config struct {
 	WarningsAsErrors bool     `json:"warnings_as_errors"`
 }
 
-func LoadConfig() Config {
+func LoadConfig() (Config, error) {
 	config := Config{Input: "."}
 	path := findConfigPath()
 	if path == "" {
-		return config
+		return config, nil
 	}
 	data, err := os.ReadFile(path)
-	if err != nil || json.Unmarshal(data, &config) != nil {
-		return Config{Input: "."}
+	if err != nil {
+		return Config{}, fmt.Errorf("invalid config: %s", path)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return Config{}, fmt.Errorf("invalid config: %s", path)
+	}
+	if value, ok := raw["input"]; ok && json.Unmarshal(value, &config.Input) != nil {
+		return Config{}, fmt.Errorf("invalid config field: input")
+	}
+	if value, ok := raw["output"]; ok && json.Unmarshal(value, &config.Output) != nil {
+		return Config{}, fmt.Errorf("invalid config field: output")
+	}
+	if value, ok := raw["ignore"]; ok && json.Unmarshal(value, &config.Ignore) != nil {
+		return Config{}, fmt.Errorf("invalid config field: ignore")
+	}
+	if value, ok := raw["warnings_as_errors"]; ok && json.Unmarshal(value, &config.WarningsAsErrors) != nil {
+		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
 	}
 	if config.Input == "" {
 		config.Input = "."
@@ -31,7 +48,7 @@ func LoadConfig() Config {
 	if config.Output != "" {
 		config.Output = resolveConfigPath(base, config.Output)
 	}
-	return config
+	return config, nil
 }
 
 func findConfigPath() string {

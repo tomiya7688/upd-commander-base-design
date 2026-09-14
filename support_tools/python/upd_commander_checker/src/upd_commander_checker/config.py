@@ -4,6 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+class ConfigError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class CheckerConfig:
     input_path: str = "."
@@ -19,16 +23,29 @@ def load_config() -> CheckerConfig:
 
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return CheckerConfig()
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ConfigError(f"invalid config: {path}") from exc
+
+    if not isinstance(data, dict):
+        raise ConfigError(f"invalid config: {path}")
+    if "input" in data and not isinstance(data["input"], str):
+        raise ConfigError("invalid config field: input")
+    if "output" in data and not isinstance(data["output"], str):
+        raise ConfigError("invalid config field: output")
+    if "ignore" in data and (
+        not isinstance(data["ignore"], list)
+        or not all(isinstance(item, str) for item in data["ignore"])
+    ):
+        raise ConfigError("invalid config field: ignore")
+    if "warnings_as_errors" in data and not isinstance(data["warnings_as_errors"], bool):
+        raise ConfigError("invalid config field: warnings_as_errors")
 
     base = path.parent.parent
-    input_path = _resolve_path(base, str(data.get("input", ".")))
-    output_value = str(data.get("output", ""))
+    input_path = _resolve_path(base, data.get("input", "."))
+    output_value = data.get("output", "")
     output_path = _resolve_path(base, output_value) if output_value else ""
-    ignore_value = data.get("ignore", [])
-    ignore = tuple(str(item) for item in ignore_value) if isinstance(ignore_value, list) else ()
-    warnings_as_errors = bool(data.get("warnings_as_errors", False))
+    ignore = tuple(data.get("ignore", []))
+    warnings_as_errors = data.get("warnings_as_errors", False)
     return CheckerConfig(input_path, output_path, ignore, warnings_as_errors)
 
 

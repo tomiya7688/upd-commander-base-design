@@ -15,7 +15,8 @@ internal static class ConfigLoader
         try
         {
             var text = File.ReadAllText(path);
-            var config = JsonSerializer.Deserialize<CheckerConfig>(text) ?? new CheckerConfig();
+            var config = JsonSerializer.Deserialize<CheckerConfig>(text)
+                ?? throw new ConfigException($"invalid config: {path}");
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(new ResolvePathInput(
                 root,
@@ -26,13 +27,21 @@ internal static class ConfigLoader
             }
             return config;
         }
+        catch (ConfigException)
+        {
+            throw;
+        }
         catch (IOException)
         {
-            return new CheckerConfig();
+            throw new ConfigException($"invalid config: {path}");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new ConfigException($"invalid config: {path}");
         }
         catch (JsonException)
         {
-            return new CheckerConfig();
+            throw new ConfigException($"invalid config: {path}");
         }
     }
 
