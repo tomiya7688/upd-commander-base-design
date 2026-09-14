@@ -22,6 +22,25 @@ func TestCrossApplicationInternalImportIsReported(t *testing.T) {
 	assertHasCode(t, findings, "UPD102")
 }
 
+func TestNestedApplicationInternalImportIsReported(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "apps", "product", "applications", "settings", "ui", "screen_processing.go")
+	writeTestFile(t, path, "package ui\nimport _ \"example/apps/product/applications/profile/process/profile_processing\"\n")
+	findings := ScanPath(root, nil)
+	assertHasCode(t, findings, "UPD102")
+}
+
+func TestNestedApplicationClassifierUsesNearestScope(t *testing.T) {
+	module := ClassifyPath("apps/product/ui/commander/applications/settings/data/screen.go")
+	if module.ApplicationID != "settings" || module.Layer != "data" || module.Role != "" {
+		t.Fatalf("unexpected path classification: %+v", module)
+	}
+	dependency := ClassifyImport("example/apps/product/ui/commander/applications/profile/process/profile_processing")
+	if dependency.ApplicationID != "profile" || dependency.Layer != "process" || dependency.Role != "processing" {
+		t.Fatalf("unexpected import classification: %+v", dependency)
+	}
+}
+
 func TestCrossApplicationMessengerIsAllowed(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
