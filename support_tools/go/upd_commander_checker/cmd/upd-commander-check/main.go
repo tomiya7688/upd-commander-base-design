@@ -45,24 +45,29 @@ func main() {
 	findings := checker.ScanPath(target, ignores)
 	errors := 0
 	warnings := 0
+	attentions := 0
 	lines := []string{}
 	for _, finding := range findings {
-		level := "E"
-		if finding.Severity == "warning" {
+		level := "A"
+		switch finding.Severity {
+		case "error":
+			level = "E"
+			errors++
+		case "warning":
 			level = "W"
 			warnings++
-		} else {
-			errors++
+		default:
+			attentions++
 		}
 		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message))
 	}
 
 	if errors > 0 || warningsAsErrors && warnings > 0 {
-		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d", errors, warnings))
+		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
 		finish(lines, output, 1)
 	}
-	if warnings > 0 {
-		lines = append(lines, fmt.Sprintf("OK w=%d", warnings))
+	if warnings > 0 || attentions > 0 {
+		lines = append(lines, fmt.Sprintf("OK w=%d a=%d", warnings, attentions))
 	} else {
 		lines = append(lines, "OK")
 	}
