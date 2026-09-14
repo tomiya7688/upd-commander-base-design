@@ -50,6 +50,38 @@ Windows向け成果物には `THIRD_PARTY_NOTICES.md` と `licenses/LLVM-LICENSE
 
 コメントや文字列内の疑似C++コードはASTノードにならないため、規則判定対象になりません。パス分類、glob、IgnoreのようにC++構文ではない処理にはASTを使用しません。
 
+## compile_commands.json
+
+実プロジェクトと同じinclude path、macro、C++標準、platform define等でASTを構築するため、C++ checkerは `compile_commands.json` を自動利用します。
+
+探索順:
+
+1. 解析対象ファイルの親ディレクトリ
+2. その親階層をルート方向へ順次探索
+3. 最初に見つかった `compile_commands.json` を使用
+4. 対象sourceのcompile commandがあればその引数を優先
+5. header等で直接commandが無ければdatabase内の関連translation unitの引数を利用
+6. databaseが無い、または利用可能なcommandが無い場合は従来の軽量fallbackを使用
+
+fallbackは次の内容です。
+
+```text
+-x c++
+-std=c++17
+-I<scan root>
+-I<target file parent>
+```
+
+Compilation Databaseから取得したcompiler executable、`-c`、source入力、`-o`等の出力専用引数はlibclang解析用には渡しません。compile commandのworking directoryは保持するため、相対 `-I` 等も実ビルドと同じ基準で解決されます。
+
+CMakeプロジェクトなら一般的には次のように生成できます。
+
+```bash
+cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+`build/compile_commands.json` をプロジェクトルートへ配置またはリンクする構成でも利用できます。
+
 ## 実行
 
 ```bash

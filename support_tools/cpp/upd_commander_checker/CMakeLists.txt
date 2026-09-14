@@ -44,6 +44,7 @@ endif()
 add_library(upd_checker_core
     src/ast_analyzer.cpp
     src/classifier.cpp
+    src/compile_arguments.cpp
     src/config.cpp
     src/data_type_location_rules.cpp
     src/dependency_rules.cpp

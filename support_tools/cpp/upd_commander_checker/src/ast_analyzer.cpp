@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "classifier.hpp"
+#include "compile_arguments.hpp"
 #include "dependency_rules.hpp"
 
 namespace upd_checker {
@@ -99,11 +100,7 @@ bool is_arithmetic(CXCursor cursor) {
     for (unsigned index = 0; index < token_count; ++index) {
         unsigned token_offset = 0;
         clang_getSpellingLocation(
-            clang_getTokenLocation(unit, tokens[index]),
-            nullptr,
-            nullptr,
-            nullptr,
-            &token_offset);
+            clang_getTokenLocation(unit, tokens[index]), nullptr, nullptr, nullptr, &token_offset);
         if (token_offset != cursor_offset) {
             continue;
         }
@@ -122,8 +119,7 @@ std::string qualified_name(CXCursor cursor) {
     std::vector<std::string> names;
     CXCursor current = cursor;
     while (!clang_Cursor_isNull(current)) {
-        const auto kind = clang_getCursorKind(current);
-        if (kind == CXCursor_TranslationUnit) {
+        if (clang_getCursorKind(current) == CXCursor_TranslationUnit) {
             break;
         }
         const std::string name = cx_text(clang_getCursorSpelling(current));
@@ -164,10 +160,8 @@ bool is_direct_work(CXCursor cursor) {
         clang_Cursor_isNull(referenced) ? cursor : referenced)));
     const std::string qualified = lower(
         clang_Cursor_isNull(referenced) ? name : qualified_name(referenced));
-    return name == "fopen" ||
-           name.rfind("curl_", 0) == 0 ||
-           name.rfind("sqlite3_", 0) == 0 ||
-           qualified.find("::json::") != std::string::npos ||
+    return name == "fopen" || name.rfind("curl_", 0) == 0 ||
+           name.rfind("sqlite3_", 0) == 0 || qualified.find("::json::") != std::string::npos ||
            qualified.find("nlohmann::json") != std::string::npos;
 }
 
@@ -175,7 +169,7 @@ int tuple_output_count(CXCursor cursor) {
     if (clang_getCursorKind(cursor) == CXCursor_Constructor) {
         return 0;
     }
-    std::string type = cx_text(clang_getTypeSpelling(clang_getCursorResultType(cursor)));
+    const std::string type = cx_text(clang_getTypeSpelling(clang_getCursorResultType(cursor)));
     const auto pair_position = type.find("pair<");
     if (pair_position != std::string::npos) {
         return 2;
@@ -248,17 +242,10 @@ void analyze_dependency(AnalysisState& state, CXCursor cursor) {
     if (include_name.empty()) {
         return;
     }
-    const ModuleInfo target = classify_include(include_name);
-    const auto result = dependency_result(state.source, target);
-    if (!result.has_value()) {
-        return;
+    const auto result = dependency_result(state.source, classify_include(include_name));
+    if (result.has_value()) {
+        add_finding(state, cursor_line(cursor), result->code, result->message, result->severity);
     }
-    add_finding(
-        state,
-        cursor_line(cursor),
-        result->code,
-        result->message,
-        result->severity);
 }
 
 void analyze_function(AnalysisState& state, CXCursor cursor) {
@@ -303,12 +290,10 @@ void analyze_class(AnalysisState& state, CXCursor cursor) {
     if (!clang_isCursorDefinition(cursor)) {
         return;
     }
-    const bool responsibility_bearing = has_direct_behavior(cursor);
-    if (responsibility_bearing) {
+    if (has_direct_behavior(cursor)) {
         ++state.major_class_count;
-        const int line = cursor_line(cursor);
         if (state.major_class_count == 2) {
-            state.second_class_line = line;
+            state.second_class_line = cursor_line(cursor);
         }
     }
 
@@ -337,12 +322,10 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     if (kind == CXCursor_InclusionDirective) {
         analyze_dependency(state, cursor);
     }
-    if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl ||
-        kind == CXCursor_ClassTemplate) {
+    if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl || kind == CXCursor_ClassTemplate) {
         analyze_class(state, cursor);
     }
-    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod ||
-        kind == CXCursor_Constructor) {
+    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod || kind == CXCursor_Constructor) {
         analyze_function(state, cursor);
     }
 
@@ -351,15 +334,9 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
             kind == CXCursor_WhileStmt || kind == CXCursor_DoStmt) {
             add_finding(state, cursor_line(cursor), "UPD201", "Commander loop", "warning");
         } else if (kind == CXCursor_BinaryOperator && is_arithmetic(cursor)) {
-            add_finding(
-                state, cursor_line(cursor), "UPD202", "Commander calculation", "warning");
+            add_finding(state, cursor_line(cursor), "UPD202", "Commander calculation", "warning");
         } else if (is_direct_work(cursor)) {
-            add_finding(
-                state,
-                cursor_line(cursor),
-                "UPD203",
-                "Commander direct I/O/API call",
-                "error");
+            add_finding(state, cursor_line(cursor), "UPD203", "Commander direct I/O/API call", "error");
         }
     }
 
@@ -386,18 +363,20 @@ std::vector<Finding> analyze_cpp_ast(
         }
     }
 
-    const std::string include_root = "-I" + root.string();
-    const std::string include_parent = "-I" + path.parent_path().string();
-    const char* arguments[] = {
-        "-x", "c++", "-std=c++17", include_root.c_str(), include_parent.c_str()};
+    const std::vector<std::string> argument_storage = resolve_compile_arguments(path, root);
+    std::vector<const char*> arguments;
+    arguments.reserve(argument_storage.size());
+    for (const auto& argument : argument_storage) {
+        arguments.push_back(argument.c_str());
+    }
 
     CXIndex index = clang_createIndex(0, 0);
     const std::string filename = path.string();
     CXTranslationUnit unit = clang_parseTranslationUnit(
         index,
         filename.c_str(),
-        arguments,
-        static_cast<int>(sizeof(arguments) / sizeof(arguments[0])),
+        arguments.data(),
+        static_cast<int>(arguments.size()),
         nullptr,
         0,
         CXTranslationUnit_DetailedPreprocessingRecord | CXTranslationUnit_KeepGoing);

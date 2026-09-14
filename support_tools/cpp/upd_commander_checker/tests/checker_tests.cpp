@@ -46,9 +46,7 @@ void test_cross_application_dependency() {
 void test_data_commander_warning() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_data_commanders";
     std::filesystem::remove_all(root);
-    write_file(
-        root / "data" / "save_commander.cpp",
-        "#include \"data/cache_commander.hpp\"\n");
+    write_file(root / "data" / "save_commander.cpp", "#include \"data/cache_commander.hpp\"\n");
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD103"));
     std::filesystem::remove_all(root);
 }
@@ -92,9 +90,7 @@ void test_ast_ignores_comment_and_string_pseudo_syntax() {
 void test_ast_detects_real_loop() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ast_loop";
     std::filesystem::remove_all(root);
-    write_file(
-        root / "process" / "loop_commander.cpp",
-        "void run() { for (int i = 0; i < 3; ++i) {} }\n");
+    write_file(root / "process" / "loop_commander.cpp", "void run() { for (int i = 0; i < 3; ++i) {} }\n");
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD201"));
     std::filesystem::remove_all(root);
 }
@@ -111,18 +107,64 @@ void test_ast_detects_multiline_parameters() {
     std::filesystem::remove_all(root);
 }
 
+void test_compile_commands_arguments_are_used() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_compile_commands";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "custom" / "feature.hpp",
+        "#ifdef PROJECT_FEATURE\n"
+        "#define FEATURE_FLAG 1\n"
+        "constexpr int feature_value = 1;\n"
+        "#else\n"
+        "#define FEATURE_FLAG 0\n"
+        "#endif\n");
+    write_file(
+        root / "process" / "feature_commander.cpp",
+        "#include \"feature.hpp\"\n"
+        "#if FEATURE_FLAG\n"
+        "int run() { return feature_value + 1; }\n"
+        "#else\n"
+        "int run() { return 0; }\n"
+        "#endif\n");
+    write_file(
+        root / "compile_commands.json",
+        "[{\"directory\":\"" + root.generic_string() +
+            "\",\"arguments\":[\"clang++\",\"-Icustom\",\"-DPROJECT_FEATURE=1\",\"-c\","
+            "\"process/feature_commander.cpp\",\"-o\",\"feature.o\"],"
+            "\"file\":\"process/feature_commander.cpp\"}]\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD202"));
+    std::filesystem::remove_all(root);
+}
+
+void test_header_uses_related_compile_command() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_header_commands";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "header_commander.hpp",
+        "#ifdef HEADER_FEATURE\n"
+        "inline int run() { return 1 + 2; }\n"
+        "#else\n"
+        "inline int run() { return 0; }\n"
+        "#endif\n");
+    write_file(root / "driver.cpp", "#include \"process/header_commander.hpp\"\n");
+    write_file(
+        root / "compile_commands.json",
+        "[{\"directory\":\"" + root.generic_string() +
+            "\",\"arguments\":[\"clang++\",\"-DHEADER_FEATURE=1\",\"-c\",\"driver.cpp\"],"
+            "\"file\":\"driver.cpp\"}]\n");
+    assert(has_code(upd_checker::scan_path((root / "process" / "header_commander.hpp").string(), {}), "UPD202"));
+    std::filesystem::remove_all(root);
+}
+
 void test_checker_package_name_is_not_commander() {
-    const auto module = upd_checker::classify_path(
-        "support_tools/cpp/upd_commander_checker/src/scanner.cpp");
+    const auto module = upd_checker::classify_path("support_tools/cpp/upd_commander_checker/src/scanner.cpp");
     assert(module.role.empty());
 }
 
 void test_enabled_rules_load_from_config() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_enabled_rules";
     std::filesystem::remove_all(root);
-    write_file(
-        root / "config" / "path.json",
-        "{\"enabled_rules\":[\"UPD101\",\"UPD202\"]}\n");
+    write_file(root / "config" / "path.json", "{\"enabled_rules\":[\"UPD101\",\"UPD202\"]}\n");
     const auto config = upd_checker::load_config((root / "checker.exe").string());
     assert(config.enabled_rules_configured);
     assert(config.enabled_rules.size() == 2);
@@ -136,8 +178,7 @@ void test_enabled_rules_filter_findings() {
         {"second.cpp", 2, "UPD202", "message", "warning"}};
     const std::vector<std::string> enabled = {"UPD202"};
     const std::vector<std::string> none;
-    const auto filtered = upd_checker::filter_enabled_findings(
-        {findings, enabled, true});
+    const auto filtered = upd_checker::filter_enabled_findings({findings, enabled, true});
     assert(filtered.size() == 1);
     assert(filtered.front().code == "UPD202");
     assert(upd_checker::filter_enabled_findings({findings, none, true}).empty());
@@ -166,6 +207,8 @@ int main() {
     test_ast_ignores_comment_and_string_pseudo_syntax();
     test_ast_detects_real_loop();
     test_ast_detects_multiline_parameters();
+    test_compile_commands_arguments_are_used();
+    test_header_uses_related_compile_command();
     test_checker_package_name_is_not_commander();
     test_inline_ignore();
     test_enabled_rules_filter_findings();
