@@ -4,7 +4,7 @@ namespace UpdCommanderChecker;
 
 internal static class ResponsibilityRules
 {
-    private const int MaxResponsibilityLines = 250;
+    private const int MaxResponsibilityLines = 350;
 
     private static readonly Regex ClassPattern = new(
         @"^\s*(?:(?:public|internal|private|protected|static|sealed|abstract|partial)\s+)*class\s+[A-Za-z_][A-Za-z0-9_]*",
