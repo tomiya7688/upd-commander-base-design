@@ -5,8 +5,8 @@ import (
 	"go/token"
 )
 
-const containerBloatOperationThreshold = 3
-const containerBloatExcessSlotThreshold = 6
+const containerMinReducibleLines = 10
+const containerMinReductionRatio = 0.20
 
 func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source ModuleInfo, rel string, lines []string, rules []IgnoreRule) []Finding {
 	if source.Role != "commander" && source.Role != "messenger" && source.Role != "processing" {
@@ -14,8 +14,7 @@ func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source Module
 	}
 
 	var findings []Finding
-	offendingOperations := 0
-	excessSlots := 0
+	reducibleLines := 0
 	firstLine := 1
 
 	for _, decl := range file.Decls {
@@ -28,29 +27,27 @@ func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source Module
 			firstLine = line
 		}
 
-		offends := false
 		inputCount := fieldCount(fn.Type.Params)
-		if inputCount > 1 {
-			offends = true
-			excessSlots += inputCount - 1
+		outputCount := fieldCount(fn.Type.Results)
+		inputViolation := inputCount > 1
+		outputViolation := outputCount > 1
+
+		if inputViolation {
 			addFinding(&findings, rel, line, "UPD301", "multiple inputs reduce readability; consider one Input Container", "attention", lines, rules)
 		}
-
-		outputCount := fieldCount(fn.Type.Results)
-		if outputCount > 1 {
-			offends = true
-			excessSlots += outputCount - 1
+		if outputViolation {
 			addFinding(&findings, rel, line, "UPD302", "multiple return values reduce readability; consider one Output Container", "attention", lines, rules)
 		}
 
-		if offends {
-			offendingOperations++
+		if inputViolation || outputViolation {
+			signatureLines := signatureReducibleLines(fn, fset)
+			excessValues := maxInt(0, inputCount-1) + maxInt(0, outputCount-1)
+			reducibleLines += maxInt(signatureLines, excessValues)
 		}
 	}
 
-	if (source.Role == "commander" || source.Role == "messenger") &&
-		(offendingOperations >= containerBloatOperationThreshold || excessSlots >= containerBloatExcessSlotThreshold) {
-		addFinding(&findings, rel, firstLine, "UPD303", "uncontainerized signatures contribute to Commander/Messenger bloat", "warning", lines, rules)
+	if (source.Role == "commander" || source.Role == "messenger") && largeCompressionExpected(reducibleLines, len(lines)) {
+		addFinding(&findings, rel, firstLine, "UPD303", "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger", "warning", lines, rules)
 	}
 
 	return findings
@@ -69,4 +66,30 @@ func fieldCount(list *ast.FieldList) int {
 		}
 	}
 	return count
+}
+
+func signatureReducibleLines(fn *ast.FuncDecl, fset *token.FileSet) int {
+	start := fset.Position(fn.Pos()).Line
+	end := start
+	if fn.Type.Params != nil {
+		end = maxInt(end, fset.Position(fn.Type.Params.Closing).Line)
+	}
+	if fn.Type.Results != nil {
+		end = maxInt(end, fset.Position(fn.Type.Results.Closing).Line)
+	}
+	return maxInt(0, end-start)
+}
+
+func largeCompressionExpected(reducibleLines int, totalLines int) bool {
+	if reducibleLines < containerMinReducibleLines {
+		return false
+	}
+	return float64(reducibleLines)/float64(maxInt(1, totalLines)) >= containerMinReductionRatio
+}
+
+func maxInt(left int, right int) int {
+	if left > right {
+		return left
+	}
+	return right
 }
