@@ -34,6 +34,21 @@ internal static class IgnoreRules
         return rules;
     }
 
+    internal static bool IsPathIgnored(PathIgnoreCheckInput input)
+    {
+        foreach (var rule in input.Rules)
+        {
+            if (
+                rule.Code == "all"
+                && GlobMatch(new GlobMatchInput(input.Path, rule.Pattern))
+            )
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     internal static bool IsIgnored(IgnoreCheckInput input)
     {
         foreach (var rule in input.Rules)
