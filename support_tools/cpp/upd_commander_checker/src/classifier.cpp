@@ -11,7 +11,7 @@ namespace upd_checker {
 namespace {
 
 const std::unordered_set<std::string> kLayers = {"ui", "process", "data"};
-const std::unordered_set<std::string> kRoles = {"commander", "messenger", "processing"};
+const std::unordered_set<std::string> kRoles = {"commander", "messenger", "processing", "compresser"};
 const std::unordered_set<std::string> kAppRoots = {
     "app", "apps", "application", "applications", "feature", "features"};
 
@@ -77,6 +77,9 @@ std::string find_role(const std::vector<std::string>& parts) {
         }
         if (part.size() >= 10 && part.rfind("processing") == part.size() - 10) {
             return "processing";
+        }
+        if (part.size() >= 10 && part.rfind("compresser") == part.size() - 10) {
+            return "compresser";
         }
     }
     return {};
