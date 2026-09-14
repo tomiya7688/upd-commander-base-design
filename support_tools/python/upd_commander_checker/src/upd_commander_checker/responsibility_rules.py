@@ -25,6 +25,7 @@ def check_responsibilities(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     for class_node in classes:
         method_count = sum(
             isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name != "__init__"
             for node in class_node.body
         )
         end_line = getattr(class_node, "end_lineno", class_node.lineno)
@@ -37,6 +38,22 @@ def check_responsibilities(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     "UPD401",
                     f"class {class_node.name} is too large for one responsibility "
                     f"(lines={line_count}, methods={method_count})",
+                    "warning",
+                )
+            )
+
+    if not classes:
+        end_line = max(
+            (getattr(node, "end_lineno", getattr(node, "lineno", 1)) for node in getattr(tree, "body", [])),
+            default=1,
+        )
+        if end_line > _MAX_CLASS_LINES:
+            findings.append(
+                Finding(
+                    module.path,
+                    1,
+                    "UPD401",
+                    "file/module approximation is too large for one responsibility",
                     "warning",
                 )
             )
