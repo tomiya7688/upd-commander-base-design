@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - "support_tools/**"
+      - "licenses/**"
+      - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/checker-self-check.yml"
   push:
     branches: [main]
     paths:
       - "support_tools/**"
+      - "licenses/**"
+      - "THIRD_PARTY_NOTICES.md"
       - ".github/workflows/checker-self-check.yml"
 
 jobs:
@@ -183,3 +187,18 @@ jobs:
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .
+  license-packaging:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package Roslyn and LLVM notices
+        shell: pwsh
+        run: |
+          $roslynOutput = Join-Path $env:RUNNER_TEMP "roslyn-package"
+          $llvmOutput = Join-Path $env:RUNNER_TEMP "llvm-package"
+          ./support_tools/copy_third_party_licenses.ps1 -Component roslyn -OutputDirectory $roslynOutput
+          ./support_tools/copy_third_party_licenses.ps1 -Component llvm -OutputDirectory $llvmOutput
+          if (-not (Test-Path "$roslynOutput/THIRD_PARTY_NOTICES.md")) { throw "Roslyn notice missing" }
+          if (-not (Test-Path "$roslynOutput/licenses/ROSLYN-LICENSE.txt")) { throw "Roslyn license missing" }
+          if (-not (Test-Path "$llvmOutput/THIRD_PARTY_NOTICES.md")) { throw "LLVM notice missing" }
+          if (-not (Test-Path "$llvmOutput/licenses/LLVM-LICENSE.txt")) { throw "LLVM license missing" }

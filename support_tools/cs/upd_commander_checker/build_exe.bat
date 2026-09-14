@@ -12,4 +12,6 @@ if not exist dist\config\path.json (
   >>dist\config\path.json echo   "warnings_as_errors": false
   >>dist\config\path.json echo }
 )
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\..\copy_third_party_licenses.ps1" -Component roslyn -OutputDirectory "%CD%\dist"
+if errorlevel 1 exit /b %errorlevel%
 exit /b 0

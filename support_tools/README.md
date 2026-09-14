@@ -16,6 +16,8 @@ support_tools/
 
 各言語のツールは独立してパッケージ化し、他言語実装と依存させません。
 
+配布物に含まれる第三者コンポーネントとライセンスは [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md) を参照してください。ビルドスクリプトは該当するライセンス文書を成果物へコピーします。
+
 共通設定は [`config/path.json`](config-path.md) を使用します。ビルド時に実行ファイル側へ既定設定を自動生成し、入力先・出力先・Ignore・warnings-as-errors を保存できます。
 
 ## Compresser / Container 対応
