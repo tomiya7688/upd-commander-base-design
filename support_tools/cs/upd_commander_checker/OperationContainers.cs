@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace UpdCommanderChecker;
 
 internal sealed record ScanPathInput(
@@ -23,16 +25,6 @@ internal sealed record GlobMatchInput(
     string Path,
     string Pattern);
 
-internal sealed record AddFindingInput(
-    List<Finding> Findings,
-    string Path,
-    int Line,
-    string Code,
-    string Message,
-    string Severity,
-    string LineText,
-    IReadOnlyList<IgnoreRule> IgnoreRules);
-
 internal sealed record FinishInput(
     IEnumerable<string> Lines,
     string Output,
@@ -51,6 +43,7 @@ internal sealed record ResolvePathInput(
     string Value);
 
 internal sealed record ResponsibilityCheckInput(
+    CompilationUnitSyntax Root,
     IReadOnlyList<string> Lines,
     string Path,
     IReadOnlyList<IgnoreRule> IgnoreRules);
