@@ -140,8 +140,8 @@ void test_included_header_reference_is_not_main_file_reference() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_header_reference";
     std::filesystem::remove_all(root);
     write_file(root / "models.hpp", "struct First { int value; }; struct Second { int value; };\n");
-    write_file(root / "helper.hpp", "#include \"models.hpp\"\nFirst helper_value;\n");
-    write_file(root / "consumer.cpp", "#include \"helper.hpp\"\nint value = 0;\n");
+    write_file(root / "helper.inc", "#include \"models.hpp\"\nFirst helper_value;\n");
+    write_file(root / "consumer.cpp", "#include \"helper.inc\"\nint value = 0;\n");
     const auto findings = upd_checker::scan_path(root.string(), {});
     assert(has_code_message(findings, "UPD403", "First"));
     assert(!has_code_message(findings, "UPD404", "First"));
