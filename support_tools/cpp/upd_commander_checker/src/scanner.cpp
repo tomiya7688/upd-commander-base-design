@@ -20,6 +20,21 @@ bool is_source_file(const std::filesystem::path& path) {
            ext == ".hpp" || ext == ".h" || ext == ".hh" || ext == ".hxx";
 }
 
+bool is_component_role(const std::string& role) {
+    return role == "commander" || role == "messenger" || role == "processing";
+}
+
+int count_parameters(const std::string& parameters) {
+    std::string text = parameters;
+    text.erase(std::remove_if(text.begin(), text.end(), [](unsigned char ch) {
+        return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+    }), text.end());
+    if (text.empty() || text == "void") {
+        return 0;
+    }
+    return 1 + static_cast<int>(std::count(text.begin(), text.end(), ','));
+}
+
 std::string relative_text(
     const std::filesystem::path& path,
     const std::filesystem::path& root) {
@@ -69,8 +84,9 @@ std::vector<Finding> scan_file(
     const std::regex include_pattern(R"(^\s*#\s*include\s*[<\"]([^>\"]+)[>\"])");
     const std::regex loop_pattern(R"(\b(for|while)\s*\()");
     const std::regex calc_pattern(R"([^+*/%<>=!-][+*/%][^=+*/])");
-    const std::regex io_pattern(
-        R"((std::(ifstream|ofstream|fstream)|fopen\s*\(|sqlite|curl_|json::))");
+    const std::regex io_pattern(R"((std::(ifstream|ofstream|fstream)|fopen\s*\(|sqlite|curl_|json::))");
+    const std::regex method_pattern(R"(^\s*(?:virtual\s+|static\s+|inline\s+|constexpr\s+|consteval\s+|friend\s+)*[A-Za-z_][A-Za-z0-9_:<>,*&\s]*\s+[A-Za-z_~][A-Za-z0-9_:~]*\s*\(([^()]*)\)\s*(?:const\s*)?(?:override\s*)?(?:final\s*)?(?:\{|;)$)");
+    const std::regex tuple_return_pattern(R"(^\s*std::(tuple|pair)\s*<)");
 
     std::vector<Finding> findings;
     std::string line_text;
@@ -82,18 +98,18 @@ std::vector<Finding> scan_file(
             const ModuleInfo target = classify_include(match[1].str());
             const std::string message = dependency_error(source, target);
             if (!message.empty()) {
-                const std::string code = message == "cross-application internal dependency"
-                    ? "UPD102"
-                    : "UPD101";
-                add_finding(
-                    findings,
-                    relative,
-                    line_number,
-                    code,
-                    message,
-                    "error",
-                    line_text,
-                    rules);
+                const std::string code = message == "cross-application internal dependency" ? "UPD102" : "UPD101";
+                add_finding(findings, relative, line_number, code, message, "error", line_text, rules);
+            }
+        }
+
+        if (is_component_role(source.role)) {
+            std::smatch method_match;
+            if (std::regex_search(line_text, method_match, method_pattern) && count_parameters(method_match[1].str()) > 1) {
+                add_finding(findings, relative, line_number, "UPD301", "class operation has multiple inputs; use one Input Container", "warning", line_text, rules);
+            }
+            if (std::regex_search(line_text, tuple_return_pattern)) {
+                add_finding(findings, relative, line_number, "UPD302", "class operation returns multiple values; use one Output Container", "warning", line_text, rules);
             }
         }
 
