@@ -6,15 +6,13 @@ namespace UpdCommanderChecker;
 internal static class DataTypeLocationRules
 {
     private sealed record DataTypeSource(string File, string Relative, CompilationUnitSyntax Root);
-
     private sealed record DataTypeCandidate(string File, string Relative, int Line, string Name);
+    private sealed record ParseInput(IReadOnlyList<string> Files, string Root);
+    private sealed record ReferenceInput(CompilationUnitSyntax Root, string Name);
 
-    internal static List<Finding> Check(
-        IReadOnlyList<string> files,
-        string root,
-        IReadOnlyList<IgnoreRule> ignoreRules)
+    internal static List<Finding> Check(DataTypeLocationRuleContext input)
     {
-        var sources = Parse(files, root);
+        var sources = Parse(new ParseInput(input.Files, input.Root));
         var candidates = new List<DataTypeCandidate>();
         foreach (var source in sources)
         {
@@ -38,13 +36,13 @@ internal static class DataTypeLocationRules
         {
             var external = sources.Any(source =>
                 !string.Equals(source.File, candidate.File, StringComparison.OrdinalIgnoreCase) &&
-                References(source.Root, candidate.Name));
+                References(new ReferenceInput(source.Root, candidate.Name)));
             var code = external ? "UPD404" : "UPD403";
             if (IgnoreRules.IsIgnored(new IgnoreCheckInput(
                     candidate.Relative,
                     code,
                     string.Empty,
-                    ignoreRules)))
+                    input.IgnoreRules)))
             {
                 continue;
             }
@@ -60,10 +58,10 @@ internal static class DataTypeLocationRules
         return findings;
     }
 
-    private static List<DataTypeSource> Parse(IReadOnlyList<string> files, string root)
+    private static List<DataTypeSource> Parse(ParseInput input)
     {
         var result = new List<DataTypeSource>();
-        foreach (var file in files)
+        foreach (var file in input.Files)
         {
             string text;
             try
@@ -82,7 +80,7 @@ internal static class DataTypeLocationRules
             }
             result.Add(new DataTypeSource(
                 file,
-                Path.GetRelativePath(root, file).Replace('\\', '/'),
+                Path.GetRelativePath(input.Root, file).Replace('\\', '/'),
                 tree.GetCompilationUnitRoot()));
         }
         return result;
@@ -111,10 +109,10 @@ internal static class DataTypeLocationRules
         return false;
     }
 
-    private static bool References(CompilationUnitSyntax root, string name)
+    private static bool References(ReferenceInput input)
     {
-        return root.DescendantNodes().Any(node =>
-            node is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name ||
-            node is GenericNameSyntax generic && generic.Identifier.ValueText == name);
+        return input.Root.DescendantNodes().Any(node =>
+            node is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == input.Name ||
+            node is GenericNameSyntax generic && generic.Identifier.ValueText == input.Name);
     }
 }
