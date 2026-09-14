@@ -11,6 +11,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", default=None)
     parser.add_argument("--ignore", action="append", default=[], metavar="GLOB")
     parser.add_argument("--warnings-as-errors", action="store_true")
+    parser.add_argument("--attentions-as-errors", action="store_true")
     return parser
 
 
@@ -21,6 +22,7 @@ def main() -> int:
     output = args.output if args.output is not None else config.output_path
     ignores = tuple(config.ignore) + tuple(args.ignore)
     warnings_as_errors = config.warnings_as_errors or args.warnings_as_errors
+    attentions_as_errors = args.attentions_as_errors
 
     if not target.exists():
         return _finish([f"E UPD000 {target}: missing"], output, 2)
@@ -38,7 +40,11 @@ def main() -> int:
     error_count = sum(item.severity == "error" for item in findings)
     warning_count = sum(item.severity == "warning" for item in findings)
     attention_count = sum(item.severity == "attention" for item in findings)
-    failed = error_count > 0 or warnings_as_errors and warning_count > 0
+    failed = (
+        error_count > 0
+        or warnings_as_errors and warning_count > 0
+        or attentions_as_errors and attention_count > 0
+    )
     if failed:
         lines.append(
             f"FAIL e={error_count} w={warning_count} a={attention_count}"
