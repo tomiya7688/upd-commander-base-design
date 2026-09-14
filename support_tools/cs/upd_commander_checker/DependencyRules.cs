@@ -5,8 +5,11 @@ internal static class DependencyRules
     private static readonly HashSet<string> BoundaryApiNames =
         ["contract", "contracts", "dto", "dtos", "shared"];
 
-    internal static string? GetError(ModuleInfo source, ModuleInfo target)
+    internal static string? GetError(DependencyCheckInput input)
     {
+        var source = input.Source;
+        var target = input.Target;
+
         if (!string.IsNullOrEmpty(source.ApplicationId) &&
             !string.IsNullOrEmpty(target.ApplicationId) &&
             source.ApplicationId != target.ApplicationId &&
