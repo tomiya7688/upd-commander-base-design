@@ -4,7 +4,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -43,6 +42,11 @@ int cursor_line(CXCursor cursor) {
     unsigned line = 1;
     clang_getSpellingLocation(clang_getCursorLocation(cursor), nullptr, &line, nullptr, nullptr);
     return static_cast<int>(line);
+}
+
+bool is_file_scope_type(CXCursor cursor) {
+    const auto parent_kind = clang_getCursorKind(clang_getCursorSemanticParent(cursor));
+    return parent_kind == CXCursor_TranslationUnit || parent_kind == CXCursor_Namespace;
 }
 
 bool has_behavior(CXCursor cursor) {
@@ -101,7 +105,8 @@ std::vector<DataTypeCandidate> data_types_in_file(
             const auto kind = clang_getCursorKind(cursor);
             if ((kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl ||
                  kind == CXCursor_ClassTemplate) &&
-                clang_isCursorDefinition(cursor) && !has_behavior(cursor)) {
+                is_file_scope_type(cursor) && clang_isCursorDefinition(cursor) &&
+                !has_behavior(cursor)) {
                 const std::string name = cx_text(clang_getCursorSpelling(cursor));
                 if (!name.empty()) {
                     state.result->push_back(
