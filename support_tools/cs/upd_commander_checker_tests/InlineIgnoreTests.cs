@@ -54,10 +54,7 @@ public sealed class InlineIgnoreTests
             findings,
             item => item.Code == "UPD403" && item.Message.Contains("First")
         );
-        Assert.Contains(
-            findings,
-            item => item.Code == "UPD403" && item.Message.Contains("Second")
-        );
+        Assert.Contains(findings, item => item.Code == "UPD403" && item.Message.Contains("Second"));
     }
 
     [Fact]
