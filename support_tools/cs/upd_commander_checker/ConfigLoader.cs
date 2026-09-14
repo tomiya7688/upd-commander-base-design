@@ -31,17 +31,17 @@ internal static class ConfigLoader
         {
             throw;
         }
-        catch (IOException exception)
+        catch (IOException)
         {
-            throw new ConfigException($"invalid config: {path}", exception);
+            throw new ConfigException($"invalid config: {path}");
         }
-        catch (UnauthorizedAccessException exception)
+        catch (UnauthorizedAccessException)
         {
-            throw new ConfigException($"invalid config: {path}", exception);
+            throw new ConfigException($"invalid config: {path}");
         }
-        catch (JsonException exception)
+        catch (JsonException)
         {
-            throw new ConfigException($"invalid config: {path}", exception);
+            throw new ConfigException($"invalid config: {path}");
         }
     }
 
