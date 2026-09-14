@@ -41,6 +41,16 @@ void test_cross_application_dependency() {
     std::filesystem::remove_all(root);
 }
 
+void test_data_commander_warning() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_data_commanders";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "data" / "save_commander.cpp",
+        "#include \"data/cache_commander.hpp\"\n");
+    assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD103"));
+    std::filesystem::remove_all(root);
+}
+
 void test_boundary_like_directory_is_not_boundary_api() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_contractor";
     std::filesystem::remove_all(root);
@@ -84,6 +94,7 @@ void test_inline_ignore() {
 int main() {
     test_ui_to_data_dependency();
     test_cross_application_dependency();
+    test_data_commander_warning();
     test_boundary_like_directory_is_not_boundary_api();
     test_boundary_layer_violation_keeps_upd101();
     test_checker_package_name_is_not_commander();
