@@ -36,6 +36,7 @@ func checkDataTypeLocations(paths []string, root string, rules []IgnoreRule) []F
 				if ok {
 					types = append(types, typeSpec)
 				}
+			}
 		}
 		if len(types) < 2 {
 			continue
