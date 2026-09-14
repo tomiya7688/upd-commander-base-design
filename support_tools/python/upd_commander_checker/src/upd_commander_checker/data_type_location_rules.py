@@ -17,7 +17,7 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
         classes = [
             node for node in getattr(tree, "body", []) if isinstance(node, ast.ClassDef)
         ]
-        if not any(not _is_data_only(node) for node in classes):
+        if len(classes) < 2:
             continue
         candidates.extend(
             (path, node.lineno, node.name) for node in classes if _is_data_only(node)
@@ -36,7 +36,7 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     relative,
                     line,
                     "UPD404",
-                    f"data-only type {name} shares a file with a behavioral type and is referenced from another file",
+                    f"data-only type {name} shares a file with another type and is referenced from another file",
                     "warning",
                 )
             )
@@ -46,7 +46,7 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     relative,
                     line,
                     "UPD403",
-                    f"data-only type {name} shares a file with a behavioral type",
+                    f"data-only type {name} shares a file with another type",
                     "attention",
                 )
             )
