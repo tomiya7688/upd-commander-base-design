@@ -1,7 +1,7 @@
 import ast
 
 from .classifier import classify_import
-from .models import Finding, ModuleInfo
+from .models import DependencyRuleResult, Finding, ModuleInfo
 
 
 def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
@@ -9,28 +9,21 @@ def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     for node in ast.walk(tree):
         for imported_name in _imported_names(node):
             target_layer, target_role, target_application = classify_import(imported_name)
-            message, code = _dependency_error(
+            result = _dependency_result(
                 module,
                 target_layer,
                 target_role,
                 target_application,
                 imported_name,
             )
-            if message:
-                findings.append(
-                    Finding(module.path, getattr(node, "lineno", 1), code, message)
-                )
-                continue
-
-            warning = _data_commander_warning(module, target_layer, target_role)
-            if warning:
+            if result:
                 findings.append(
                     Finding(
                         module.path,
                         getattr(node, "lineno", 1),
-                        "UPD103",
-                        warning,
-                        "warning",
+                        result.code,
+                        result.message,
+                        result.severity,
                     )
                 )
     return findings
@@ -44,13 +37,13 @@ def _imported_names(node: ast.AST) -> list[str]:
     return []
 
 
-def _dependency_error(
+def _dependency_result(
     source: ModuleInfo,
     target_layer: str | None,
     target_role: str | None,
     target_application: str | None,
     imported_name: str,
-) -> tuple[str | None, str]:
+) -> DependencyRuleResult | None:
     if _cross_application_internal_dependency(
         source,
         target_layer,
@@ -58,34 +51,42 @@ def _dependency_error(
         target_application,
         imported_name,
     ):
-        return "direct dependency on another Application internal module", "UPD102"
+        return DependencyRuleResult(
+            "UPD102",
+            "direct dependency on another Application internal module",
+            "error",
+        )
 
     if source.layer == "ui" and target_layer == "data":
-        return "UI layer must not depend directly on Data layer", "UPD101"
+        return DependencyRuleResult("UPD101", "UI layer must not depend directly on Data layer", "error")
     if source.layer == "data" and target_layer == "ui":
-        return "Data layer must not depend directly on UI layer", "UPD101"
+        return DependencyRuleResult("UPD101", "Data layer must not depend directly on UI layer", "error")
     if source.role == "messenger" and target_role == "processing":
-        return "Messenger must not depend directly on Processing", "UPD101"
+        return DependencyRuleResult("UPD101", "Messenger must not depend directly on Processing", "error")
     if source.role == "processing" and target_role == "processing":
-        return "Processing modules must not depend directly on other Processing modules", "UPD101"
+        return DependencyRuleResult(
+            "UPD101",
+            "Processing modules must not depend directly on other Processing modules",
+            "error",
+        )
     if source.role == "commander" and target_role == "processing":
         if source.layer and target_layer and source.layer != target_layer:
-            return "Commander must not depend on Processing in another layer", "UPD101"
-    return None, "UPD101"
-
-
-def _data_commander_warning(
-    source: ModuleInfo,
-    target_layer: str | None,
-    target_role: str | None,
-) -> str | None:
+            return DependencyRuleResult(
+                "UPD101",
+                "Commander must not depend on Processing in another layer",
+                "error",
+            )
     if (
         source.layer == "data"
         and source.role == "commander"
         and target_layer == "data"
         and target_role == "commander"
     ):
-        return "Data Commander should not communicate directly with another Data Commander"
+        return DependencyRuleResult(
+            "UPD103",
+            "Data Commander should not communicate directly with another Data Commander",
+            "warning",
+        )
     return None
 
 

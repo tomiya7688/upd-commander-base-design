@@ -15,32 +15,20 @@ internal static class DependencyAnalyzer
             }
 
             var target = Classifier.ClassifyReference(reference);
-            var dependency = new DependencyCheckInput(context.Analysis.Source, target);
-            var message = DependencyRules.GetError(dependency);
-            if (message is not null)
+            var result = DependencyRules.Evaluate(new DependencyCheckInput(
+                context.Analysis.Source,
+                target));
+            if (result is null)
             {
-                var code = message == "cross-application internal dependency"
-                    ? "UPD102"
-                    : "UPD101";
-                AstFindingEmitter.Add(new NodeFindingInput(
-                    context,
-                    usingDirective,
-                    code,
-                    message,
-                    "error"));
                 continue;
             }
 
-            var warning = DependencyRules.GetWarning(dependency);
-            if (warning is not null)
-            {
-                AstFindingEmitter.Add(new NodeFindingInput(
-                    context,
-                    usingDirective,
-                    "UPD103",
-                    warning,
-                    "warning"));
-            }
+            AstFindingEmitter.Add(new NodeFindingInput(
+                context,
+                usingDirective,
+                result.Code,
+                result.Message,
+                result.Severity));
         }
     }
 }

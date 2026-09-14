@@ -19,4 +19,10 @@ struct ModuleInfo {
     std::string application_id;
 };
 
+struct DependencyRuleResult {
+    std::string code;
+    std::string message;
+    std::string severity;
+};
+
 }  // namespace upd_checker

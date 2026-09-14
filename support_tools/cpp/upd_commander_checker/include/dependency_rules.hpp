@@ -1,12 +1,13 @@
 #pragma once
 
-#include <string>
+#include <optional>
 
 #include "models.hpp"
 
 namespace upd_checker {
 
-std::string dependency_error(const ModuleInfo& source, const ModuleInfo& target);
-std::string data_commander_warning(const ModuleInfo& source, const ModuleInfo& target);
+std::optional<DependencyRuleResult> dependency_result(
+    const ModuleInfo& source,
+    const ModuleInfo& target);
 
 }  // namespace upd_checker
