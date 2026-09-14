@@ -15,4 +15,7 @@ internal sealed class CheckerConfig
 
     [JsonPropertyName("warnings_as_errors")]
     public bool WarningsAsErrors { get; set; }
+
+    [JsonPropertyName("enabled_rules")]
+    public List<string>? EnabledRules { get; set; }
 }

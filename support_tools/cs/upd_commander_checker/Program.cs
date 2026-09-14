@@ -53,7 +53,9 @@ internal static class Program
                 2));
         }
 
-        var findings = Scanner.ScanPath(new ScanPathInput(target, ignores));
+        var findings = RuleSelection.Filter(new RuleSelectionInput(
+            Scanner.ScanPath(new ScanPathInput(target, ignores)),
+            config.EnabledRules));
         var errors = 0;
         var warnings = 0;
         var attentions = 0;

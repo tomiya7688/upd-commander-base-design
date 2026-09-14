@@ -4,6 +4,8 @@
 #include <string>
 
 #include "classifier.hpp"
+#include "config.hpp"
+#include "rule_selection.hpp"
 #include "scanner.hpp"
 
 namespace {
@@ -115,6 +117,34 @@ void test_checker_package_name_is_not_commander() {
     assert(module.role.empty());
 }
 
+void test_enabled_rules_load_from_config() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_enabled_rules";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "config" / "path.json",
+        "{\"enabled_rules\":[\"UPD101\",\"UPD202\"]}\n");
+    const auto config = upd_checker::load_config((root / "checker.exe").string());
+    assert(config.enabled_rules_configured);
+    assert(config.enabled_rules.size() == 2);
+    assert(config.enabled_rules.front() == "UPD101");
+    std::filesystem::remove_all(root);
+}
+
+void test_enabled_rules_filter_findings() {
+    const std::vector<upd_checker::Finding> findings = {
+        {"first.cpp", 1, "UPD101", "message", "error"},
+        {"second.cpp", 2, "UPD202", "message", "warning"}};
+    const std::vector<std::string> enabled = {"UPD202"};
+    const std::vector<std::string> none;
+    const auto filtered = upd_checker::filter_enabled_findings(
+        {findings, enabled, true});
+    assert(filtered.size() == 1);
+    assert(filtered.front().code == "UPD202");
+    assert(upd_checker::filter_enabled_findings({findings, none, true}).empty());
+    assert(upd_checker::filter_enabled_findings({findings, none, false}).size() == 2);
+    assert(!upd_checker::enabled_rules_are_valid({"UPD999"}));
+}
+
 void test_inline_ignore() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ignore";
     std::filesystem::remove_all(root);
@@ -138,5 +168,7 @@ int main() {
     test_ast_detects_multiline_parameters();
     test_checker_package_name_is_not_commander();
     test_inline_ignore();
+    test_enabled_rules_filter_findings();
+    test_enabled_rules_load_from_config();
     return 0;
 }

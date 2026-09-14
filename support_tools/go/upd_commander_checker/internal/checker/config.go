@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	Input            string   `json:"input"`
-	Output           string   `json:"output"`
-	Ignore           []string `json:"ignore"`
-	WarningsAsErrors bool     `json:"warnings_as_errors"`
+	Input            string    `json:"input"`
+	Output           string    `json:"output"`
+	Ignore           []string  `json:"ignore"`
+	WarningsAsErrors bool      `json:"warnings_as_errors"`
+	EnabledRules     *[]string `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
@@ -39,6 +40,13 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["warnings_as_errors"]; ok && json.Unmarshal(value, &config.WarningsAsErrors) != nil {
 		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
+	}
+	if value, ok := raw["enabled_rules"]; ok {
+		var enabled []string
+		if string(value) == "null" || json.Unmarshal(value, &enabled) != nil || ValidateEnabledRules(enabled) != nil {
+			return Config{}, fmt.Errorf("invalid config field: enabled_rules")
+		}
+		config.EnabledRules = &enabled
 	}
 	if config.Input == "" {
 		config.Input = "."

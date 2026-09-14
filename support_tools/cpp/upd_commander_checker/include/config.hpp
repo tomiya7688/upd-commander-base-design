@@ -12,6 +12,8 @@ struct Config {
     std::string output;
     std::vector<std::string> ignore;
     bool warnings_as_errors = false;
+    std::vector<std::string> enabled_rules;
+    bool enabled_rules_configured = false;
 };
 
 Config load_config(const std::string& executable_path);

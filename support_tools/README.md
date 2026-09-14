@@ -42,7 +42,7 @@ Python は AST、Go は go/ast を利用して検出します。C++ / C# は軽�
 
 現在:
 
-- Python: ASTベースチェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、EXEビルド対応
+- Python: ASTベースチェッカー、CUI/GUI、ルール選択、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、EXEビルド対応
 - Go: go/astベースチェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、単体EXEビルド対応
 - C++: 軽量静的チェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、CMake/EXEビルド対応
 - C#: 軽量静的チェッカー、短出力、Ignore、Application境界、Compresser分類、Container境界チェック、Checker自身のContainer化、単一EXE publish対応

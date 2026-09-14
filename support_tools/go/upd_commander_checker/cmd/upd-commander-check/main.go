@@ -48,7 +48,7 @@ func main() {
 		finish([]string{fmt.Sprintf("E UPD000 %s missing", target)}, output, 2)
 	}
 
-	findings := checker.ScanPath(target, ignores)
+	findings := checker.FilterEnabledFindings(checker.ScanPath(target, ignores), config.EnabledRules)
 	errors := 0
 	warnings := 0
 	attentions := 0

@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from .config import ConfigError, load_config
+from .rule_selection import filter_enabled_findings
 from .scanner import scan_path
 
 
@@ -31,7 +32,9 @@ def main() -> int:
     if not target.exists():
         return _finish([f"E UPD000 {target}: missing"], output, 2)
 
-    findings = scan_path(target, ignores)
+    findings = filter_enabled_findings(
+        scan_path(target, ignores), config.enabled_rules
+    )
     lines = []
     for finding in findings:
         level = {"error": "E", "warning": "W", "attention": "A"}.get(

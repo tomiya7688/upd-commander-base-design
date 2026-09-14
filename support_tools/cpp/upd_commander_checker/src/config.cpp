@@ -1,5 +1,7 @@
 #include "config.hpp"
 
+#include "rule_selection.hpp"
+
 #include <cctype>
 #include <filesystem>
 #include <fstream>
@@ -197,12 +199,21 @@ Config load_config(const std::string& executable_path) {
         !try_bool_value(text, "warnings_as_errors", warnings_as_errors)) {
         throw ConfigError("invalid config field: warnings_as_errors");
     }
+    std::vector<std::string> enabled_rules;
+    const bool enabled_rules_configured = contains_key(text, "enabled_rules");
+    if (enabled_rules_configured &&
+        (!try_string_array(text, "enabled_rules", enabled_rules) ||
+         !enabled_rules_are_valid(enabled_rules))) {
+        throw ConfigError("invalid config field: enabled_rules");
+    }
 
     const auto base = path.parent_path().parent_path();
     config.input = resolve_path(base, input.empty() ? "." : input);
     config.output = output.empty() ? "" : resolve_path(base, output);
     config.ignore = std::move(ignore);
     config.warnings_as_errors = warnings_as_errors;
+    config.enabled_rules = std::move(enabled_rules);
+    config.enabled_rules_configured = enabled_rules_configured;
     return config;
 }
 
