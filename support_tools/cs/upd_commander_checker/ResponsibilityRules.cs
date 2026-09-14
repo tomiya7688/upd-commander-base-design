@@ -21,7 +21,8 @@ internal static class ResponsibilityRules
         {
             var span = type.GetLocation().GetLineSpan();
             var line = span.StartLinePosition.Line + 1;
-            var lineText = line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
+            var lineText =
+                line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
             var lineCount = span.EndLinePosition.Line - span.StartLinePosition.Line + 1;
             var methodCount = type.Members.OfType<MethodDeclarationSyntax>().Count();
             if (lineCount <= MaxResponsibilityLines && methodCount <= MaxResponsibilityMethods)
@@ -73,7 +74,8 @@ internal static class ResponsibilityRules
         {
             var second = majorTypes[1];
             var line = second.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-            var lineText = line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
+            var lineText =
+                line > 0 && line <= input.Lines.Count ? input.Lines[line - 1] : string.Empty;
             if (
                 !IgnoreRules.IsIgnored(
                     new IgnoreCheckInput(input.Path, "UPD402", lineText, input.IgnoreRules)
