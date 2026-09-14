@@ -87,6 +87,15 @@ bool glob_match(const std::string& path, const std::string& pattern) {
     }
 }
 
+bool is_path_ignored(const std::string& path, const std::vector<IgnoreRule>& rules) {
+    for (const auto& rule : rules) {
+        if (rule.code == "all" && glob_match(path, rule.pattern)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool is_ignored(
     const std::string& path,
     const std::string& code,

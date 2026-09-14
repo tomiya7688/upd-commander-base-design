@@ -73,4 +73,8 @@ if(BUILD_TESTING)
     add_executable(upd_checker_regression_matrix_tests tests/regression_matrix_tests.cpp)
     target_link_libraries(upd_checker_regression_matrix_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_regression_matrix_tests COMMAND upd_checker_regression_matrix_tests)
+
+    add_executable(upd_checker_path_ignore_tests tests/path_ignore_tests.cpp)
+    target_link_libraries(upd_checker_path_ignore_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_path_ignore_tests COMMAND upd_checker_path_ignore_tests)
 endif()
