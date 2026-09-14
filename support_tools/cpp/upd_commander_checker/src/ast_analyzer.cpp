@@ -86,9 +86,35 @@ bool is_component_role(const std::string& role) {
 }
 
 bool is_arithmetic(CXCursor cursor) {
-    const auto op = clang_Cursor_getBinaryOpcode(cursor);
-    return op == CX_BO_Add || op == CX_BO_Sub || op == CX_BO_Mul ||
-           op == CX_BO_Div || op == CX_BO_Rem;
+    unsigned cursor_offset = 0;
+    clang_getSpellingLocation(
+        clang_getCursorLocation(cursor), nullptr, nullptr, nullptr, &cursor_offset);
+
+    CXToken* tokens = nullptr;
+    unsigned token_count = 0;
+    CXTranslationUnit unit = clang_Cursor_getTranslationUnit(cursor);
+    clang_tokenize(unit, clang_getCursorExtent(cursor), &tokens, &token_count);
+    bool arithmetic = false;
+    for (unsigned index = 0; index < token_count; ++index) {
+        unsigned token_offset = 0;
+        clang_getSpellingLocation(
+            clang_getTokenLocation(unit, tokens[index]),
+            nullptr,
+            nullptr,
+            nullptr,
+            &token_offset);
+        if (token_offset != cursor_offset) {
+            continue;
+        }
+        const std::string token = cx_text(clang_getTokenSpelling(unit, tokens[index]));
+        arithmetic = token == "+" || token == "-" || token == "*" ||
+                     token == "/" || token == "%";
+        break;
+    }
+    if (tokens != nullptr) {
+        clang_disposeTokens(unit, tokens, token_count);
+    }
+    return arithmetic;
 }
 
 std::string qualified_name(CXCursor cursor) {
@@ -331,7 +357,7 @@ std::vector<Finding> analyze_cpp_ast(
         index,
         filename.c_str(),
         arguments,
-        static_cast<int>(std::size(arguments)),
+        static_cast<int>(sizeof(arguments) / sizeof(arguments[0])),
         nullptr,
         0,
         CXTranslationUnit_DetailedPreprocessingRecord | CXTranslationUnit_KeepGoing);
