@@ -10,7 +10,8 @@
 - [Application Boundary](application-boundary.md) — Application / Sub Application の境界と3層構造の再帰適用
 - [Commander Specification](commander-spec.md) — Commander の責務と禁止事項
 - [Messenger Specification](messenger-spec.md) — 層間通信の責務と正式経路
-- [Compresser Specification](compresser-spec.md) — 複数の引数・返却値を単一の通信単位へまとめ、展開する責務
+- [Compresser Specification](compresser-spec.md) — 複数の引数・返却値をクラス単位の Container としてまとめる責務
+- [Compresser / Container Checker Rules](compresser-check-rules.md) — Container 化の Attention / Warning 判定と Self Check 規定
 - [Processing Specification](processing-spec.md) — 各層の実処理の責務
 - [Dependency Rules](dependency-rules.md) — 許可・禁止される依存関係
 - [Message Contract](message-contract.md) — 層間メッセージの契約
@@ -40,6 +41,8 @@
 本文中の「しなければならない」「禁止する」は原則として必須規定です。
 
 「推奨する」「してよい」は、プロジェクト固有事情に応じて変更可能です。ただし、その変更によって最上位規定を破ってはなりません。
+
+Container 化は可読性改善を目的とする推奨規定であり、一般プロジェクトでは一律必須とはしません。パッケージ化自体のコストも考慮し、個別の未Container化は Attention、大幅な Commander / Messenger 圧縮が見込める場合のみ Warning とします。
 
 `implementation-quality.md` は推奨事項ではなく、通常品質の実装として受け入れるための適合条件を定義します。
 
