@@ -3,12 +3,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UpdCommanderChecker;
 
-internal sealed record DataTypeSource(string File, string Relative, CompilationUnitSyntax Root);
-
-internal sealed record DataTypeCandidate(string File, string Relative, int Line, string Name);
-
 internal static class DataTypeLocationRules
 {
+    private sealed record DataTypeSource(string File, string Relative, CompilationUnitSyntax Root);
+
+    private sealed record DataTypeCandidate(string File, string Relative, int Line, string Name);
+
     internal static List<Finding> Check(
         IReadOnlyList<string> files,
         string root,
