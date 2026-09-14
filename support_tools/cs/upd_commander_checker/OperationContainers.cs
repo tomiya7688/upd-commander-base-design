@@ -45,3 +45,7 @@ internal sealed record FindNameInput(
 internal sealed record FindPathRoleInput(
     IEnumerable<string> Directories,
     string Stem);
+
+internal sealed record ResolvePathInput(
+    string Root,
+    string Value);
