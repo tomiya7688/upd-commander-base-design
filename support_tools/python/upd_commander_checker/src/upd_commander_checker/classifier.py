@@ -5,7 +5,7 @@ from .models import ModuleInfo
 
 
 _LAYER_NAMES = {"ui", "process", "data"}
-_ROLE_NAMES = {"commander", "messenger", "processing"}
+_ROLE_NAMES = {"commander", "messenger", "processing", "compresser"}
 _APPLICATION_MARKERS = {"app", "apps", "application", "applications", "feature", "features"}
 
 
@@ -68,6 +68,8 @@ def _find_role(parts: list[str]) -> str | None:
             return "messenger"
         if part.endswith("processing"):
             return "processing"
+        if part.endswith("compresser"):
+            return "compresser"
     return None
 
 

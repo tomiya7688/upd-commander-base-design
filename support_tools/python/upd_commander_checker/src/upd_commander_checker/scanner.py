@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .classifier import classify_module
 from .commander_rules import check_commander
+from .container_rules import check_containers
 from .dependency_rules import check_dependencies
 from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
@@ -62,6 +63,7 @@ def _scan_file(
     module = classify_module(path, classification_root)
     findings = check_dependencies(tree, module)
     findings.extend(check_commander(tree, module))
+    findings.extend(check_containers(tree, module))
     return filter_findings(findings, source, _relative_text(path, root), ignore_rules)
 
 
