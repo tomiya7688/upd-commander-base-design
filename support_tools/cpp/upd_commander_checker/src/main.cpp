@@ -34,7 +34,14 @@ int finish(const std::vector<std::string>& lines, const std::string& output, int
 }  // namespace
 
 int main(int argc, char* argv[]) {
-    const upd_checker::Config config = upd_checker::load_config(argv[0]);
+    upd_checker::Config config;
+    try {
+        config = upd_checker::load_config(argv[0]);
+    } catch (const upd_checker::ConfigError& error) {
+        std::cout << "CONFIG ERROR: " << error.what() << '\n';
+        return 2;
+    }
+
     std::string target = config.input;
     std::string output = config.output;
     std::vector<std::string> ignores = config.ignore;
