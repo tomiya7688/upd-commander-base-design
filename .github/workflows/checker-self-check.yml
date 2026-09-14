@@ -25,6 +25,20 @@ jobs:
       - name: Test
         working-directory: support_tools/python/upd_commander_checker
         run: python -m unittest discover -s tests
+      - name: Invalid config fails
+        working-directory: support_tools/python/upd_commander_checker
+        shell: bash
+        run: |
+          mkdir -p config
+          printf '{ invalid' > config/path.json
+          set +e
+          output="$(python -m upd_commander_checker . 2>&1)"
+          status=$?
+          set -e
+          rm -rf config
+          echo "$output"
+          test "$status" -eq 2
+          grep -q "CONFIG ERROR:" <<< "$output"
       - name: Self check
         working-directory: support_tools/python/upd_commander_checker
         run: python -m upd_commander_checker . --warnings-as-errors --attentions-as-errors
@@ -39,6 +53,20 @@ jobs:
       - name: Test
         working-directory: support_tools/go/upd_commander_checker
         run: go test ./...
+      - name: Invalid config fails
+        working-directory: support_tools/go/upd_commander_checker
+        shell: bash
+        run: |
+          mkdir -p config
+          printf '{ invalid' > config/path.json
+          set +e
+          output="$(go run ./cmd/upd-commander-check . 2>&1)"
+          status=$?
+          set -e
+          rm -rf config
+          echo "$output"
+          test "$status" -ne 0
+          grep -q "CONFIG ERROR:" <<< "$output"
       - name: Self check
         working-directory: support_tools/go/upd_commander_checker
         run: go run ./cmd/upd-commander-check --warnings-as-errors --attentions-as-errors .
@@ -58,6 +86,20 @@ jobs:
       - name: Test
         working-directory: support_tools/cpp/upd_commander_checker
         run: ctest --test-dir build --output-on-failure
+      - name: Invalid config fails
+        working-directory: support_tools/cpp/upd_commander_checker
+        shell: bash
+        run: |
+          mkdir -p config
+          printf '{ invalid' > config/path.json
+          set +e
+          output="$(./build/upd-commander-check . 2>&1)"
+          status=$?
+          set -e
+          rm -rf config
+          echo "$output"
+          test "$status" -eq 2
+          grep -q "CONFIG ERROR:" <<< "$output"
       - name: Self check
         working-directory: support_tools/cpp/upd_commander_checker
         run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors --ignore "build/**" .
@@ -121,6 +163,20 @@ jobs:
           grep -q "W UPD103" <<< "$output"
           grep -q "A UPD301 process/ast_commander.cs" <<< "$output"
           if grep -q "UPD201 process/ast_commander.cs" <<< "$output"; then exit 1; fi
+      - name: Invalid config fails
+        working-directory: support_tools/cs/upd_commander_checker
+        shell: bash
+        run: |
+          mkdir -p config
+          printf '{ invalid' > config/path.json
+          set +e
+          output="$(dotnet bin/Release/net8.0/upd-commander-check.dll . 2>&1)"
+          status=$?
+          set -e
+          rm -rf config
+          echo "$output"
+          test "$status" -eq 2
+          grep -q "CONFIG ERROR:" <<< "$output"
       - name: Self check
         working-directory: support_tools/cs/upd_commander_checker
         run: dotnet run --project UpdCommanderChecker.csproj -c Release -- --warnings-as-errors --attentions-as-errors .
