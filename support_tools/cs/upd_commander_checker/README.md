@@ -2,7 +2,7 @@
 
 C#プロジェクト向けのUPD Commander静的チェッカーです。
 
-.NET 8標準ライブラリのみで実装し、UPD Commanderの依存規則・Application境界・Commander責務を軽量に検査します。
+.NET 8 + Roslyn (`Microsoft.CodeAnalysis.CSharp`) の構文木を使用し、UPD Commanderの依存規則・Application境界・Commander責務・Container/Compresser候補を解析します。コメントや文字列をC#構文として誤認せず、複数行宣言もSyntax Node単位で扱います。
 
 ## 実行
 
@@ -21,7 +21,7 @@ dotnet run --project UpdCommanderChecker.csproj
 ```text
 E UPD102 applications/main/process/MainCommander.cs:3 cross-application internal dependency
 W UPD202 process/GameCommander.cs:12 Commander calculation
-FAIL e=1 w=1
+FAIL e=1 w=1 a=0
 ```
 
 問題なし:
@@ -29,6 +29,19 @@ FAIL e=1 w=1
 ```text
 OK
 ```
+
+## AST解析
+
+ソースコードに対するルール判定はRoslyn SyntaxTreeを基準にします。
+
+- `using` -> `UsingDirectiveSyntax`
+- loop -> `ForStatementSyntax` / `ForEachStatementSyntax` / `WhileStatementSyntax` / `DoStatementSyntax`
+- calculation -> `BinaryExpressionSyntax`
+- I/O/API呼び出し -> `InvocationExpressionSyntax` / `ObjectCreationExpressionSyntax`
+- 入出力Container候補 -> `BaseMethodDeclarationSyntax` / `TupleTypeSyntax`
+- 責務単位 -> `TypeDeclarationSyntax`
+
+パス分類、glob、Ignoreのように言語構文ではない処理にはASTを使用しません。
 
 ## config/path.json
 
@@ -91,15 +104,22 @@ dist/upd-commander-check.exe
 dist/config/path.json
 ```
 
-self-contained のため.NETランタイム未導入環境でも実行できますが、ファイルサイズは大きくなります。
+self-contained のため.NETランタイム未導入環境でも実行できます。
 
 ## 規則
 
 - `UPD001`: ソース読み込み失敗
+- `UPD002`: C#構文エラー
 - `UPD101`: UI / Process / Data・Commander / Messenger / Processing依存違反
 - `UPD102`: Application境界越しの内部実装直接依存
+- `UPD103`: Data Commander同士の直接通信
 - `UPD201`: Commander内のループ
-- `UPD202`: Commander内の計算式（軽量ヒューリスティック）
-- `UPD203`: Commander内の直接I/O/API呼び出し（軽量ヒューリスティック）
+- `UPD202`: Commander内の計算式
+- `UPD203`: Commander内の直接I/O/API呼び出し
+- `UPD301`: 複数入力によるContainer化候補 (`attention`)
+- `UPD302`: 複数返却値によるContainer化候補 (`attention`)
+- `UPD303`: Container/Compresser導入でCommander/Messengerの大幅圧縮が見込まれる場合 (`warning`)
+- `UPD401`: 責務単位が過大
+- `UPD402`: 1ファイルに複数の主要責務型
 
-完全なC#構文検査は通常の `dotnet build` に任せ、このツールはUPD Commander規約の静的検査に集中します。
+C#コンパイラそのものの型検査等は `dotnet build` に任せ、このツールはRoslyn ASTを利用してUPD Commander規約を解析します。

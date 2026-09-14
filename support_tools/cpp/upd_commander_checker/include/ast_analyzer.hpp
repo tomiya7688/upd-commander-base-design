@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -8,9 +9,10 @@
 
 namespace upd_checker {
 
-std::vector<Finding> check_responsibilities(
-    const std::string& source_text,
-    const std::string& path,
+std::vector<Finding> analyze_cpp_ast(
+    const std::filesystem::path& path,
+    const std::filesystem::path& root,
+    const std::string& relative,
     const std::vector<IgnoreRule>& rules);
 
 }  // namespace upd_checker
