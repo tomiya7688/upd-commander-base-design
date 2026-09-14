@@ -3,7 +3,7 @@ namespace UpdCommanderChecker;
 internal static class Classifier
 {
     private static readonly HashSet<string> Layers = ["ui", "process", "data"];
-    private static readonly HashSet<string> Roles = ["commander", "messenger", "processing"];
+    private static readonly HashSet<string> Roles = ["commander", "messenger", "processing", "compresser"];
     private static readonly HashSet<string> AppRoots = ["app", "apps", "application", "applications", "feature", "features"];
 
     internal static ModuleInfo ClassifyPath(string path)
@@ -96,6 +96,10 @@ internal static class Classifier
             if (part.EndsWith("processing", StringComparison.Ordinal))
             {
                 return "processing";
+            }
+            if (part.EndsWith("compresser", StringComparison.Ordinal))
+            {
+                return "compresser";
             }
         }
         return string.Empty;
