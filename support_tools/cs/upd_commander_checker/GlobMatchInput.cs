@@ -1,5 +1,3 @@
 namespace UpdCommanderChecker;
 
-internal sealed record GlobMatchInput(
-    string Path,
-    string Pattern);
+internal sealed record GlobMatchInput(string Path, string Pattern);

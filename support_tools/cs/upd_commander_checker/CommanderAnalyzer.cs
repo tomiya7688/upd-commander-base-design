@@ -15,7 +15,8 @@ internal static class CommanderAnalyzer
         "System.Data.Common.DbConnection",
     ];
 
-    private static readonly IReadOnlyList<MetadataReference> RuntimeReferences = LoadRuntimeReferences();
+    private static readonly IReadOnlyList<MetadataReference> RuntimeReferences =
+        LoadRuntimeReferences();
 
     internal static void Analyze(AstRuleContext context)
     {
@@ -27,47 +28,71 @@ internal static class CommanderAnalyzer
         var semanticModel = CreateSemanticModel(context.Analysis.Root.SyntaxTree);
         foreach (var node in context.Analysis.Root.DescendantNodes())
         {
-            if (node is ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or DoStatementSyntax)
+            if (
+                node
+                is ForStatementSyntax
+                    or ForEachStatementSyntax
+                    or WhileStatementSyntax
+                    or DoStatementSyntax
+            )
             {
-                AstFindingEmitter.Add(new NodeFindingInput(context, node, "UPD201", "Commander loop", "warning"));
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(context, node, "UPD201", "Commander loop", "warning")
+                );
                 continue;
             }
 
             if (node is BinaryExpressionSyntax binary && IsArithmetic(binary))
             {
-                AstFindingEmitter.Add(new NodeFindingInput(context, binary, "UPD202", "Commander calculation", "warning"));
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(
+                        context,
+                        binary,
+                        "UPD202",
+                        "Commander calculation",
+                        "warning"
+                    )
+                );
                 continue;
             }
 
-            if (node is InvocationExpressionSyntax or ObjectCreationExpressionSyntax &&
-                IsDirectWork(new DirectWorkCheckInput(node, semanticModel)))
+            if (
+                node is InvocationExpressionSyntax or ObjectCreationExpressionSyntax
+                && IsDirectWork(new DirectWorkCheckInput(node, semanticModel))
+            )
             {
-                AstFindingEmitter.Add(new NodeFindingInput(
-                    context,
-                    node,
-                    "UPD203",
-                    "Commander direct I/O/API call",
-                    "error"));
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(
+                        context,
+                        node,
+                        "UPD203",
+                        "Commander direct I/O/API call",
+                        "error"
+                    )
+                );
             }
         }
     }
 
     private static bool IsArithmetic(BinaryExpressionSyntax expression)
     {
-        return expression.IsKind(SyntaxKind.AddExpression) ||
-               expression.IsKind(SyntaxKind.SubtractExpression) ||
-               expression.IsKind(SyntaxKind.MultiplyExpression) ||
-               expression.IsKind(SyntaxKind.DivideExpression) ||
-               expression.IsKind(SyntaxKind.ModuloExpression);
+        return expression.IsKind(SyntaxKind.AddExpression)
+            || expression.IsKind(SyntaxKind.SubtractExpression)
+            || expression.IsKind(SyntaxKind.MultiplyExpression)
+            || expression.IsKind(SyntaxKind.DivideExpression)
+            || expression.IsKind(SyntaxKind.ModuloExpression);
     }
 
     private static bool IsDirectWork(DirectWorkCheckInput input)
     {
         ITypeSymbol? type = input.Node switch
         {
-            InvocationExpressionSyntax invocation =>
-                (input.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol)?.ContainingType,
-            ObjectCreationExpressionSyntax creation => input.SemanticModel.GetTypeInfo(creation).Type,
+            InvocationExpressionSyntax invocation => (
+                input.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol
+            )?.ContainingType,
+            ObjectCreationExpressionSyntax creation => input
+                .SemanticModel.GetTypeInfo(creation)
+                .Type,
             _ => null,
         };
         return IsDirectWorkType(type);
@@ -77,7 +102,9 @@ internal static class CommanderAnalyzer
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
-            var qualifiedName = current.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat);
+            var qualifiedName = current.ToDisplayString(
+                SymbolDisplayFormat.CSharpErrorMessageFormat
+            );
             if (DirectWorkTypes.Contains(qualifiedName))
             {
                 return true;
@@ -92,7 +119,8 @@ internal static class CommanderAnalyzer
             "UpdCommanderCheckerSemanticAnalysis",
             [syntaxTree],
             RuntimeReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        );
         return compilation.GetSemanticModel(syntaxTree, ignoreAccessibility: true);
     }
 

@@ -25,7 +25,7 @@ public sealed class RuleSelectionTests
         var findings = new[]
         {
             new Finding("first.cs", 1, "UPD101", "message"),
-            new Finding("second.cs", 2, "UPD202", "message", "warning")
+            new Finding("second.cs", 2, "UPD202", "message", "warning"),
         };
         var filtered = RuleSelection.Filter(new RuleSelectionInput(findings, ["UPD202"]));
         Assert.Equal("UPD202", Assert.Single(filtered).Code);

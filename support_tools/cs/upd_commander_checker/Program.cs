@@ -47,15 +47,15 @@ internal static class Program
 
         if (!File.Exists(target) && !Directory.Exists(target))
         {
-            return Finish(new FinishInput(
-                new[] { $"E UPD000 {target} missing" },
-                output,
-                2));
+            return Finish(new FinishInput(new[] { $"E UPD000 {target} missing" }, output, 2));
         }
 
-        var findings = RuleSelection.Filter(new RuleSelectionInput(
-            Scanner.ScanPath(new ScanPathInput(target, ignores)),
-            config.EnabledRules));
+        var findings = RuleSelection.Filter(
+            new RuleSelectionInput(
+                Scanner.ScanPath(new ScanPathInput(target, ignores)),
+                config.EnabledRules
+            )
+        );
         var errors = 0;
         var warnings = 0;
         var attentions = 0;
@@ -80,17 +80,16 @@ internal static class Program
             lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
         }
 
-        var failed = errors > 0 ||
-            (warningsAsErrors && warnings > 0) ||
-            (attentionsAsErrors && attentions > 0);
+        var failed =
+            errors > 0
+            || (warningsAsErrors && warnings > 0)
+            || (attentionsAsErrors && attentions > 0);
         if (failed)
         {
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
             return Finish(new FinishInput(lines, output, 1));
         }
-        lines.Add(warnings > 0 || attentions > 0
-            ? $"OK w={warnings} a={attentions}"
-            : "OK");
+        lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
         return Finish(new FinishInput(lines, output, 0));
     }
 

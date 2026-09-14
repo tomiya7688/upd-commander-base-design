@@ -4,7 +4,11 @@ namespace UpdCommanderChecker.Tests;
 
 internal sealed class TempProject : IDisposable
 {
-    private readonly string root = Path.Combine(Path.GetTempPath(), "upd-checker-tests", Guid.NewGuid().ToString("N"));
+    private readonly string root = Path.Combine(
+        Path.GetTempPath(),
+        "upd-checker-tests",
+        Guid.NewGuid().ToString("N")
+    );
 
     internal TempProject()
     {

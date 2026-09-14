@@ -7,4 +7,5 @@ internal sealed record NodeFindingInput(
     SyntaxNode Node,
     string Code,
     string Message,
-    string Severity);
+    string Severity
+);
