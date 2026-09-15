@@ -15,9 +15,6 @@ internal static class CommanderAnalyzer
         "System.Data.Common.DbConnection",
     ];
 
-    private static readonly IReadOnlyList<MetadataReference> RuntimeReferences =
-        LoadRuntimeReferences();
-
     internal static void Analyze(AstRuleContext context)
     {
         if (context.Analysis.Source.Role != "commander")
@@ -25,7 +22,9 @@ internal static class CommanderAnalyzer
             return;
         }
 
-        var semanticModel = CreateSemanticModel(context.Analysis.Root.SyntaxTree);
+        var semanticModel = context.Analysis.SemanticProject.GetModel(
+            context.Analysis.Root.SyntaxTree
+        );
         foreach (var node in context.Analysis.Root.DescendantNodes())
         {
             if (
@@ -111,31 +110,5 @@ internal static class CommanderAnalyzer
             }
         }
         return false;
-    }
-
-    private static SemanticModel CreateSemanticModel(SyntaxTree syntaxTree)
-    {
-        var compilation = CSharpCompilation.Create(
-            "UpdCommanderCheckerSemanticAnalysis",
-            [syntaxTree],
-            RuntimeReferences,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
-        );
-        return compilation.GetSemanticModel(syntaxTree, ignoreAccessibility: true);
-    }
-
-    private static IReadOnlyList<MetadataReference> LoadRuntimeReferences()
-    {
-        var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
-        if (string.IsNullOrWhiteSpace(trustedAssemblies))
-        {
-            return [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)];
-        }
-
-        return trustedAssemblies
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(path => MetadataReference.CreateFromFile(path))
-            .ToArray();
     }
 }

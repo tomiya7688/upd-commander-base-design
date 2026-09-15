@@ -121,20 +121,54 @@ jobs:
         run: |
           target="$(mktemp -d)"
           mkdir -p "$target/applications/main/ui"
+          mkdir -p "$target/applications/main/data"
           mkdir -p "$target/applications/main/process"
+          mkdir -p "$target/applications/settings/process"
           mkdir -p "$target/data"
           mkdir -p "$target/process"
+          cat > "$target/applications/main/data/storage.cs" <<'EOF'
+          namespace Applications.Main.Data;
+          internal static class Storage
+          {
+              internal static void Save() { }
+          }
+          EOF
           cat > "$target/applications/main/ui/screen_processing.cs" <<'EOF'
-          using Applications.Settings.Shared.Data.Storage;
-          namespace Sample;
+          using Applications.Main.Data;
+          namespace Applications.Main.Ui;
+          internal sealed class ScreenProcessing
+          {
+              internal void Run() => Storage.Save();
+          }
+          EOF
+          cat > "$target/applications/settings/process/settings_processing.cs" <<'EOF'
+          namespace Applications.Settings.Process;
+          internal static class SettingsProcessing
+          {
+              internal static void Run() { }
+          }
           EOF
           cat > "$target/applications/main/process/main_commander.cs" <<'EOF'
-          using Applications.Settings.Contractor.Process.SettingsProcessing;
-          namespace Sample;
+          using Applications.Settings.Process;
+          namespace Applications.Main.Process;
+          internal sealed class MainCommander
+          {
+              internal void Run() => SettingsProcessing.Run();
+          }
+          EOF
+          cat > "$target/data/cache_commander.cs" <<'EOF'
+          namespace Data;
+          internal static class CacheCommander
+          {
+              internal static void Run() { }
+          }
           EOF
           cat > "$target/data/save_commander.cs" <<'EOF'
-          using Data.CacheCommander;
-          namespace Sample;
+          namespace Data;
+          internal sealed class SaveCommander
+          {
+              internal void Run() => CacheCommander.Run();
+          }
           EOF
           cat > "$target/process/ast_commander.cs" <<'EOF'
           namespace Sample;

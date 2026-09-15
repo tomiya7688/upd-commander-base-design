@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UpdCommanderChecker;
@@ -6,36 +7,72 @@ internal static class DependencyAnalyzer
 {
     internal static void Analyze(AstRuleContext context)
     {
-        foreach (
-            var usingDirective in context
-                .Analysis.Root.DescendantNodes()
-                .OfType<UsingDirectiveSyntax>()
-        )
+        var project = context.Analysis.SemanticProject;
+        var model = project.GetModel(context.Analysis.Root.SyntaxTree);
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var node in context.Analysis.Root.DescendantNodes().Where(IsReferenceNode))
         {
-            var reference = usingDirective.Name?.ToString();
-            if (string.IsNullOrWhiteSpace(reference))
+            if (node.AncestorsAndSelf().Any(ancestor => ancestor is UsingDirectiveSyntax))
             {
                 continue;
             }
 
-            var target = Classifier.ClassifyReference(reference);
-            var result = DependencyRules.Evaluate(
-                new DependencyCheckInput(context.Analysis.Source, target)
-            );
-            if (result is null)
+            ISymbol? symbol = null;
+            if (node is IdentifierNameSyntax identifier)
+            {
+                symbol = model.GetAliasInfo(identifier)?.Target;
+            }
+            symbol ??= model.GetSymbolInfo(node).Symbol;
+            if (symbol is null)
             {
                 continue;
             }
 
-            AstFindingEmitter.Add(
-                new NodeFindingInput(
-                    context,
-                    usingDirective,
-                    result.Code,
-                    result.Message,
-                    result.Severity
+            foreach (var targetPath in project.FindSourcePaths(symbol))
+            {
+                if (
+                    string.Equals(
+                        targetPath,
+                        context.Analysis.Relative,
+                        StringComparison.OrdinalIgnoreCase
+                    )
                 )
-            );
+                {
+                    continue;
+                }
+
+                var target = Classifier.ClassifyPath(targetPath);
+                var result = DependencyRules.Evaluate(
+                    new DependencyCheckInput(context.Analysis.Source, target)
+                );
+                if (result is null)
+                {
+                    continue;
+                }
+
+                var line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                var key = $"{line}:{targetPath}:{result.Code}";
+                if (!emitted.Add(key))
+                {
+                    continue;
+                }
+
+                AstFindingEmitter.Add(
+                    new NodeFindingInput(
+                        context,
+                        node,
+                        result.Code,
+                        result.Message,
+                        result.Severity
+                    )
+                );
+            }
         }
+    }
+
+    private static bool IsReferenceNode(SyntaxNode node)
+    {
+        return node is IdentifierNameSyntax or GenericNameSyntax;
     }
 }
