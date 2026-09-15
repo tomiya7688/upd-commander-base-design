@@ -13,7 +13,10 @@ public sealed class BuildLayoutTests
         var configPath = Path.Combine(configDirectory, "path.json");
 
         Assert.True(File.Exists(assemblyPath), $"Missing checker assembly: {assemblyPath}");
-        Assert.True(Directory.Exists(configDirectory), $"Missing config directory: {configDirectory}");
+        Assert.True(
+            Directory.Exists(configDirectory),
+            $"Missing config directory: {configDirectory}"
+        );
         Assert.True(File.Exists(configPath), $"Missing config/path.json: {configPath}");
 
         using var document = JsonDocument.Parse(File.ReadAllText(configPath));
