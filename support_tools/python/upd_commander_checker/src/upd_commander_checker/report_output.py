@@ -11,7 +11,7 @@ def finish_report(lines: list[str], output: str | None, exit_code: int) -> int:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    except OSError:
+    except (OSError, ValueError):
         print(f"I/O ERROR: failed to write output: {path}")
         return 2
     return exit_code
