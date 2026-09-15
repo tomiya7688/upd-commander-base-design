@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from .config import ConfigError, load_config
+from .report_output import finish_report
 from .rule_selection import filter_enabled_findings
 from .scanner import scan_path
 
@@ -30,7 +31,7 @@ def main() -> int:
     attentions_as_errors = args.attentions_as_errors
 
     if not target.exists():
-        return _finish([f"E UPD000 {target}: missing"], output, 2)
+        return finish_report([f"E UPD000 {target}: missing"], output, 2)
 
     findings = filter_enabled_findings(
         scan_path(target, ignores), config.enabled_rules
@@ -54,23 +55,13 @@ def main() -> int:
     )
     if failed:
         lines.append(f"FAIL e={error_count} w={warning_count} a={attention_count}")
-        return _finish(lines, output, 1)
+        return finish_report(lines, output, 1)
 
     if warning_count or attention_count:
         lines.append(f"OK w={warning_count} a={attention_count}")
     else:
         lines.append("OK")
-    return _finish(lines, output, 0)
-
-
-def _finish(lines: list[str], output: str, exit_code: int) -> int:
-    for line in lines:
-        print(line)
-    if output:
-        path = Path(output)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return exit_code
+    return finish_report(lines, output, 0)
 
 
 def _display_path(path: Path, target: Path) -> str:

@@ -47,7 +47,9 @@ internal static class Program
 
         if (!File.Exists(target) && !Directory.Exists(target))
         {
-            return Finish(new FinishInput(new[] { $"E UPD000 {target} missing" }, output, 2));
+            return ReportOutput.Finish(
+                new FinishInput(new[] { $"E UPD000 {target} missing" }, output, 2)
+            );
         }
 
         var findings = RuleSelection.Filter(
@@ -87,28 +89,9 @@ internal static class Program
         if (failed)
         {
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
-            return Finish(new FinishInput(lines, output, 1));
+            return ReportOutput.Finish(new FinishInput(lines, output, 1));
         }
         lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
-        return Finish(new FinishInput(lines, output, 0));
-    }
-
-    private static int Finish(FinishInput input)
-    {
-        var values = input.Lines.ToList();
-        foreach (var line in values)
-        {
-            Console.WriteLine(line);
-        }
-        if (!string.IsNullOrWhiteSpace(input.Output))
-        {
-            var parent = Path.GetDirectoryName(input.Output);
-            if (!string.IsNullOrWhiteSpace(parent))
-            {
-                Directory.CreateDirectory(parent);
-            }
-            File.WriteAllLines(input.Output, values);
-        }
-        return input.ExitCode;
+        return ReportOutput.Finish(new FinishInput(lines, output, 0));
     }
 }

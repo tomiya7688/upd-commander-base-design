@@ -49,6 +49,7 @@ add_library(upd_checker_core
     src/data_type_location_rules.cpp
     src/dependency_rules.cpp
     src/ignore_rules.cpp
+    src/report_output.cpp
     src/rule_selection.cpp
     src/scanner.cpp
     src/syntax_diagnostics.cpp
@@ -82,4 +83,8 @@ if(BUILD_TESTING)
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_syntax_diagnostic_tests COMMAND upd_checker_syntax_diagnostic_tests)
+
+    add_executable(upd_checker_report_output_tests tests/report_output_tests.cpp)
+    target_link_libraries(upd_checker_report_output_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_report_output_tests COMMAND upd_checker_report_output_tests)
 endif()

@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"upd_commander_checker/internal/checker"
 )
@@ -81,14 +79,5 @@ func main() {
 }
 
 func finish(lines []string, output string, code int) {
-	for _, line := range lines {
-		fmt.Println(line)
-	}
-	if output != "" {
-		if dir := filepath.Dir(output); dir != "." {
-			_ = os.MkdirAll(dir, 0o755)
-		}
-		_ = os.WriteFile(output, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
-	}
-	os.Exit(code)
+	os.Exit(finishReport(lines, output, code))
 }
