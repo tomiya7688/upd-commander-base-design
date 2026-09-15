@@ -46,6 +46,23 @@ func TestContainerRulesMatrix(t *testing.T) {
 	assertHasCode(t, findings, "UPD303")
 }
 
+func TestUnexportedReceiverMethodIsChecked(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "process", "private_processing.go")
+	writeTestFile(t, path, "package process\ntype worker struct{}\nfunc (worker) run(left, right int) (int, int) { return left, right }\n")
+	findings := ScanPath(root, nil)
+	assertHasCode(t, findings, "UPD301")
+	assertHasCode(t, findings, "UPD302")
+}
+
+func TestConstructorLikePackageFunctionIsNotChecked(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "process", "constructor_processing.go")
+	writeTestFile(t, path, "package process\ntype worker struct{}\nfunc NewWorker(left, right int) worker { return worker{} }\n")
+	findings := ScanPath(root, nil)
+	assertNoCode(t, findings, "UPD301")
+}
+
 func TestCliPathIgnoreMatrix(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "process", "ignored_commander.go")

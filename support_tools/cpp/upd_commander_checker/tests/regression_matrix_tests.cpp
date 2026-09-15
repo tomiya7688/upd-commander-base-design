@@ -91,6 +91,36 @@ void test_container_matrix() {
     std::filesystem::remove_all(root);
 }
 
+void test_private_method_container_rules() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_private_container";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "private_processing.cpp",
+        "#include <utility>\n"
+        "class PrivateProcessing {\n"
+        "private:\n"
+        "std::pair<int,int> run(int left, int right) { return {left, right}; }\n"
+        "};\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code(findings, "UPD301"));
+    assert(has_code(findings, "UPD302"));
+    std::filesystem::remove_all(root);
+}
+
+void test_constructor_is_not_container_operation() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_constructor";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "constructor_processing.cpp",
+        "class ConstructorProcessing {\n"
+        "public:\n"
+        "ConstructorProcessing(int left, int right) {}\n"
+        "};\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(!has_code(findings, "UPD301"));
+    std::filesystem::remove_all(root);
+}
+
 void test_cli_ignore_matrix() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_matrix_ignore";
     std::filesystem::remove_all(root);
@@ -155,6 +185,8 @@ int main() {
     test_upd203_namespace_alias();
     test_upd203_ignores_user_symbol_with_similar_name();
     test_container_matrix();
+    test_private_method_container_rules();
+    test_constructor_is_not_container_operation();
     test_cli_ignore_matrix();
     test_ignore_file_matrix();
     test_data_type_location_matrix();

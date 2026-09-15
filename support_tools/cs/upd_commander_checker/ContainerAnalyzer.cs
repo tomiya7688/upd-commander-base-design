@@ -24,6 +24,11 @@ internal static class ContainerAnalyzer
                 .OfType<BaseMethodDeclarationSyntax>()
         )
         {
+            if (method is ConstructorDeclarationSyntax)
+            {
+                continue;
+            }
+
             var parameterCount = method.ParameterList.Parameters.Count;
             var outputCount =
                 method is MethodDeclarationSyntax declaration

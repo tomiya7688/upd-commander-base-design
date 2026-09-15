@@ -23,6 +23,18 @@ Attention は設計改善候補の提示であり、適合違反ではない。
 
 Container 化による効果が小さい場合や、パッケージ化コストの方が大きい場合は、Attention を確認した上で現在の実装を維持してよい。
 
+### 2.1 対象 callable
+
+UPD301 / UPD302 はアクセス可視性ではなく、型・モジュールの操作として定義された callable を対象とする。
+
+- public / exported method だけでなく private / protected / unexported method も対象とする。
+- constructor は初期化責務であり通常の操作とは分けるため、UPD301 / UPD302 の対象外とする。
+- Python は `__init__` と `__new__` を constructor / construction hook として対象外にするが、`_run` のような private 相当methodは対象とする。
+- C# / C++ は言語構文上の constructor を対象外にする。
+- Go は receiver method を可視性に関係なく対象とし、package-level function は対象外とする。`NewX` 等の命名だけからconstructor判定は行わない。
+
+この範囲は「公開APIだけを整える」ためではなく、実装内部を含む操作単位の可読性を揃えるための規則である。
+
 ## 3. Warning
 
 Commander または Messenger について、Compresser / Container を導入することでクラス自体を大幅に圧縮できると推定される場合のみ `warning` を出す。
