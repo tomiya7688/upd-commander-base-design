@@ -3,6 +3,7 @@ import ast
 from .models import Finding, ModuleInfo
 
 _BLOAT_ROLES = {"commander", "messenger"}
+_CONSTRUCTION_HOOKS = {"__init__", "__new__"}
 _MIN_REDUCIBLE_LINES = 10
 _MIN_REDUCTION_RATIO = 0.20
 
@@ -31,7 +32,7 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
         for node in class_node.body:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
-            if node.name.startswith("_"):
+            if node.name in _CONSTRUCTION_HOOKS:
                 continue
 
             parameters = _payload_parameters(node.args)
