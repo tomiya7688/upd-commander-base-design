@@ -28,7 +28,8 @@ internal static class ReportOutput
                     is IOException
                         or UnauthorizedAccessException
                         or ArgumentException
-                        or NotSupportedException)
+                        or NotSupportedException
+            )
         {
             Console.WriteLine($"I/O ERROR: failed to write output: {input.Output}");
             return 2;
