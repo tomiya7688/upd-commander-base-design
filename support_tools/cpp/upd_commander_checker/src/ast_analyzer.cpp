@@ -326,7 +326,7 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl || kind == CXCursor_ClassTemplate) {
         analyze_class(state, cursor);
     }
-    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod || kind == CXCursor_Constructor) {
+    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod) {
         analyze_function(state, cursor);
     }
 
