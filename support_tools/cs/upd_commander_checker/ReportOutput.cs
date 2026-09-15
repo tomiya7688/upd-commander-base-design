@@ -25,10 +25,10 @@ internal static class ReportOutput
         }
         catch (Exception exception)
             when (exception
-                is IOException
-                    or UnauthorizedAccessException
-                    or ArgumentException
-                    or NotSupportedException)
+                    is IOException
+                        or UnauthorizedAccessException
+                        or ArgumentException
+                        or NotSupportedException)
         {
             Console.WriteLine($"I/O ERROR: failed to write output: {input.Output}");
             return 2;
