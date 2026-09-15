@@ -28,14 +28,10 @@ public sealed class BuildLayoutTests
     private static string FindCheckerBuildOutput()
     {
         var frameworkDirectory = new DirectoryInfo(AppContext.BaseDirectory);
-        var configurationDirectory = frameworkDirectory.Parent
-            ?? throw new InvalidOperationException("Test configuration directory was not found.");
-        var binDirectory = configurationDirectory.Parent
-            ?? throw new InvalidOperationException("Test bin directory was not found.");
-        var testProjectDirectory = binDirectory.Parent
-            ?? throw new InvalidOperationException("Test project directory was not found.");
-        var csDirectory = testProjectDirectory.Parent
-            ?? throw new InvalidOperationException("C# support tools directory was not found.");
+        var configurationDirectory = frameworkDirectory.Parent!;
+        var binDirectory = configurationDirectory.Parent!;
+        var testProjectDirectory = binDirectory.Parent!;
+        var csDirectory = testProjectDirectory.Parent!;
 
         return Path.Combine(
             csDirectory.FullName,
