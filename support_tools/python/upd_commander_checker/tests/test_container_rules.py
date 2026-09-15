@@ -61,6 +61,38 @@ class Worker:
         upd302 = [finding for finding in findings if finding.code == "UPD302"]
         self.assertEqual(1, len(upd302))
 
+    def test_private_method_is_checked(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    def _run(self, left, right):
+        return left, right
+"""
+        )
+        findings = check_containers(
+            tree,
+            ModuleInfo(Path("worker.py"), "process", "processing"),
+        )
+        self.assertTrue(any(finding.code == "UPD301" for finding in findings))
+        self.assertTrue(any(finding.code == "UPD302" for finding in findings))
+
+    def test_construction_hooks_are_not_checked(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    def __new__(cls, left, right):
+        return super().__new__(cls)
+
+    def __init__(self, left, right):
+        self.value = left + right
+"""
+        )
+        findings = check_containers(
+            tree,
+            ModuleInfo(Path("worker.py"), "process", "processing"),
+        )
+        self.assertFalse(any(finding.code == "UPD301" for finding in findings))
+
 
 if __name__ == "__main__":
     unittest.main()
