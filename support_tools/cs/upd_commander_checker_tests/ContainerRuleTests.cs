@@ -18,6 +18,31 @@ public sealed class ContainerRuleTests
     }
 
     [Fact]
+    public void PrivateMethodIsChecked()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "process/private_processing.cs",
+            "namespace Sample; internal sealed class PrivateProcessing { private (int Left, int Right) Run(int left, int right) => (left, right); }"
+        );
+        var findings = project.Scan();
+        TestAssert.Has(findings, "UPD301", "attention");
+        TestAssert.Has(findings, "UPD302", "attention");
+    }
+
+    [Fact]
+    public void ConstructorIsNotChecked()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "process/constructor_processing.cs",
+            "namespace Sample; internal sealed class ConstructorProcessing { internal ConstructorProcessing(int left, int right) { } }"
+        );
+        var findings = project.Scan();
+        Assert.DoesNotContain(findings, item => item.Code == "UPD301");
+    }
+
+    [Fact]
     public void SubstantialCommanderCompressionIsWarning()
     {
         using var project = new TempProject();
