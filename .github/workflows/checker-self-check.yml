@@ -202,13 +202,14 @@ jobs:
         working-directory: support_tools/cs/upd_commander_checker
         shell: bash
         run: |
-          mkdir -p config
-          printf '{ invalid' > config/path.json
+          config_path="bin/Release/net8.0/config/path.json"
+          cp "$config_path" "$config_path.bak"
+          printf '{ invalid' > "$config_path"
           set +e
           output="$(dotnet bin/Release/net8.0/upd-commander-check.dll . 2>&1)"
           status=$?
           set -e
-          rm -rf config
+          mv "$config_path.bak" "$config_path"
           echo "$output"
           test "$status" -eq 2
           grep -q "CONFIG ERROR:" <<< "$output"
