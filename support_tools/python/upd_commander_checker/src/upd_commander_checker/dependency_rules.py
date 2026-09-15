@@ -1,4 +1,5 @@
 import ast
+from pathlib import Path
 
 from .classifier import classify_import
 from .models import DependencyRuleResult, Finding, ModuleInfo
@@ -7,7 +8,7 @@ from .models import DependencyRuleResult, Finding, ModuleInfo
 def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     findings: list[Finding] = []
     for node in ast.walk(tree):
-        for imported_name in _imported_names(node):
+        for imported_name in _imported_names(node, module.path):
             target_layer, target_role, target_application = classify_import(imported_name)
             result = _dependency_result(
                 module,
@@ -29,12 +30,33 @@ def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     return findings
 
 
-def _imported_names(node: ast.AST) -> list[str]:
+def _imported_names(node: ast.AST, source_path: Path) -> list[str]:
     if isinstance(node, ast.Import):
         return [alias.name for alias in node.names]
-    if isinstance(node, ast.ImportFrom) and node.module:
-        return [node.module]
-    return []
+    if not isinstance(node, ast.ImportFrom):
+        return []
+
+    base = _import_base(node, source_path)
+    if any(alias.name == "*" for alias in node.names):
+        return [base] if base else []
+    return [_join_import(base, alias.name) for alias in node.names]
+
+
+def _import_base(node: ast.ImportFrom, source_path: Path) -> str:
+    if node.level == 0:
+        return node.module or ""
+
+    package_parts = [part for part in source_path.parent.parts if part != source_path.anchor]
+    parent_count = max(0, node.level - 1)
+    if parent_count:
+        package_parts = package_parts[:-parent_count] if parent_count < len(package_parts) else []
+    if node.module:
+        package_parts.extend(node.module.split("."))
+    return ".".join(package_parts)
+
+
+def _join_import(base: str, name: str) -> str:
+    return f"{base}.{name}" if base else name
 
 
 def _dependency_result(
