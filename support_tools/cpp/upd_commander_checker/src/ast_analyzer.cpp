@@ -11,6 +11,7 @@
 #include "classifier.hpp"
 #include "compile_arguments.hpp"
 #include "dependency_rules.hpp"
+#include "syntax_diagnostics.hpp"
 
 namespace upd_checker {
 namespace {
@@ -383,6 +384,13 @@ std::vector<Finding> analyze_cpp_ast(
     if (unit == nullptr) {
         clang_disposeIndex(index);
         return {Finding{relative, 1, "UPD002", "AST parse failed", "error"}};
+    }
+
+    const int syntax_error_line = first_main_file_error_line(unit);
+    if (syntax_error_line > 0) {
+        clang_disposeTranslationUnit(unit);
+        clang_disposeIndex(index);
+        return {Finding{relative, syntax_error_line, "UPD002", "syntax error", "error"}};
     }
 
     clang_visitChildren(clang_getTranslationUnitCursor(unit), visit_cursor, &state);
