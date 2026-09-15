@@ -49,7 +49,7 @@ public sealed class DependencyTests
         );
         project.Write(
             "apps/product/applications/settings/ui/screen_processing.cs",
-            "using Apps.Product.Applications.Profile.Process; namespace Apps.Product.Applications.Settings.Ui; public sealed class Screen { public void Run() { ProfileProcessing.Run(); } }\n"
+            "namespace Apps.Product.Applications.Settings.Ui; public sealed class Screen { public void Run() { Apps.Product.Applications.Profile.Process.ProfileProcessing.Run(); } }\n"
         );
         TestAssert.Has(project.Scan(), "UPD102", "error");
     }
