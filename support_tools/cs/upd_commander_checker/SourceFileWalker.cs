@@ -8,7 +8,13 @@ internal static class SourceFileWalker
         var fullTarget = Path.GetFullPath(input.Target);
         if (File.Exists(fullTarget))
         {
-            if (string.Equals(Path.GetExtension(fullTarget), ".cs", StringComparison.OrdinalIgnoreCase))
+            if (
+                string.Equals(
+                    Path.GetExtension(fullTarget),
+                    ".cs",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             {
                 files.Add(fullTarget);
             }
@@ -38,7 +44,10 @@ internal static class SourceFileWalker
                 entries = Directory.GetFileSystemEntries(directory);
             }
             catch (Exception exception)
-                when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                when (exception
+                        is IOException
+                        or UnauthorizedAccessException
+                        or System.Security.SecurityException)
             {
                 input.Findings.Add(
                     new Finding(
@@ -64,13 +73,22 @@ internal static class SourceFileWalker
                         }
                         continue;
                     }
-                    if (string.Equals(Path.GetExtension(entry), ".cs", StringComparison.OrdinalIgnoreCase))
+                    if (
+                        string.Equals(
+                            Path.GetExtension(entry),
+                            ".cs",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
                     {
                         files.Add(entry);
                     }
                 }
                 catch (Exception exception)
-                    when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                    when (exception
+                            is IOException
+                            or UnauthorizedAccessException
+                            or System.Security.SecurityException)
                 {
                     input.Findings.Add(
                         new Finding(
