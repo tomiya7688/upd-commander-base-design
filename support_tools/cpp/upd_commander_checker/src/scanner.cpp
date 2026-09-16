@@ -1,6 +1,7 @@
 #include "scanner.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -25,6 +26,51 @@ bool ignored_by_cli(const std::string& path, const std::vector<std::string>& pat
     });
 }
 
+std::string lower_name(const std::filesystem::path& path) {
+    std::string value = path.filename().string();
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+}
+
+bool is_application_marker(const std::string& value) {
+    return value == "app" || value == "apps" || value == "application" ||
+           value == "applications" || value == "feature" || value == "features";
+}
+
+bool is_layer(const std::string& value) {
+    return value == "ui" || value == "process" || value == "data";
+}
+
+std::filesystem::path single_file_context_root(const std::filesystem::path& file) {
+    const auto directory = file.parent_path();
+    std::filesystem::path application_root;
+    for (auto current = directory; !current.empty(); current = current.parent_path()) {
+        if (is_application_marker(lower_name(current))) {
+            application_root = current.parent_path();
+        }
+        const auto parent = current.parent_path();
+        if (parent == current) {
+            break;
+        }
+    }
+    if (!application_root.empty()) {
+        return application_root;
+    }
+
+    for (auto current = directory; !current.empty(); current = current.parent_path()) {
+        if (is_layer(lower_name(current))) {
+            return current.parent_path();
+        }
+        const auto parent = current.parent_path();
+        if (parent == current) {
+            break;
+        }
+    }
+    return directory;
+}
+
 }  // namespace
 
 std::vector<Finding> scan_path(const std::string& target, const std::vector<std::string>& cli_ignore) {
@@ -42,7 +88,7 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
     }
     const std::filesystem::path root = target_is_directory
         ? target_path
-        : target_path.parent_path();
+        : single_file_context_root(target_path);
 
     std::vector<IgnoreRule> rules;
     try {
