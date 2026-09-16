@@ -43,11 +43,19 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 			return nil
 		}
 		paths = append(paths, path)
-		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
 	if walkErr != nil {
 		findings = append(findings, Finding{Path: filepath.ToSlash(target), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
+	}
+
+	internalPackages := internalPackagePaths(paths, root)
+	for _, path := range paths {
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			rel = path
+		}
+		findings = append(findings, scanFile(path, filepath.ToSlash(rel), rules, internalPackages)...)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
 	sort.Slice(findings, func(i, j int) bool {
@@ -62,7 +70,7 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	return findings
 }
 
-func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
+func scanFile(path string, rel string, rules []IgnoreRule, internalPackages []string) []Finding {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
@@ -71,7 +79,7 @@ func scanFile(path string, rel string, rules []IgnoreRule) []Finding {
 	lines := readLines(path)
 	source := ClassifyPath(rel)
 	var findings []Finding
-	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules)...)
+	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules, internalPackages)...)
 	findings = append(findings, checkCommander(file, fset, source, rel, lines, rules)...)
 	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules)...)
 	findings = append(findings, checkResponsibilities(file, fset, rel, lines, rules)...)

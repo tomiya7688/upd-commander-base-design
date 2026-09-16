@@ -10,6 +10,7 @@ func TestUIToDataImportIsReported(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ui", "screen_processing.go")
 	writeTestFile(t, path, "package ui\nimport _ \"example/data/storage\"\n")
+	writeTestFile(t, filepath.Join(root, "data", "storage", "storage.go"), "package storage\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD101")
 }
@@ -18,6 +19,7 @@ func TestCrossApplicationInternalImportIsReported(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
 	writeTestFile(t, path, "package process\nimport _ \"example/applications/settings/process/settings_processing\"\n")
+	writeTestFile(t, filepath.Join(root, "applications", "settings", "process", "settings_processing", "processing.go"), "package settings_processing\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD102")
 }
@@ -26,6 +28,7 @@ func TestNestedApplicationInternalImportIsReported(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "apps", "product", "applications", "settings", "ui", "screen_processing.go")
 	writeTestFile(t, path, "package ui\nimport _ \"example/apps/product/applications/profile/process/profile_processing\"\n")
+	writeTestFile(t, filepath.Join(root, "apps", "product", "applications", "profile", "process", "profile_processing", "processing.go"), "package profile_processing\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD102")
 }
@@ -45,6 +48,7 @@ func TestCrossApplicationMessengerIsAllowed(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
 	writeTestFile(t, path, "package process\nimport _ \"example/applications/settings/process/settings_messenger\"\n")
+	writeTestFile(t, filepath.Join(root, "applications", "settings", "process", "settings_messenger", "messenger.go"), "package settings_messenger\n")
 	findings := ScanPath(root, nil)
 	assertNoCode(t, findings, "UPD102")
 }
@@ -53,6 +57,7 @@ func TestBoundaryLikeDirectoryIsNotBoundaryAPI(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
 	writeTestFile(t, path, "package process\nimport _ \"example/applications/settings/contractor/process/settings_processing\"\n")
+	writeTestFile(t, filepath.Join(root, "applications", "settings", "contractor", "process", "settings_processing", "processing.go"), "package settings_processing\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD102")
 }
@@ -61,6 +66,7 @@ func TestBoundaryAPILayerViolationKeepsUPD101(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "ui", "screen_processing.go")
 	writeTestFile(t, path, "package ui\nimport _ \"example/applications/settings/shared/data/storage\"\n")
+	writeTestFile(t, filepath.Join(root, "applications", "settings", "shared", "data", "storage", "storage.go"), "package storage\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD101")
 	assertNoCode(t, findings, "UPD102")

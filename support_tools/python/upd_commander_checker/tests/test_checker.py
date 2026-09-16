@@ -19,6 +19,7 @@ class CheckerTest(unittest.TestCase):
             root = Path(directory)
             path = root / "ui" / "screen_processing.py"
             path.parent.mkdir()
+            self._write_internal(root / "data" / "storage.py")
             path.write_text("from data.storage import load\n", encoding="utf-8")
             findings = scan_path(root)
             self.assertTrue(any(item.code == "UPD101" for item in findings))
@@ -28,6 +29,7 @@ class CheckerTest(unittest.TestCase):
             root = Path(directory) / "data" / "project"
             path = root / "ui" / "screen_processing.py"
             path.parent.mkdir(parents=True)
+            self._write_internal(root / "data" / "storage.py")
             path.write_text("from data.storage import load\n", encoding="utf-8")
             findings = scan_path(root)
             self.assertTrue(any(item.code == "UPD101" for item in findings))
@@ -37,6 +39,13 @@ class CheckerTest(unittest.TestCase):
             root = Path(directory)
             path = root / "applications" / "main" / "ui" / "screen_processing.py"
             path.parent.mkdir(parents=True)
+            self._write_internal(
+                root
+                / "applications"
+                / "settings"
+                / "process"
+                / "settings_processing.py"
+            )
             path.write_text(
                 "from applications.settings.process.settings_processing import run\n",
                 encoding="utf-8",
@@ -49,6 +58,13 @@ class CheckerTest(unittest.TestCase):
             root = Path(directory)
             path = root / "applications" / "main" / "process" / "main_commander.py"
             path.parent.mkdir(parents=True)
+            self._write_internal(
+                root
+                / "applications"
+                / "settings"
+                / "process"
+                / "settings_messenger.py"
+            )
             path.write_text(
                 "from applications.settings.process.settings_messenger import send\n",
                 encoding="utf-8",
@@ -61,6 +77,7 @@ class CheckerTest(unittest.TestCase):
             root = Path(directory)
             path = root / "data" / "save_commander.py"
             path.parent.mkdir(parents=True)
+            self._write_internal(root / "data" / "cache_commander.py")
             path.write_text("from data.cache_commander import run\n", encoding="utf-8")
             findings = scan_path(root)
             warning = next(item for item in findings if item.code == "UPD103")
@@ -107,6 +124,11 @@ class CheckerTest(unittest.TestCase):
             )
             findings = scan_path(root)
             self.assertEqual([], findings)
+
+    @staticmethod
+    def _write_internal(path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# internal module\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

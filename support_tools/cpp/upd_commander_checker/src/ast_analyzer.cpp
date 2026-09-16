@@ -238,12 +238,45 @@ bool has_direct_behavior(CXCursor cursor) {
     return has_behavior;
 }
 
+std::filesystem::path project_root_for_cursor(CXCursor cursor, const std::string& relative) {
+    CXTranslationUnit unit = clang_Cursor_getTranslationUnit(cursor);
+    std::filesystem::path root(cx_text(clang_getTranslationUnitSpelling(unit)));
+    const std::filesystem::path relative_path(relative);
+    for (const auto& part : relative_path) {
+        if (part == "." || part.empty()) {
+            continue;
+        }
+        root = root.parent_path();
+    }
+    return root;
+}
+
+std::string internal_include_path(CXCursor cursor, const std::string& source_relative) {
+    CXFile included_file = clang_getIncludedFile(cursor);
+    if (included_file == nullptr) {
+        return {};
+    }
+
+    const std::filesystem::path included(cx_text(clang_getFileName(included_file)));
+    const std::filesystem::path root = project_root_for_cursor(cursor, source_relative);
+    std::error_code error;
+    const std::filesystem::path relative = std::filesystem::relative(included, root, error);
+    if (error || relative.empty()) {
+        return {};
+    }
+    const auto first = relative.begin();
+    if (first != relative.end() && *first == "..") {
+        return {};
+    }
+    return relative.generic_string();
+}
+
 void analyze_dependency(AnalysisState& state, CXCursor cursor) {
-    const std::string include_name = cx_text(clang_getCursorSpelling(cursor));
-    if (include_name.empty()) {
+    const std::string target_path = internal_include_path(cursor, state.relative);
+    if (target_path.empty()) {
         return;
     }
-    const auto result = dependency_result(state.source, classify_include(include_name));
+    const auto result = dependency_result(state.source, classify_path(target_path));
     if (result.has_value()) {
         add_finding(state, cursor_line(cursor), result->code, result->message, result->severity);
     }

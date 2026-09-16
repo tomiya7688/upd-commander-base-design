@@ -11,6 +11,7 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             ui = root / "applications" / "settings" / "ui"
             ui.mkdir(parents=True)
+            self._write(root / "applications" / "settings" / "data" / "storage.py")
             (ui / "absolute.py").write_text(
                 "import applications.settings.data.storage\n",
                 encoding="utf-8",
@@ -30,6 +31,7 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             path = root / "applications" / "settings" / "ui" / "screen.py"
             path.parent.mkdir(parents=True)
+            self._write(root / "applications" / "settings" / "data" / "storage.py")
             path.write_text(
                 "from applications.settings.data import storage as harmless_name\n",
                 encoding="utf-8",
@@ -43,6 +45,7 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             path = root / "applications" / "settings" / "ui" / "screen.py"
             path.parent.mkdir(parents=True)
+            self._write(root / "applications" / "settings" / "data_processing.py")
             path.write_text(
                 "from applications.settings import data_processing\n",
                 encoding="utf-8",
@@ -56,6 +59,15 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             path = root / "apps" / "product" / "applications" / "settings" / "ui" / "screen.py"
             path.parent.mkdir(parents=True)
+            self._write(
+                root
+                / "apps"
+                / "product"
+                / "applications"
+                / "settings"
+                / "data"
+                / "storage.py"
+            )
             path.write_text("from ..data import storage\n", encoding="utf-8")
 
             findings = scan_path(root)
@@ -66,6 +78,15 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             path = root / "apps" / "product" / "applications" / "settings" / "ui" / "screen.py"
             path.parent.mkdir(parents=True)
+            self._write(
+                root
+                / "apps"
+                / "product"
+                / "applications"
+                / "profile"
+                / "process"
+                / "profile_processing.py"
+            )
             path.write_text(
                 "from ...profile.process import profile_processing\n",
                 encoding="utf-8",
@@ -79,10 +100,16 @@ class DependencyImportTest(unittest.TestCase):
             root = Path(directory)
             path = root / "applications" / "settings" / "ui" / "screen.py"
             path.parent.mkdir(parents=True)
+            self._write(root / "applications" / "settings" / "data" / "__init__.py")
             path.write_text("from applications.settings.data import *\n", encoding="utf-8")
 
             findings = scan_path(root)
             self.assertTrue(any(item.code == "UPD101" for item in findings))
+
+    @staticmethod
+    def _write(path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# internal module\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
