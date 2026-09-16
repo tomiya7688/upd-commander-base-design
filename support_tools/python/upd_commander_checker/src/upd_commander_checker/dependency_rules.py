@@ -5,10 +5,18 @@ from .classifier import classify_import
 from .models import DependencyRuleResult, Finding, ModuleInfo
 
 
-def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
+def check_dependencies(
+    tree: ast.AST,
+    module: ModuleInfo,
+    internal_modules: frozenset[str] | None = None,
+) -> list[Finding]:
     findings: list[Finding] = []
     for node in ast.walk(tree):
         for imported_name in _imported_names(node, module.path):
+            if internal_modules is not None and not _is_internal_import(
+                imported_name, internal_modules
+            ):
+                continue
             target_layer, target_role, target_application = classify_import(imported_name)
             result = _dependency_result(
                 module,
@@ -28,6 +36,18 @@ def check_dependencies(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     )
                 )
     return findings
+
+
+def _is_internal_import(imported_name: str, internal_modules: frozenset[str]) -> bool:
+    normalized = imported_name.strip(".")
+    for module_name in internal_modules:
+        if normalized == module_name:
+            return True
+        if normalized.startswith(module_name + "."):
+            return True
+        if module_name.startswith(normalized + "."):
+            return True
+    return False
 
 
 def _imported_names(node: ast.AST, source_path: Path) -> list[str]:
