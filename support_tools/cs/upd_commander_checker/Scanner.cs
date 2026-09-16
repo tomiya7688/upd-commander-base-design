@@ -84,7 +84,8 @@ internal static class Scanner
                 {
                     continue;
                 }
-                var contextRelative = Path.GetRelativePath(contextRoot, contextFile).Replace('\\', '/');
+                var contextRelative = Path.GetRelativePath(contextRoot, contextFile)
+                    .Replace('\\', '/');
                 var parsed = SourceParser.Parse(
                     new ScanFileInput(contextFile, contextRelative, ignoreRules)
                 );
