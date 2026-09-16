@@ -15,9 +15,21 @@ internal sealed class TempProject : IDisposable
         Directory.CreateDirectory(root);
     }
 
+    internal string PathFor(string relative)
+    {
+        return Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    internal string CreateDirectory(string relative)
+    {
+        var path = PathFor(relative);
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
     internal void Write(string relative, string content)
     {
-        var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        var path = PathFor(relative);
         var parent = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(parent))
         {

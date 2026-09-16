@@ -52,6 +52,7 @@ add_library(upd_checker_core
     src/report_output.cpp
     src/rule_selection.cpp
     src/scanner.cpp
+    src/source_file_walker.cpp
     src/syntax_diagnostics.cpp
 )
 target_include_directories(upd_checker_core
@@ -79,6 +80,10 @@ if(BUILD_TESTING)
     add_executable(upd_checker_path_ignore_tests tests/path_ignore_tests.cpp)
     target_link_libraries(upd_checker_path_ignore_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_path_ignore_tests COMMAND upd_checker_path_ignore_tests)
+
+    add_executable(upd_checker_io_error_tests tests/io_error_tests.cpp)
+    target_link_libraries(upd_checker_io_error_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_io_error_tests COMMAND upd_checker_io_error_tests)
 
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)

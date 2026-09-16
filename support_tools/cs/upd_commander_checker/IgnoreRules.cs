@@ -9,6 +9,10 @@ internal static class IgnoreRules
         var path = Path.Combine(root, ".updcommanderignore");
         if (!File.Exists(path))
         {
+            if (Directory.Exists(path))
+            {
+                throw new IOException(".updcommanderignore is not a readable file");
+            }
             return [];
         }
 

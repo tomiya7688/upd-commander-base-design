@@ -8,12 +8,33 @@ internal static class Scanner
             ? Path.GetFullPath(input.Target)
             : Path.GetDirectoryName(Path.GetFullPath(input.Target))
                 ?? Directory.GetCurrentDirectory();
-        var ignoreRules = IgnoreRules.Load(root);
-        var files = File.Exists(input.Target)
-            ? [Path.GetFullPath(input.Target)]
-            : Directory.EnumerateFiles(input.Target, "*.cs", SearchOption.AllDirectories).ToList();
+        IReadOnlyList<IgnoreRule> ignoreRules;
+        try
+        {
+            ignoreRules = IgnoreRules.Load(root);
+        }
+        catch (Exception exception)
+            when (exception
+                    is IOException
+                        or UnauthorizedAccessException
+                        or System.Security.SecurityException
+            )
+        {
+            return
+            [
+                new Finding(
+                    ".updcommanderignore",
+                    1,
+                    "UPD001",
+                    $"read failed: {exception.Message}"
+                ),
+            ];
+        }
 
         var findings = new List<Finding>();
+        var files = SourceFileWalker.Enumerate(
+            new SourceFileWalkInput(input.Target, root, findings)
+        );
         var includedFiles = new List<string>();
         var sources = new List<ParsedSource>();
         foreach (var file in files)

@@ -13,9 +13,17 @@ type IgnoreRule struct {
 }
 
 func LoadIgnoreRules(root string) []IgnoreRule {
+	rules, _ := loadIgnoreRules(root)
+	return rules
+}
+
+func loadIgnoreRules(root string) ([]IgnoreRule, error) {
 	file, err := os.Open(filepath.Join(root, ".updcommanderignore"))
 	if err != nil {
-		return nil
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
 	defer file.Close()
 
@@ -35,7 +43,10 @@ func LoadIgnoreRules(root string) []IgnoreRule {
 			rules = append(rules, IgnoreRule{Code: fields[0], Pattern: fields[1]})
 		}
 	}
-	return rules
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return rules, nil
 }
 
 func IsPathIgnored(path string, rules []IgnoreRule) bool {
