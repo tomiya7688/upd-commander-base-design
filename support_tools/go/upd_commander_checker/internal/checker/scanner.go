@@ -16,16 +16,19 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	if err == nil && !info.IsDir() {
 		root = filepath.Dir(target)
 	}
-	rules := LoadIgnoreRules(root)
+	rules, ignoreErr := loadIgnoreRules(root)
+	if ignoreErr != nil {
+		return []Finding{{Path: ".updcommanderignore", Line: 1, Code: "UPD001", Message: "read failed: " + ignoreErr.Error(), Severity: "error"}}
+	}
 	var findings []Finding
 	var paths []string
-	_ = filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
+	walkErr := filepath.WalkDir(target, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			rel, relErr := filepath.Rel(root, path)
 			if relErr != nil {
 				rel = path
 			}
-			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed", Severity: "error"})
+			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
 			return nil
 		}
 		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" {
@@ -43,6 +46,9 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 		findings = append(findings, scanFile(path, relText, rules)...)
 		return nil
 	})
+	if walkErr != nil {
+		findings = append(findings, Finding{Path: filepath.ToSlash(target), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
+	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
 	sort.Slice(findings, func(i, j int) bool {
 		if findings[i].Path != findings[j].Path {
