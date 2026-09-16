@@ -5,7 +5,8 @@ var boundaryAPINames = map[string]bool{
 	"contracts": true,
 	"dto":       true,
 	"dtos":      true,
-	"shared":    true,
+	"message":   true,
+	"messages":  true,
 }
 
 func DependencyResult(source ModuleInfo, target ModuleInfo) *DependencyRuleResult {
