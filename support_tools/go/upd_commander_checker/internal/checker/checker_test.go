@@ -62,11 +62,11 @@ func TestBoundaryLikeDirectoryIsNotBoundaryAPI(t *testing.T) {
 	assertHasCode(t, findings, "UPD102")
 }
 
-func TestBoundaryAPILayerViolationKeepsUPD101(t *testing.T) {
+func TestExplicitBoundaryAPILayerViolationKeepsUPD101(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "ui", "screen_processing.go")
-	writeTestFile(t, path, "package ui\nimport _ \"example/applications/settings/shared/data/storage\"\n")
-	writeTestFile(t, filepath.Join(root, "applications", "settings", "shared", "data", "storage", "storage.go"), "package storage\n")
+	writeTestFile(t, path, "package ui\nimport _ \"example/applications/settings/contracts/data/storage\"\n")
+	writeTestFile(t, filepath.Join(root, "applications", "settings", "contracts", "data", "storage", "storage.go"), "package storage\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD101")
 	assertNoCode(t, findings, "UPD102")

@@ -11,7 +11,7 @@ namespace upd_checker {
 namespace {
 
 const std::unordered_set<std::string> kBoundaryApiNames = {
-    "contract", "contracts", "dto", "dtos", "shared"};
+    "contract", "contracts", "dto", "dtos", "message", "messages"};
 
 bool has_boundary_component(std::string path) {
     std::transform(path.begin(), path.end(), path.begin(), [](unsigned char ch) {

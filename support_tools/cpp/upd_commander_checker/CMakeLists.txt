@@ -94,6 +94,10 @@ if(BUILD_TESTING)
     target_link_libraries(upd_checker_single_file_scan_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_single_file_scan_tests COMMAND upd_checker_single_file_scan_tests)
 
+    add_executable(upd_checker_shared_boundary_tests tests/shared_boundary_tests.cpp)
+    target_link_libraries(upd_checker_shared_boundary_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_shared_boundary_tests COMMAND upd_checker_shared_boundary_tests)
+
     add_executable(upd_checker_cli_options_tests tests/cli_options_tests.cpp)
     target_link_libraries(upd_checker_cli_options_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_cli_options_tests COMMAND upd_checker_cli_options_tests)
