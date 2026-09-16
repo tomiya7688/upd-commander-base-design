@@ -23,9 +23,14 @@ def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Findi
 
     findings: list[Finding] = []
     paths = _python_files(target, root, ignore_patterns, ignore_rules, findings)
+    internal_modules = _internal_module_names(paths, root)
     for path in paths:
-        findings.extend(_scan_file(path, root, classification_root, ignore_rules))
-    findings.extend(_filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules))
+        findings.extend(
+            _scan_file(path, root, classification_root, ignore_rules, internal_modules)
+        )
+    findings.extend(
+        _filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules)
+    )
     return sorted(findings, key=lambda item: (str(item.path), item.line, item.code))
 
 
@@ -66,6 +71,27 @@ def _python_files(
     ]
 
 
+def _internal_module_names(paths: list[Path], root: Path) -> frozenset[str]:
+    names: set[str] = set()
+    for path in paths:
+        names.add(_module_name(path, None))
+        names.add(_module_name(path, root))
+    return frozenset(name for name in names if name)
+
+
+def _module_name(path: Path, root: Path | None) -> str:
+    module_path = path
+    if root is not None:
+        try:
+            module_path = path.relative_to(root)
+        except ValueError:
+            pass
+    parts = [part for part in module_path.with_suffix("").parts if part != module_path.anchor]
+    if parts and parts[-1] == "__init__":
+        parts.pop()
+    return ".".join(parts)
+
+
 def _is_ignored(
     path: Path,
     root: Path,
@@ -83,6 +109,7 @@ def _scan_file(
     root: Path,
     classification_root: Path | None,
     ignore_rules: tuple[IgnoreRule, ...],
+    internal_modules: frozenset[str],
 ) -> list[Finding]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -93,7 +120,7 @@ def _scan_file(
         return [Finding(path, exc.lineno or 1, "UPD002", f"syntax: {exc.msg}")]
 
     module = classify_module(path, classification_root)
-    findings = check_dependencies(tree, module)
+    findings = check_dependencies(tree, module, internal_modules)
     findings.extend(check_commander(tree, module))
     findings.extend(check_containers(tree, module))
     findings.extend(check_responsibilities(tree, module))
@@ -112,7 +139,9 @@ def _filter_location_findings(
             source = source_path.read_text(encoding="utf-8")
         except (OSError, UnicodeError):
             continue
-        filtered.extend(filter_findings([finding], source, finding.path.as_posix(), ignore_rules))
+        filtered.extend(
+            filter_findings([finding], source, finding.path.as_posix(), ignore_rules)
+        )
     return filtered
 
 
