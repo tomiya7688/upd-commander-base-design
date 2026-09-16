@@ -8,7 +8,8 @@ internal static class DependencyRules
         "contracts",
         "dto",
         "dtos",
-        "shared",
+        "message",
+        "messages",
     ];
 
     internal static DependencyRuleResult? Evaluate(DependencyCheckInput input)
