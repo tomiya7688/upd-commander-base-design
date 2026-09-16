@@ -44,6 +44,7 @@ endif()
 add_library(upd_checker_core
     src/ast_analyzer.cpp
     src/classifier.cpp
+    src/cli_options.cpp
     src/compile_arguments.cpp
     src/config.cpp
     src/data_type_location_rules.cpp
@@ -88,6 +89,10 @@ if(BUILD_TESTING)
     add_executable(upd_checker_external_dependency_tests tests/external_dependency_tests.cpp)
     target_link_libraries(upd_checker_external_dependency_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_external_dependency_tests COMMAND upd_checker_external_dependency_tests)
+
+    add_executable(upd_checker_cli_options_tests tests/cli_options_tests.cpp)
+    target_link_libraries(upd_checker_cli_options_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_cli_options_tests COMMAND upd_checker_cli_options_tests)
 
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)

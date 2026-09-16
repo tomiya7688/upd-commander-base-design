@@ -15,46 +15,27 @@ internal static class Program
             return 2;
         }
 
-        var target = config.Input;
-        var output = config.Output;
-        var ignores = new List<string>(config.Ignore);
-        var warningsAsErrors = config.WarningsAsErrors;
-        var attentionsAsErrors = false;
-
-        for (var index = 0; index < args.Length; index++)
+        CliOptions options;
+        try
         {
-            if (args[index] == "--ignore" && index + 1 < args.Length)
-            {
-                ignores.Add(args[++index]);
-            }
-            else if (args[index] == "--output" && index + 1 < args.Length)
-            {
-                output = args[++index];
-            }
-            else if (args[index] == "--warnings-as-errors")
-            {
-                warningsAsErrors = true;
-            }
-            else if (args[index] == "--attentions-as-errors")
-            {
-                attentionsAsErrors = true;
-            }
-            else
-            {
-                target = args[index];
-            }
+            options = CliParser.Parse(new CliParseInput(args, config));
+        }
+        catch (CliUsageException exception)
+        {
+            Console.WriteLine($"USAGE ERROR: {exception.Message}");
+            return 2;
         }
 
-        if (!File.Exists(target) && !Directory.Exists(target))
+        if (!File.Exists(options.Target) && !Directory.Exists(options.Target))
         {
             return ReportOutput.Finish(
-                new FinishInput(new[] { $"E UPD000 {target} missing" }, output, 2)
+                new FinishInput(new[] { $"E UPD000 {options.Target} missing" }, options.Output, 2)
             );
         }
 
         var findings = RuleSelection.Filter(
             new RuleSelectionInput(
-                Scanner.ScanPath(new ScanPathInput(target, ignores)),
+                Scanner.ScanPath(new ScanPathInput(options.Target, options.Ignores)),
                 config.EnabledRules
             )
         );
@@ -84,14 +65,14 @@ internal static class Program
 
         var failed =
             errors > 0
-            || (warningsAsErrors && warnings > 0)
-            || (attentionsAsErrors && attentions > 0);
+            || (options.WarningsAsErrors && warnings > 0)
+            || (options.AttentionsAsErrors && attentions > 0);
         if (failed)
         {
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
-            return ReportOutput.Finish(new FinishInput(lines, output, 1));
+            return ReportOutput.Finish(new FinishInput(lines, options.Output, 1));
         }
         lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
-        return ReportOutput.Finish(new FinishInput(lines, output, 0));
+        return ReportOutput.Finish(new FinishInput(lines, options.Output, 0));
     }
 }
