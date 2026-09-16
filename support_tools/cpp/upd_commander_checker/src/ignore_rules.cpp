@@ -4,6 +4,7 @@
 #include <fstream>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 
 namespace upd_checker {
 namespace {
@@ -49,9 +50,19 @@ std::string glob_to_regex(const std::string& pattern) {
 }  // namespace
 
 std::vector<IgnoreRule> load_ignore_rules(const std::string& root) {
-    std::ifstream file(std::filesystem::path(root) / ".updcommanderignore");
-    if (!file) {
+    const auto path = std::filesystem::path(root) / ".updcommanderignore";
+    std::error_code exists_error;
+    const bool exists = std::filesystem::exists(path, exists_error);
+    if (exists_error) {
+        throw std::runtime_error("read failed: " + exists_error.message());
+    }
+    if (!exists) {
         return {};
+    }
+
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("read failed: " + path.string());
     }
 
     std::vector<IgnoreRule> rules;
@@ -75,6 +86,9 @@ std::vector<IgnoreRule> load_ignore_rules(const std::string& root) {
         } else {
             rules.push_back(IgnoreRule{first, second});
         }
+    }
+    if (file.bad()) {
+        throw std::runtime_error("read failed: " + path.string());
     }
     return rules;
 }
