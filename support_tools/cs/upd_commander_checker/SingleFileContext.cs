@@ -16,8 +16,8 @@ internal static class SingleFileContext
 
     internal static string FindRoot(string file)
     {
-        var directory = Path.GetDirectoryName(Path.GetFullPath(file))
-            ?? Directory.GetCurrentDirectory();
+        var directory =
+            Path.GetDirectoryName(Path.GetFullPath(file)) ?? Directory.GetCurrentDirectory();
         string? applicationRoot = null;
         for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)
         {
