@@ -127,6 +127,57 @@ UPD Commander では、処理量が増えても Commander が別の Processing �
 
 これらは責務過多の可能性を示す warning とし、性能上・生成コード上など明確な理由がある場合は Ignore で理由を残せます。UPD Commander チェッカー自身は strict Self Check により責務警告も許容しません。
 
+## 2.7. Namespace / package / module はフォルダ構成に一致させる
+
+Namespace、package、module など、コード上の論理的な所属を表す構造は、原則としてソースコードのフォルダ構成と一致させることを推奨します。
+
+UPD Commander 設計では、フォルダ構成を責務境界・探索経路・依存関係を人間が把握するための重要な情報として扱います。コード上の所属と物理配置が一致していれば、ファイルを開く前でも責務と依存先を推測しやすくなります。
+
+推奨例:
+
+```text
+src/
+└─ Process/
+   ├─ Commander/
+   │  └─ BattleCommander.cs
+   └─ Processing/
+      └─ BattleProcessing.cs
+```
+
+```csharp
+namespace MyApp.Process.Commander;
+```
+
+```text
+src/process/processing/battle_processing.py
+```
+
+```python
+# import path / module path
+process.processing.battle_processing
+```
+
+言語ごとの対応例:
+
+```text
+C#      -> namespace とディレクトリ階層を対応させる
+C++     -> namespace とディレクトリ階層を可能な範囲で対応させる
+Python  -> package / module path とディレクトリ階層を対応させる
+Go      -> package の配置とディレクトリ構成を対応させる
+```
+
+完全一致が言語仕様や既存資産の都合で不自然になる場合まで強制するものではありません。次のような場合は例外として扱えます。
+
+- 自動生成コード
+- 外部ライブラリやSDKが要求する配置
+- 言語・ビルドシステム固有の慣習
+- 互換性維持のため変更困難な既存公開API
+- テストやサンプルなど、意図的に別の物理配置を採用する場合
+
+ただし例外を除き、同じ Namespace / package / module に属するコードが無関係な複数ディレクトリへ散在したり、物理的に別責務のディレクトリへ置かれたりする構成は避けてください。
+
+この規則の目的は名前空間そのものを制約することではなく、**論理構造と物理構造を一致させ、コードベースの探索性と責務境界の可視性を高めること**です。
+
 ## 3. 1関数1動作
 
 1つの関数は、原則として1つの動作のみを担当することを推奨します。
@@ -255,6 +306,7 @@ UPD Commander 設計はオブジェクト指向を前提としません。
 - 1モジュールに複数の独立責務が混在していないか。
 - 1クラスに複数の独立責務が混在していないか。
 - クラスやモジュールが不必要に大きくなっていないか。
+- Namespace / package / module とフォルダ構成が不必要に乖離していないか。
 - 関数が複数の独立動作を抱えていないか。
 - 処理の区切りと意図が読み取れるか。
 - Processing 同士が横方向へ直接結合していないか。
@@ -273,6 +325,7 @@ UPD Commander 設計では、Commander を処理の交通整理役として保�
 1モジュール = 1責務
 1クラス     = 1責務（クラスを使う場合）
 1関数       = 1動作
+Namespace / package / module = 原則としてフォルダ構成と一致
 処理単位     = 意図を示すコメント
 Processing  = 原則として親Commander配下に閉じる
 Class       = OOP言語におけるモジュール実装例の1つ
