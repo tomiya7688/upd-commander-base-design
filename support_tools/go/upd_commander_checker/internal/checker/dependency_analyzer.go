@@ -6,10 +6,21 @@ import (
 	"strings"
 )
 
-func checkDependencies(file *ast.File, fset *token.FileSet, source ModuleInfo, rel string, lines []string, rules []IgnoreRule) []Finding {
+func checkDependencies(
+	file *ast.File,
+	fset *token.FileSet,
+	source ModuleInfo,
+	rel string,
+	lines []string,
+	rules []IgnoreRule,
+	internalPackages []string,
+) []Finding {
 	var findings []Finding
 	for _, spec := range file.Imports {
 		name := strings.Trim(spec.Path.Value, "\"")
+		if !isInternalImport(name, internalPackages) {
+			continue
+		}
 		target := ClassifyImport(name)
 		line := fset.Position(spec.Pos()).Line
 		if result := DependencyResult(source, target); result != nil {
