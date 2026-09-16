@@ -19,7 +19,11 @@ internal static class SingleFileContext
         var directory =
             Path.GetDirectoryName(Path.GetFullPath(file)) ?? Directory.GetCurrentDirectory();
         string? applicationRoot = null;
-        for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)
+        for (
+            var current = new DirectoryInfo(directory);
+            current is not null;
+            current = current.Parent
+        )
         {
             if (ApplicationMarkers.Contains(current.Name.ToLowerInvariant()))
             {
@@ -31,7 +35,11 @@ internal static class SingleFileContext
             return applicationRoot;
         }
 
-        for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)
+        for (
+            var current = new DirectoryInfo(directory);
+            current is not null;
+            current = current.Parent
+        )
         {
             if (Layers.Contains(current.Name.ToLowerInvariant()))
             {
