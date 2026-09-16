@@ -99,7 +99,8 @@ internal static class Scanner
         var semanticProject = SemanticProject.Create(semanticSources);
         foreach (var source in sources)
         {
-            var classificationRelative = Path.GetRelativePath(contextRoot, source.File).Replace('\\', '/');
+            var classificationRelative = Path.GetRelativePath(contextRoot, source.File)
+                .Replace('\\', '/');
             findings.AddRange(
                 CSharpAstAnalyzer.Analyze(
                     new AstAnalysisInput(
