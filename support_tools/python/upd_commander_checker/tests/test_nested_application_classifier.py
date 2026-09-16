@@ -11,7 +11,18 @@ class NestedApplicationClassifierTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             path = root / "apps" / "product" / "applications" / "settings" / "ui" / "screen_processing.py"
+            target = (
+                root
+                / "apps"
+                / "product"
+                / "applications"
+                / "profile"
+                / "process"
+                / "profile_processing.py"
+            )
             path.parent.mkdir(parents=True)
+            target.parent.mkdir(parents=True)
+            target.write_text("def run():\n    return None\n", encoding="utf-8")
             path.write_text(
                 "from apps.product.applications.profile.process.profile_processing import run\n",
                 encoding="utf-8",
