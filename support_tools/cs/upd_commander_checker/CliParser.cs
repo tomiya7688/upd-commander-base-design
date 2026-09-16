@@ -2,8 +2,10 @@ namespace UpdCommanderChecker;
 
 internal static class CliParser
 {
-    internal static CliOptions Parse(string[] args, CheckerConfig config)
+    internal static CliOptions Parse(CliParseInput input)
     {
+        var args = input.Args;
+        var config = input.Config;
         var target = config.Input;
         var output = config.Output;
         var ignores = new List<string>(config.Ignore);
@@ -16,11 +18,25 @@ internal static class CliParser
             var argument = args[index];
             if (argument == "--ignore")
             {
-                ignores.Add(ReadValue(args, ref index, argument));
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                {
+                    throw new CliUsageException($"missing value for {argument}");
+                }
+                ignores.Add(args[++index]);
             }
             else if (argument == "--output")
             {
-                output = ReadValue(args, ref index, argument);
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                {
+                    throw new CliUsageException($"missing value for {argument}");
+                }
+                output = args[++index];
             }
             else if (argument == "--warnings-as-errors")
             {
@@ -46,14 +62,5 @@ internal static class CliParser
         }
 
         return new CliOptions(target, output, ignores, warningsAsErrors, attentionsAsErrors);
-    }
-
-    private static string ReadValue(string[] args, ref int index, string option)
-    {
-        if (index + 1 >= args.Length || args[index + 1].StartsWith("-", StringComparison.Ordinal))
-        {
-            throw new CliUsageException($"missing value for {option}");
-        }
-        return args[++index];
     }
 }
