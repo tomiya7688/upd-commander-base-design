@@ -18,7 +18,7 @@ internal static class Program
         CliOptions options;
         try
         {
-            options = CliParser.Parse(args, config);
+            options = CliParser.Parse(new CliParseInput(args, config));
         }
         catch (CliUsageException exception)
         {
