@@ -46,8 +46,8 @@ internal static class SourceFileWalker
             catch (Exception exception)
                 when (exception
                         is IOException
-                        or UnauthorizedAccessException
-                        or System.Security.SecurityException)
+                            or UnauthorizedAccessException
+                            or System.Security.SecurityException)
             {
                 input.Findings.Add(
                     new Finding(
@@ -87,8 +87,8 @@ internal static class SourceFileWalker
                 catch (Exception exception)
                     when (exception
                             is IOException
-                            or UnauthorizedAccessException
-                            or System.Security.SecurityException)
+                                or UnauthorizedAccessException
+                                or System.Security.SecurityException)
                 {
                     input.Findings.Add(
                         new Finding(
