@@ -14,7 +14,10 @@ internal static class Scanner
             ignoreRules = IgnoreRules.Load(root);
         }
         catch (Exception exception)
-            when (exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            when (exception
+                    is IOException
+                    or UnauthorizedAccessException
+                    or System.Security.SecurityException)
         {
             return
             [
