@@ -1,5 +1,6 @@
 import ast
 from fnmatch import fnmatch
+import os
 from pathlib import Path
 
 from .classifier import classify_module
@@ -15,9 +16,13 @@ from .responsibility_rules import check_responsibilities
 def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Finding]:
     root = target if target.is_dir() else target.parent
     classification_root = root if target.is_dir() else None
-    ignore_rules = load_ignore_rules(root)
+    try:
+        ignore_rules = load_ignore_rules(root)
+    except (OSError, UnicodeError) as exc:
+        return [Finding(Path(".updcommanderignore"), 1, "UPD001", f"read failed: {exc}")]
+
     findings: list[Finding] = []
-    paths = _python_files(target, root, ignore_patterns, ignore_rules)
+    paths = _python_files(target, root, ignore_patterns, ignore_rules, findings)
     for path in paths:
         findings.extend(_scan_file(path, root, classification_root, ignore_rules))
     findings.extend(_filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules))
@@ -29,8 +34,31 @@ def _python_files(
     root: Path,
     ignore_patterns: tuple[str, ...],
     ignore_rules: tuple[IgnoreRule, ...],
+    findings: list[Finding],
 ) -> list[Path]:
-    paths = [target] if target.is_file() else list(target.rglob("*.py"))
+    if target.is_file():
+        paths = [target]
+    else:
+        paths = []
+
+        def on_error(error: OSError) -> None:
+            error_path = Path(error.filename) if error.filename else target
+            findings.append(
+                Finding(
+                    Path(_relative_text(error_path, root)),
+                    1,
+                    "UPD001",
+                    f"read failed: {error}",
+                )
+            )
+
+        for directory, _, names in os.walk(target, onerror=on_error):
+            paths.extend(
+                Path(directory) / name
+                for name in names
+                if name.endswith(".py")
+            )
+
     return [
         path
         for path in paths
