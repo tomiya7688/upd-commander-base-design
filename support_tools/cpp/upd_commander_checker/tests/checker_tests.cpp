@@ -103,11 +103,11 @@ void test_boundary_like_directory_is_not_boundary_api() {
     std::filesystem::remove_all(root);
 }
 
-void test_boundary_layer_violation_keeps_upd101() {
+void test_explicit_boundary_layer_violation_keeps_upd101() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_boundary_layer";
     std::filesystem::remove_all(root);
     const auto target =
-        root / "applications" / "settings" / "shared" / "data" / "storage.hpp";
+        root / "applications" / "settings" / "contracts" / "data" / "storage.hpp";
     write_file(target, "#pragma once\n");
     write_file(
         root / "applications" / "main" / "ui" / "screen_processing.cpp",
@@ -250,7 +250,7 @@ int main() {
     test_nested_application_classifier_uses_nearest_scope();
     test_data_commander_warning();
     test_boundary_like_directory_is_not_boundary_api();
-    test_boundary_layer_violation_keeps_upd101();
+    test_explicit_boundary_layer_violation_keeps_upd101();
     test_ast_ignores_comment_and_string_pseudo_syntax();
     test_ast_detects_real_loop();
     test_ast_detects_multiline_parameters();
