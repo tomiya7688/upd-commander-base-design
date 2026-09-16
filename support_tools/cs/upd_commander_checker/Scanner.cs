@@ -4,10 +4,12 @@ internal static class Scanner
 {
     internal static List<Finding> ScanPath(ScanPathInput input)
     {
-        var root = Directory.Exists(input.Target)
+        var targetIsDirectory = Directory.Exists(input.Target);
+        var root = targetIsDirectory
             ? Path.GetFullPath(input.Target)
             : Path.GetDirectoryName(Path.GetFullPath(input.Target))
                 ?? Directory.GetCurrentDirectory();
+        var contextRoot = targetIsDirectory ? root : SingleFileContext.FindRoot(input.Target);
         IReadOnlyList<IgnoreRule> ignoreRules;
         try
         {
@@ -62,14 +64,46 @@ internal static class Scanner
             }
         }
 
-        var semanticProject = SemanticProject.Create(sources);
+        var semanticSources = sources.ToList();
+        if (!targetIsDirectory && sources.Count > 0)
+        {
+            var contextFindings = new List<Finding>();
+            var contextFiles = SourceFileWalker.Enumerate(
+                new SourceFileWalkInput(contextRoot, contextRoot, contextFindings)
+            );
+            var targetFullPath = Path.GetFullPath(input.Target);
+            foreach (var contextFile in contextFiles)
+            {
+                if (
+                    string.Equals(
+                        Path.GetFullPath(contextFile),
+                        targetFullPath,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    continue;
+                }
+                var contextRelative = Path.GetRelativePath(contextRoot, contextFile).Replace('\\', '/');
+                var parsed = SourceParser.Parse(
+                    new ScanFileInput(contextFile, contextRelative, ignoreRules)
+                );
+                if (parsed.Source is not null)
+                {
+                    semanticSources.Add(parsed.Source);
+                }
+            }
+        }
+
+        var semanticProject = SemanticProject.Create(semanticSources);
         foreach (var source in sources)
         {
+            var classificationRelative = Path.GetRelativePath(contextRoot, source.File).Replace('\\', '/');
             findings.AddRange(
                 CSharpAstAnalyzer.Analyze(
                     new AstAnalysisInput(
                         source.Root,
-                        Classifier.ClassifyPath(source.Relative),
+                        Classifier.ClassifyPath(classificationRelative),
                         source.Relative,
                         source.Lines,
                         ignoreRules,
