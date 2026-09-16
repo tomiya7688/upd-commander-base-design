@@ -17,7 +17,8 @@ internal static class Scanner
             when (exception
                     is IOException
                         or UnauthorizedAccessException
-                        or System.Security.SecurityException)
+                        or System.Security.SecurityException
+            )
         {
             return
             [
