@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "cli_options.hpp"
 #include "config.hpp"
 #include "report_output.hpp"
 #include "rule_selection.hpp"
@@ -17,32 +18,20 @@ int main(int argc, char* argv[]) {
         return 2;
     }
 
-    std::string target = config.input;
-    std::string output = config.output;
-    std::vector<std::string> ignores = config.ignore;
-    bool warnings_as_errors = config.warnings_as_errors;
-    bool attentions_as_errors = false;
-
-    for (int index = 1; index < argc; ++index) {
-        const std::string argument = argv[index];
-        if (argument == "--ignore" && index + 1 < argc) {
-            ignores.emplace_back(argv[++index]);
-        } else if (argument == "--output" && index + 1 < argc) {
-            output = argv[++index];
-        } else if (argument == "--warnings-as-errors") {
-            warnings_as_errors = true;
-        } else if (argument == "--attentions-as-errors") {
-            attentions_as_errors = true;
-        } else {
-            target = argument;
-        }
+    upd_checker::CliOptions options;
+    try {
+        options = upd_checker::parse_cli(argc, argv, config);
+    } catch (const upd_checker::CliUsageError& error) {
+        std::cout << "USAGE ERROR: " << error.what() << '\n';
+        return 2;
     }
 
-    if (!std::filesystem::exists(target)) {
-        return upd_checker::finish_report({"E UPD000 " + target + " missing"}, output, 2);
+    if (!std::filesystem::exists(options.target)) {
+        return upd_checker::finish_report(
+            {"E UPD000 " + options.target + " missing"}, options.output, 2);
     }
 
-    const auto scanned_findings = upd_checker::scan_path(target, ignores);
+    const auto scanned_findings = upd_checker::scan_path(options.target, options.ignores);
     const auto findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,
@@ -68,13 +57,13 @@ int main(int argc, char* argv[]) {
     }
 
     if (errors > 0 ||
-        (warnings_as_errors && warnings > 0) ||
-        (attentions_as_errors && attentions > 0)) {
+        (options.warnings_as_errors && warnings > 0) ||
+        (options.attentions_as_errors && attentions > 0)) {
         lines.push_back(
             "FAIL e=" + std::to_string(errors) +
             " w=" + std::to_string(warnings) +
             " a=" + std::to_string(attentions));
-        return upd_checker::finish_report(lines, output, 1);
+        return upd_checker::finish_report(lines, options.output, 1);
     }
     if (warnings > 0 || attentions > 0) {
         lines.push_back(
@@ -83,5 +72,5 @@ int main(int argc, char* argv[]) {
     } else {
         lines.push_back("OK");
     }
-    return upd_checker::finish_report(lines, output, 0);
+    return upd_checker::finish_report(lines, options.output, 0);
 }
