@@ -19,13 +19,19 @@ public sealed class SharedBoundaryTests
     [Fact]
     public void SharedContractsRemainBoundaryApi()
     {
-        Assert.DoesNotContain(ScanTarget("shared/contracts/process/settings_processing.cs"), item => item.Code == "UPD102");
+        Assert.DoesNotContain(
+            ScanTarget("shared/contracts/process/settings_processing.cs"),
+            item => item.Code == "UPD102"
+        );
     }
 
     [Fact]
     public void SharedMessagesRemainBoundaryApi()
     {
-        Assert.DoesNotContain(ScanTarget("shared/messages/process/settings_processing.cs"), item => item.Code == "UPD102");
+        Assert.DoesNotContain(
+            ScanTarget("shared/messages/process/settings_processing.cs"),
+            item => item.Code == "UPD102"
+        );
     }
 
     private static List<Finding> ScanTarget(string targetSuffix)
