@@ -44,7 +44,14 @@ public sealed class CliParserTests
             Ignore = ["old/**"],
         };
         var options = CliParser.Parse(
-            ["--ignore", "generated/**", "--output", "report.txt", "--warnings-as-errors", "source"],
+            [
+                "--ignore",
+                "generated/**",
+                "--output",
+                "report.txt",
+                "--warnings-as-errors",
+                "source",
+            ],
             config
         );
 
