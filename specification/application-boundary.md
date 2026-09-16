@@ -57,7 +57,7 @@ Application 間で通信が必要な場合は、次のいずれかを使用す�
 - Application 間 Contract / DTO / Message
 - 特定 Application に属さない Shared Contract
 
-Shared 領域に Processing や保存処理を置いて Application 境界を回避してはならない。
+Shared 領域に Processing や保存処理を置いて Application 境界を回避してはならない。`shared` というディレクトリ・namespace・package 名だけでは境界 API とみなさず、Contract / DTO / Message 等として境界責務が明示されている必要がある。
 
 ## 4. 各 Application 内の原則
 
