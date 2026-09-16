@@ -50,10 +50,7 @@ internal static class CliParser
 
     private static string ReadValue(string[] args, ref int index, string option)
     {
-        if (
-            index + 1 >= args.Length
-            || args[index + 1].StartsWith("-", StringComparison.Ordinal)
-        )
+        if (index + 1 >= args.Length || args[index + 1].StartsWith("-", StringComparison.Ordinal))
         {
             throw new CliUsageException($"missing value for {option}");
         }
