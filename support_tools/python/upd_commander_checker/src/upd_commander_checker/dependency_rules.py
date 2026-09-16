@@ -143,13 +143,16 @@ def _cross_application_internal_dependency(
         return False
     if source.application == target_application:
         return False
-    if _is_shared_contract(imported_name):
+    if _is_boundary_contract(imported_name):
         return False
     if target_role == "messenger":
         return False
     return target_layer is not None or target_role is not None
 
 
-def _is_shared_contract(imported_name: str) -> bool:
+def _is_boundary_contract(imported_name: str) -> bool:
     parts = imported_name.lower().replace("-", "_").split(".")
-    return any(part in {"contract", "contracts", "dto", "dtos", "shared"} for part in parts)
+    return any(
+        part in {"contract", "contracts", "dto", "dtos", "message", "messages"}
+        for part in parts
+    )
