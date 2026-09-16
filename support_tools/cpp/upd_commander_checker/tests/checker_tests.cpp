@@ -16,6 +16,10 @@ void write_file(const std::filesystem::path& path, const std::string& content) {
     file << content;
 }
 
+std::string include_file(const std::filesystem::path& path) {
+    return "#include \"" + path.generic_string() + "\"\n";
+}
+
 bool has_code(const std::vector<upd_checker::Finding>& findings, const std::string& code) {
     for (const auto& finding : findings) {
         if (finding.code == code) {
@@ -28,7 +32,9 @@ bool has_code(const std::vector<upd_checker::Finding>& findings, const std::stri
 void test_ui_to_data_dependency() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_ui_data";
     std::filesystem::remove_all(root);
-    write_file(root / "ui" / "screen_processing.cpp", "#include \"data/storage.hpp\"\n");
+    const auto target = root / "data" / "storage.hpp";
+    write_file(target, "#pragma once\n");
+    write_file(root / "ui" / "screen_processing.cpp", include_file(target));
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD101"));
     std::filesystem::remove_all(root);
 }
@@ -36,9 +42,11 @@ void test_ui_to_data_dependency() {
 void test_cross_application_dependency() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_apps";
     std::filesystem::remove_all(root);
+    const auto target = root / "applications" / "settings" / "process" / "settings_processing.hpp";
+    write_file(target, "#pragma once\n");
     write_file(
         root / "applications" / "main" / "process" / "main_commander.cpp",
-        "#include \"applications/settings/process/settings_processing.hpp\"\n");
+        include_file(target));
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD102"));
     std::filesystem::remove_all(root);
 }
@@ -46,10 +54,14 @@ void test_cross_application_dependency() {
 void test_nested_application_dependency() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_nested_apps";
     std::filesystem::remove_all(root);
+    const auto target =
+        root / "apps" / "product" / "applications" / "profile" / "process" /
+        "profile_processing.hpp";
+    write_file(target, "#pragma once\n");
     write_file(
         root / "apps" / "product" / "applications" / "settings" / "ui" /
             "screen_processing.cpp",
-        "#include \"apps/product/applications/profile/process/profile_processing.hpp\"\n");
+        include_file(target));
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD102"));
     std::filesystem::remove_all(root);
 }
@@ -71,7 +83,9 @@ void test_nested_application_classifier_uses_nearest_scope() {
 void test_data_commander_warning() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_data_commanders";
     std::filesystem::remove_all(root);
-    write_file(root / "data" / "save_commander.cpp", "#include \"data/cache_commander.hpp\"\n");
+    const auto target = root / "data" / "cache_commander.hpp";
+    write_file(target, "#pragma once\n");
+    write_file(root / "data" / "save_commander.cpp", include_file(target));
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD103"));
     std::filesystem::remove_all(root);
 }
@@ -79,9 +93,12 @@ void test_data_commander_warning() {
 void test_boundary_like_directory_is_not_boundary_api() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_contractor";
     std::filesystem::remove_all(root);
+    const auto target = root / "applications" / "settings" / "contractor" / "process" /
+                        "settings_processing.hpp";
+    write_file(target, "#pragma once\n");
     write_file(
         root / "applications" / "main" / "process" / "main_commander.cpp",
-        "#include \"applications/settings/contractor/process/settings_processing.hpp\"\n");
+        include_file(target));
     assert(has_code(upd_checker::scan_path(root.string(), {}), "UPD102"));
     std::filesystem::remove_all(root);
 }
@@ -89,9 +106,12 @@ void test_boundary_like_directory_is_not_boundary_api() {
 void test_boundary_layer_violation_keeps_upd101() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_boundary_layer";
     std::filesystem::remove_all(root);
+    const auto target =
+        root / "applications" / "settings" / "shared" / "data" / "storage.hpp";
+    write_file(target, "#pragma once\n");
     write_file(
         root / "applications" / "main" / "ui" / "screen_processing.cpp",
-        "#include \"applications/settings/shared/data/storage.hpp\"\n");
+        include_file(target));
     const auto findings = upd_checker::scan_path(root.string(), {});
     assert(has_code(findings, "UPD101"));
     assert(!has_code(findings, "UPD102"));
