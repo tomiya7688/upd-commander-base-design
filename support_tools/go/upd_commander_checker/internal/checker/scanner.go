@@ -13,9 +13,15 @@ import (
 func ScanPath(target string, cliIgnore []string) []Finding {
 	root := target
 	info, err := os.Stat(target)
-	if err == nil && !info.IsDir() {
+	targetIsFile := err == nil && !info.IsDir()
+	if targetIsFile {
 		root = filepath.Dir(target)
 	}
+	contextRoot := root
+	if targetIsFile {
+		contextRoot = singleFileContextRoot(target)
+	}
+
 	rules, ignoreErr := loadIgnoreRules(root)
 	if ignoreErr != nil {
 		return []Finding{{Path: ".updcommanderignore", Line: 1, Code: "UPD001", Message: "read failed: " + ignoreErr.Error(), Severity: "error"}}
@@ -49,13 +55,24 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 		findings = append(findings, Finding{Path: filepath.ToSlash(target), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
 	}
 
-	internalPackages := internalPackagePaths(paths, root)
+	dependencyPaths := paths
+	if targetIsFile {
+		dependencyPaths = dependencyContextPaths(contextRoot)
+	}
+	internalPackages := internalPackagePaths(dependencyPaths, contextRoot)
 	for _, path := range paths {
 		rel, relErr := filepath.Rel(root, path)
 		if relErr != nil {
 			rel = path
 		}
-		findings = append(findings, scanFile(path, filepath.ToSlash(rel), rules, internalPackages)...)
+		classificationRel, classificationErr := filepath.Rel(contextRoot, path)
+		if classificationErr != nil {
+			classificationRel = path
+		}
+		findings = append(
+			findings,
+			scanFile(path, filepath.ToSlash(rel), filepath.ToSlash(classificationRel), rules, internalPackages)...,
+		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
 	sort.Slice(findings, func(i, j int) bool {
@@ -70,14 +87,14 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	return findings
 }
 
-func scanFile(path string, rel string, rules []IgnoreRule, internalPackages []string) []Finding {
+func scanFile(path string, rel string, classificationPath string, rules []IgnoreRule, internalPackages []string) []Finding {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		return []Finding{{Path: rel, Line: 1, Code: "UPD002", Message: "syntax error", Severity: "error"}}
 	}
 	lines := readLines(path)
-	source := ClassifyPath(rel)
+	source := ClassifyPath(classificationPath)
 	var findings []Finding
 	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules, internalPackages)...)
 	findings = append(findings, checkCommander(file, fset, source, rel, lines, rules)...)
