@@ -54,6 +54,7 @@ add_library(upd_checker_core
     src/rule_selection.cpp
     src/scanner.cpp
     src/source_file_walker.cpp
+    src/strict_json.cpp
     src/syntax_diagnostics.cpp
 )
 target_include_directories(upd_checker_core
@@ -109,6 +110,10 @@ if(BUILD_TESTING)
     add_executable(upd_checker_config_null_tests tests/config_null_tests.cpp)
     target_link_libraries(upd_checker_config_null_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_config_null_tests COMMAND upd_checker_config_null_tests)
+
+    add_executable(upd_checker_config_json_tests tests/config_json_tests.cpp)
+    target_link_libraries(upd_checker_config_json_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_config_json_tests COMMAND upd_checker_config_json_tests)
 
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)
