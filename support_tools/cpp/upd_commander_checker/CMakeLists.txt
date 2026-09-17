@@ -49,6 +49,7 @@ add_library(upd_checker_core
     src/config.cpp
     src/data_type_location_rules.cpp
     src/dependency_rules.cpp
+    src/executable_path.cpp
     src/ignore_rules.cpp
     src/report_output.cpp
     src/rule_selection.cpp
@@ -114,6 +115,10 @@ if(BUILD_TESTING)
     add_executable(upd_checker_config_json_tests tests/config_json_tests.cpp)
     target_link_libraries(upd_checker_config_json_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_config_json_tests COMMAND upd_checker_config_json_tests)
+
+    add_executable(upd_checker_config_path_resolution_tests tests/config_path_resolution_tests.cpp)
+    target_link_libraries(upd_checker_config_path_resolution_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_config_path_resolution_tests COMMAND upd_checker_config_path_resolution_tests)
 
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)

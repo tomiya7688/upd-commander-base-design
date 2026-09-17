@@ -1,5 +1,6 @@
 #include "config.hpp"
 
+#include "executable_path.hpp"
 #include "rule_selection.hpp"
 #include "strict_json.hpp"
 
@@ -75,7 +76,7 @@ std::vector<std::string> read_string_array_field(
 }
 
 std::filesystem::path find_config(const std::string& executable_path) {
-    const auto executable = std::filesystem::absolute(executable_path).parent_path();
+    const auto executable = resolve_executable_path(executable_path).parent_path();
     const auto executable_config = executable / "config" / "path.json";
     if (std::filesystem::is_regular_file(executable_config)) {
         return executable_config;
