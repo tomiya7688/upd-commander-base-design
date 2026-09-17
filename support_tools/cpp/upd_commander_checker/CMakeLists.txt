@@ -106,6 +106,10 @@ if(BUILD_TESTING)
     target_link_libraries(upd_checker_cli_options_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_cli_options_tests COMMAND upd_checker_cli_options_tests)
 
+    add_executable(upd_checker_config_null_tests tests/config_null_tests.cpp)
+    target_link_libraries(upd_checker_config_null_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_config_null_tests COMMAND upd_checker_config_null_tests)
+
     add_executable(upd_checker_syntax_diagnostic_tests tests/syntax_diagnostic_tests.cpp)
     target_link_libraries(upd_checker_syntax_diagnostic_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_syntax_diagnostic_tests COMMAND upd_checker_syntax_diagnostic_tests)
