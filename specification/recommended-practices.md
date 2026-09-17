@@ -18,6 +18,74 @@
 
 特に Commander、Messenger、Processing の責務を同一ファイルへ混在させることは避けてください。
 
+## 1.5. ファイル名と主要責務名を一致させる
+
+UPD Commander 設計では、コードを読む人が呼び出し名・クラス名・責務名から実装ファイルへ直行できることを重視します。
+
+この規則の目的は、ファイル数やクラス数の形式統一ではなく、VSCode などのモダンなエディタで名前検索したときに、呼び出し元から実装位置へ迷わず到達できるようにすることです。
+
+### クラスを使用する言語
+
+クラスを使用する言語では、原則として主要クラス名とファイル名を一致させます。
+
+主要クラスは1ファイルに1つまでを基本とします。
+
+補助型、DTO、record、enum、内部型など、同一責務に属する小さな型は同一ファイルに置いて構いません。
+
+例:
+
+- `LoadGameSetting` クラスは `LoadGameSetting.cs` に配置する。
+- `BattleProcessing` クラスは `BattleProcessing.cs` に配置する。
+- `ProcessCommander` クラスは `ProcessCommander.cs` に配置する。
+
+呼び出し例:
+
+```csharp
+LoadGameSetting.Load();
+```
+
+この呼び出しを見たとき、開発者は `LoadGameSetting` をファイル検索することで `LoadGameSetting.cs` に到達できるべきです。
+
+### クラスを使用しない言語・表現
+
+クラスのない言語、またはクラスを主要単位としない場合は、主要な責務名・モジュール名・関数群名・ファイル名が対応するように配置します。
+
+言語ごとの対応例:
+
+```text
+C#:
+  LoadGameSetting.cs
+  class LoadGameSetting
+
+C++:
+  LoadGameSetting.cpp / LoadGameSetting.hpp
+  class LoadGameSetting または namespace / free function group
+
+Python:
+  load_game_setting.py
+  load_game_setting 関連の関数群または主要クラス
+
+Go:
+  load_game_setting.go
+  LoadGameSetting 関連の関数・struct・method
+
+C:
+  load_game_setting.c / load_game_setting.h
+  load_game_setting 関連の関数群
+
+Rust:
+  load_game_setting.rs
+  module / struct / impl / function group
+```
+
+### 位置付け
+
+この規則は Core Rule ではありません。探索性・可読性のための Recommended Structure です。
+
+`UPD402`（1ファイルに複数の主要責務型）の意図とも整合します。主要責務型をファイル単位で分離し、名前から定義位置を予測しやすくすることが共通の目的です。
+
+自動生成コード、外部SDKが要求する配置、既存公開APIの互換維持など、明確な理由がある場合は例外として扱えます。
+
 ## 2. 1モジュール1責務
 
 1つのモジュールは、原則として1つの責務のみを持つことを推奨します。
@@ -313,6 +381,7 @@ UPD Commander 設計はオブジェクト指向を前提としません。
 - Commander を迂回する呼び出し経路が増えていないか。
 - クラスを使用することでファイルまたはモジュール境界が曖昧になっていないか。
 - コメントがコードの言い換えではなく、意図を説明しているか。
+- ファイル名と主要責務名（クラス名・モジュール名・関数群名）が対応しているか。
 
 ## 要約
 
@@ -325,6 +394,7 @@ UPD Commander 設計では、Commander を処理の交通整理役として保�
 1モジュール = 1責務
 1クラス     = 1責務（クラスを使う場合）
 1関数       = 1動作
+ファイル名   = 主要責務名と一致（探索性のため）
 Namespace / package / module = 原則としてフォルダ構成と一致
 処理単位     = 意図を示すコメント
 Processing  = 原則として親Commander配下に閉じる
