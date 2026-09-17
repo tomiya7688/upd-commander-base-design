@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#include <optional>
 #include <string>
 
 #include "config.hpp"
@@ -48,36 +47,13 @@ void unset_environment(const char* name) {
 #endif
 }
 
-class EnvironmentGuard {
-public:
-    explicit EnvironmentGuard(const char* name) : name_(name) {
-        const char* value = std::getenv(name);
-        if (value != nullptr) {
-            original_ = std::string(value);
-        }
+void restore_environment(const char* name, bool existed, const std::string& value) {
+    if (existed) {
+        set_environment(name, value);
+    } else {
+        unset_environment(name);
     }
-
-    ~EnvironmentGuard() {
-        if (original_.has_value()) {
-            set_environment(name_.c_str(), *original_);
-        } else {
-            unset_environment(name_.c_str());
-        }
-    }
-
-private:
-    std::string name_;
-    std::optional<std::string> original_;
-};
-
-class CurrentPathGuard {
-public:
-    CurrentPathGuard() : original_(std::filesystem::current_path()) {}
-    ~CurrentPathGuard() { std::filesystem::current_path(original_); }
-
-private:
-    std::filesystem::path original_;
-};
+}
 
 std::filesystem::path normalized_absolute(const std::filesystem::path& path) {
     return std::filesystem::absolute(path).lexically_normal();
@@ -113,10 +89,12 @@ void test_relative_executable_path() {
     const auto executable = root / "bin" / command_name();
     prepare_executable_config(executable, "relative-input");
 
-    CurrentPathGuard current_path;
+    const auto old_cwd = std::filesystem::current_path();
     std::filesystem::current_path(root);
-    const auto config = upd_checker::load_config((std::filesystem::path("bin") / command_name()).string());
+    const auto config = upd_checker::load_config(
+        (std::filesystem::path("bin") / command_name()).string());
     assert_input(config, executable.parent_path() / "relative-input");
+    std::filesystem::current_path(old_cwd);
     std::filesystem::remove_all(root);
 }
 
@@ -127,10 +105,11 @@ void test_path_lookup_prefers_executable_config() {
     prepare_executable_config(executable, "path-input");
     write_file(root / "cwd" / "config" / "path.json", "{\"input\":\"cwd-input\"}\n");
 
-    EnvironmentGuard path_guard("PATH");
-    CurrentPathGuard current_path;
-    const char* old_path = std::getenv("PATH");
-    const std::string suffix = old_path == nullptr ? "" : std::string(1, path_separator()) + old_path;
+    const char* current_path_value = std::getenv("PATH");
+    const bool path_existed = current_path_value != nullptr;
+    const std::string old_path = path_existed ? current_path_value : "";
+    const std::string suffix = path_existed ? std::string(1, path_separator()) + old_path : "";
+    const auto old_cwd = std::filesystem::current_path();
     set_environment("PATH", executable.parent_path().string() + suffix);
     std::filesystem::current_path(root / "cwd");
 
@@ -138,6 +117,9 @@ void test_path_lookup_prefers_executable_config() {
     assert(normalized_absolute(resolved) == normalized_absolute(executable));
     const auto config = upd_checker::load_config(command_name());
     assert_input(config, executable.parent_path() / "path-input");
+
+    std::filesystem::current_path(old_cwd);
+    restore_environment("PATH", path_existed, old_path);
     std::filesystem::remove_all(root);
 }
 
@@ -148,13 +130,18 @@ void test_current_directory_config_is_fallback() {
     write_file(executable, "test executable\n");
     write_file(root / "cwd" / "config" / "path.json", "{\"input\":\"cwd-input\"}\n");
 
-    EnvironmentGuard path_guard("PATH");
-    CurrentPathGuard current_path;
+    const char* current_path_value = std::getenv("PATH");
+    const bool path_existed = current_path_value != nullptr;
+    const std::string old_path = path_existed ? current_path_value : "";
+    const auto old_cwd = std::filesystem::current_path();
     set_environment("PATH", executable.parent_path().string());
     std::filesystem::current_path(root / "cwd");
 
     const auto config = upd_checker::load_config(command_name());
     assert_input(config, root / "cwd" / "cwd-input");
+
+    std::filesystem::current_path(old_cwd);
+    restore_environment("PATH", path_existed, old_path);
     std::filesystem::remove_all(root);
 }
 
