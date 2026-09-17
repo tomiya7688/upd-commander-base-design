@@ -26,24 +26,24 @@ func LoadConfig() (Config, error) {
 		return Config{}, fmt.Errorf("invalid config: %s", path)
 	}
 	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
+	if err := json.Unmarshal(data, &raw); err != nil || raw == nil {
 		return Config{}, fmt.Errorf("invalid config: %s", path)
 	}
-	if value, ok := raw["input"]; ok && json.Unmarshal(value, &config.Input) != nil {
+	if value, ok := raw["input"]; ok && !decodeConfigString(value, &config.Input) {
 		return Config{}, fmt.Errorf("invalid config field: input")
 	}
-	if value, ok := raw["output"]; ok && json.Unmarshal(value, &config.Output) != nil {
+	if value, ok := raw["output"]; ok && !decodeConfigString(value, &config.Output) {
 		return Config{}, fmt.Errorf("invalid config field: output")
 	}
-	if value, ok := raw["ignore"]; ok && json.Unmarshal(value, &config.Ignore) != nil {
+	if value, ok := raw["ignore"]; ok && !decodeConfigStrings(value, &config.Ignore) {
 		return Config{}, fmt.Errorf("invalid config field: ignore")
 	}
-	if value, ok := raw["warnings_as_errors"]; ok && json.Unmarshal(value, &config.WarningsAsErrors) != nil {
+	if value, ok := raw["warnings_as_errors"]; ok && !decodeConfigBool(value, &config.WarningsAsErrors) {
 		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
 	}
 	if value, ok := raw["enabled_rules"]; ok {
 		var enabled []string
-		if string(value) == "null" || json.Unmarshal(value, &enabled) != nil || ValidateEnabledRules(enabled) != nil {
+		if !decodeConfigStrings(value, &enabled) || ValidateEnabledRules(enabled) != nil {
 			return Config{}, fmt.Errorf("invalid config field: enabled_rules")
 		}
 		config.EnabledRules = &enabled
