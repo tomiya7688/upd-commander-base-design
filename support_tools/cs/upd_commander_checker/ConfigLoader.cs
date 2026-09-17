@@ -7,11 +7,11 @@ internal static class ConfigLoader
     public static CheckerConfig Load()
     {
         var path = FindConfigPath();
-        if (path is null)
-        {
-            return new CheckerConfig();
-        }
+        return path is null ? new CheckerConfig() : LoadFromPath(path);
+    }
 
+    internal static CheckerConfig LoadFromPath(string path)
+    {
         try
         {
             var text = File.ReadAllText(path);
@@ -20,11 +20,14 @@ internal static class ConfigLoader
             {
                 throw new ConfigException($"invalid config: {path}");
             }
+
+            ConfigFieldValidator.Validate(document.RootElement);
             var enabledRules = RuleSelection.ReadEnabledRules(document.RootElement);
             var config =
                 JsonSerializer.Deserialize<CheckerConfig>(text)
                 ?? throw new ConfigException($"invalid config: {path}");
             config.EnabledRules = enabledRules;
+
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(
                 new ResolvePathInput(
