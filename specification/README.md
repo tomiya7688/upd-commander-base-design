@@ -6,11 +6,12 @@
 
 `docs/` が設計の説明・概要を扱うのに対し、`specification/` は実装時に従う規定そのものを扱います。
 
-UPD Commander は特定の実装形を強制するフレームワークではなく、UI / Process / Data の責務と通信経路を整理するための設計思想です。規則の強さは [Guideline Levels](guideline-levels.md) に従い、**必須 / 推奨 / 小技**へ分類します。
+UPD Commander は特定の実装形を強制するフレームワークではなく、UI / Process / Data の責務と通信経路を整理するための設計思想です。規則の強さは [Guideline Levels](guideline-levels.md) に従い、**必須 / 推奨 / 小技**へ分類します。Checker の severity はこの分類に対応し、[Checker Severity Boundary](checker-severity.md) を正本とします。
 
 ## 規定文書
 
 - [Guideline Levels](guideline-levels.md) — UPD の規則を必須 / 推奨 / 小技に分類する基準
+- [Checker Severity Boundary](checker-severity.md) — 必須→Error / 推奨→Warning / 小技→Attention の対応と既存 rule マッピング
 - [Layer Specification](layer-spec.md) — UI / Process / Data 各層の責務
 - [Application Boundary](application-boundary.md) — Application / Sub Application の境界と3層構造の再帰適用
 - [Commander Specification](commander-spec.md) — Commander の責務と禁止事項
