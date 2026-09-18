@@ -109,7 +109,8 @@ internal static class Scanner
                         source.Relative,
                         source.Lines,
                         ignoreRules,
-                        semanticProject
+                        semanticProject,
+                        input.Upd301MaxInputs
                     )
                 )
             );
