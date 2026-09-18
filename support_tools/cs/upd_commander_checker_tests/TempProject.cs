@@ -38,9 +38,22 @@ internal sealed class TempProject : IDisposable
         File.WriteAllText(path, content);
     }
 
-    internal List<Finding> Scan(IReadOnlyList<string>? ignore = null, int upd301MaxInputs = 2)
+    internal List<Finding> Scan(
+        IReadOnlyList<string>? ignore = null,
+        int upd301MaxInputs = 2,
+        int flatLayerMinFiles = 12,
+        int flatLayerMinDirectPercent = 80
+    )
     {
-        return Scanner.ScanPath(new ScanPathInput(root, ignore ?? [], upd301MaxInputs));
+        return Scanner.ScanPath(
+            new ScanPathInput(
+                root,
+                ignore ?? [],
+                upd301MaxInputs,
+                flatLayerMinFiles,
+                flatLayerMinDirectPercent
+            )
+        );
     }
 
     public void Dispose()
