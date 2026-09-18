@@ -13,7 +13,7 @@ internal static class ConfigFieldValidator
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
         RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
         RequirePositiveInteger(new ConfigFieldInput(root, "flat_layer_min_files"));
-        RequireIntegerRange(new ConfigFieldInput(root, "flat_layer_min_direct_percent"), 1, 100);
+        RequirePercentInteger(new ConfigFieldInput(root, "flat_layer_min_direct_percent"));
     }
 
     private static void RequireKind(ConfigKindFieldInput input)
@@ -67,7 +67,7 @@ internal static class ConfigFieldValidator
         }
     }
 
-    private static void RequireIntegerRange(ConfigFieldInput input, int minimum, int maximum)
+    private static void RequirePercentInteger(ConfigFieldInput input)
     {
         if (!input.Root.TryGetProperty(input.Name, out var value))
         {
@@ -81,8 +81,8 @@ internal static class ConfigFieldValidator
                 CultureInfo.InvariantCulture,
                 out var parsed
             )
-            || parsed < minimum
-            || parsed > maximum
+            || parsed < 1
+            || parsed > 100
         )
         {
             throw new ConfigException($"invalid config field: {input.Name}");
