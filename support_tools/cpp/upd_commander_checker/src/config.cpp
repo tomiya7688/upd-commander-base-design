@@ -155,6 +155,12 @@ Config load_config(const std::string& executable_path) {
     const std::vector<std::string> ignore = read_string_array_field(root, "ignore");
     const bool warnings_as_errors = read_bool_field(root, "warnings_as_errors");
     const int upd301_max_inputs = read_positive_int_field(root, "upd301_max_inputs", 2);
+    const int flat_layer_min_files = read_positive_int_field(root, "flat_layer_min_files", 12);
+    const int flat_layer_min_direct_percent =
+        read_positive_int_field(root, "flat_layer_min_direct_percent", 80);
+    if (flat_layer_min_direct_percent > 100) {
+        throw ConfigError("invalid config field: flat_layer_min_direct_percent");
+    }
     bool enabled_rules_configured = false;
     std::vector<std::string> enabled_rules =
         read_string_array_field(root, "enabled_rules", &enabled_rules_configured);
@@ -168,6 +174,8 @@ Config load_config(const std::string& executable_path) {
     config.ignore = ignore;
     config.warnings_as_errors = warnings_as_errors;
     config.upd301_max_inputs = upd301_max_inputs;
+    config.flat_layer_min_files = flat_layer_min_files;
+    config.flat_layer_min_direct_percent = flat_layer_min_direct_percent;
     config.enabled_rules = std::move(enabled_rules);
     config.enabled_rules_configured = enabled_rules_configured;
     return config;
