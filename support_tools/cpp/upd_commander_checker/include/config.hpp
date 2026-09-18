@@ -12,6 +12,7 @@ struct Config {
     std::string output;
     std::vector<std::string> ignore;
     bool warnings_as_errors = false;
+    int upd301_max_inputs = 2;
     std::vector<std::string> enabled_rules;
     bool enabled_rules_configured = false;
 };
