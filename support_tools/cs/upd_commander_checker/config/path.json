@@ -19,6 +19,9 @@
     "UPD401",
     "UPD402",
     "UPD403",
-    "UPD404"
-  ]
+    "UPD404",
+    "UPD405"
+  ],
+  "flat_layer_min_files": 12,
+  "flat_layer_min_direct_percent": 80
 }
