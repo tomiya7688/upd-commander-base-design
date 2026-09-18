@@ -14,7 +14,12 @@ The four UPD Commander Checker implementations must regression-test the same rul
 | commander-loop | UPD201 | warning |
 | commander-calculation | UPD202 | warning |
 | commander-direct-work | UPD203 | error |
-| multiple-inputs | UPD301 | attention |
+| upd301-two-inputs | UPD301 | no finding |
+| upd301-boundary-default-2 | UPD301 | no finding |
+| upd301-boundary-plus-one | UPD301 | attention |
+| upd301-custom-max-1-two-inputs | UPD301 | attention |
+| upd301-custom-max-3-three-inputs | UPD301 | no finding |
+| upd301-custom-max-3-four-inputs | UPD301 | attention |
 | multiple-outputs | UPD302 | attention |
 | substantial-compresser-opportunity | UPD303 | warning |
 | responsibility-too-large | UPD401 | warning |
