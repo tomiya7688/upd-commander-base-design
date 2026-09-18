@@ -13,6 +13,12 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"enabled_rules\":null}", "enabled_rules")]
     [InlineData("{\"input\":1}", "input")]
     [InlineData("{\"warnings_as_errors\":\"true\"}", "warnings_as_errors")]
+    [InlineData("{\"upd301_max_inputs\":null}", "upd301_max_inputs")]
+    [InlineData("{\"upd301_max_inputs\":true}", "upd301_max_inputs")]
+    [InlineData("{\"upd301_max_inputs\":\"2\"}", "upd301_max_inputs")]
+    [InlineData("{\"upd301_max_inputs\":2.0}", "upd301_max_inputs")]
+    [InlineData("{\"upd301_max_inputs\":0}", "upd301_max_inputs")]
+    [InlineData("{\"upd301_max_inputs\":-1}", "upd301_max_inputs")]
     public void InvalidTypedFieldsAreRejected(string content, string field)
     {
         var path = WriteConfig(content);
@@ -20,6 +26,26 @@ public sealed class ConfigLoaderTests
         var exception = Assert.Throws<ConfigException>(() => ConfigLoader.LoadFromPath(path));
 
         Assert.Contains($"invalid config field: {field}", exception.Message);
+    }
+
+    [Fact]
+    public void Upd301MaxInputsDefaultsToTwo()
+    {
+        var path = WriteConfig("{}");
+
+        var config = ConfigLoader.LoadFromPath(path);
+
+        Assert.Equal(2, config.Upd301MaxInputs);
+    }
+
+    [Fact]
+    public void Upd301MaxInputsLoadsPositiveInteger()
+    {
+        var path = WriteConfig("{\"upd301_max_inputs\":3}");
+
+        var config = ConfigLoader.LoadFromPath(path);
+
+        Assert.Equal(3, config.Upd301MaxInputs);
     }
 
     [Fact]
