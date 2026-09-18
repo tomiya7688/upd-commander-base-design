@@ -65,7 +65,7 @@ class Worker:
         tree = ast.parse(
             """
 class Worker:
-    def _run(self, left, right):
+    def _run(self, left, right, mode):
         return left, right
 """
         )
@@ -75,6 +75,90 @@ class Worker:
         )
         self.assertTrue(any(finding.code == "UPD301" for finding in findings))
         self.assertTrue(any(finding.code == "UPD302" for finding in findings))
+
+    def test_default_threshold_allows_two_and_flags_three(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    def good(self, left, right):
+        pass
+
+    def bad(self, left, right, mode):
+        pass
+"""
+        )
+        findings = check_containers(
+            tree,
+            ModuleInfo(Path("worker.py"), "process", "processing"),
+        )
+        upd301_lines = [finding.line for finding in findings if finding.code == "UPD301"]
+        self.assertEqual([6], upd301_lines)
+
+    def test_custom_threshold_changes_boundary(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    def two(self, left, right):
+        pass
+
+    def three(self, left, right, mode):
+        pass
+
+    def four(self, left, right, mode, extra):
+        pass
+"""
+        )
+        module = ModuleInfo(Path("worker.py"), "process", "processing")
+
+        strict = check_containers(tree, module, 1)
+        self.assertEqual(
+            [3, 6, 9],
+            [finding.line for finding in strict if finding.code == "UPD301"],
+        )
+
+        relaxed = check_containers(tree, module, 3)
+        self.assertEqual(
+            [9],
+            [finding.line for finding in relaxed if finding.code == "UPD301"],
+        )
+
+    def test_variadic_parameters_each_count_as_one_input(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    def good(self, left, *values):
+        pass
+
+    def bad(self, left, right, *values):
+        pass
+
+    def keyword_bad(self, left, right, **options):
+        pass
+"""
+        )
+        findings = check_containers(
+            tree,
+            ModuleInfo(Path("worker.py"), "process", "processing"),
+        )
+        self.assertEqual(
+            [6, 9],
+            [finding.line for finding in findings if finding.code == "UPD301"],
+        )
+
+    def test_staticmethod_has_no_implicit_receiver(self) -> None:
+        tree = ast.parse(
+            """
+class Worker:
+    @staticmethod
+    def run(self, left, right):
+        pass
+"""
+        )
+        findings = check_containers(
+            tree,
+            ModuleInfo(Path("worker.py"), "process", "processing"),
+        )
+        self.assertTrue(any(finding.code == "UPD301" for finding in findings))
 
     def test_construction_hooks_are_not_checked(self) -> None:
         tree = ast.parse(
