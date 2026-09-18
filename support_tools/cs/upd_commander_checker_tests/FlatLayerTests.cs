@@ -37,7 +37,7 @@ public sealed class FlatLayerTests
         WriteFiles((project, 6, 0, 0));
 
         Assert.Contains(
-            project.Scan(flatLayerMinFiles: 6, flatLayerMinDirectPercent: 80),
+            project.Scan((6, 80)),
             finding => finding.Code == "UPD405"
         );
     }
