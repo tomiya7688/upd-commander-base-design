@@ -34,6 +34,15 @@ def load_config() -> CheckerConfig:
         type(data["upd301_max_inputs"]) is not int or data["upd301_max_inputs"] < 1
     ):
         raise ConfigError("invalid config field: upd301_max_inputs")
+    if "flat_layer_min_files" in data and (
+        type(data["flat_layer_min_files"]) is not int or data["flat_layer_min_files"] < 1
+    ):
+        raise ConfigError("invalid config field: flat_layer_min_files")
+    if "flat_layer_min_direct_percent" in data and (
+        type(data["flat_layer_min_direct_percent"]) is not int
+        or not 1 <= data["flat_layer_min_direct_percent"] <= 100
+    ):
+        raise ConfigError("invalid config field: flat_layer_min_direct_percent")
     if "enabled_rules" in data and (
         not isinstance(data["enabled_rules"], list)
         or not all(isinstance(item, str) for item in data["enabled_rules"])
@@ -47,6 +56,8 @@ def load_config() -> CheckerConfig:
     ignore = tuple(data.get("ignore", []))
     warnings_as_errors = data.get("warnings_as_errors", False)
     upd301_max_inputs = data.get("upd301_max_inputs", 2)
+    flat_layer_min_files = data.get("flat_layer_min_files", 12)
+    flat_layer_min_direct_percent = data.get("flat_layer_min_direct_percent", 80)
     enabled_rules = None
     if "enabled_rules" in data:
         try:
@@ -60,6 +71,8 @@ def load_config() -> CheckerConfig:
         warnings_as_errors=warnings_as_errors,
         enabled_rules=enabled_rules,
         upd301_max_inputs=upd301_max_inputs,
+        flat_layer_min_files=flat_layer_min_files,
+        flat_layer_min_direct_percent=flat_layer_min_direct_percent,
     )
 
 
