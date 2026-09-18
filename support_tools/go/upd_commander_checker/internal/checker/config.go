@@ -50,7 +50,7 @@ func LoadConfig() (Config, error) {
 	if value, ok := raw["flat_layer_min_files"]; ok && !decodeConfigPositiveInt(value, &config.FlatLayerMinFiles) {
 		return Config{}, fmt.Errorf("invalid config field: flat_layer_min_files")
 	}
-	if value, ok := raw["flat_layer_min_direct_percent"]; ok && !decodeConfigIntRange(value, &config.FlatLayerMinDirectPercent, 1, 100) {
+	if value, ok := raw["flat_layer_min_direct_percent"]; ok && !decodeConfigPercent(value, &config.FlatLayerMinDirectPercent) {
 		return Config{}, fmt.Errorf("invalid config field: flat_layer_min_direct_percent")
 	}
 	if value, ok := raw["enabled_rules"]; ok {
