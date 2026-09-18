@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace UpdCommanderChecker;
@@ -10,6 +11,7 @@ internal static class ConfigFieldValidator
         RequireKind(new ConfigKindFieldInput(root, "output", JsonValueKind.String));
         RequireStringArray(new ConfigFieldInput(root, "ignore"));
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
+        RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
     }
 
     private static void RequireKind(ConfigKindFieldInput input)
@@ -39,6 +41,27 @@ internal static class ConfigFieldValidator
             {
                 throw new ConfigException($"invalid config field: {input.Name}");
             }
+        }
+    }
+
+    private static void RequirePositiveInteger(ConfigFieldInput input)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (
+            value.ValueKind != JsonValueKind.Number
+            || !int.TryParse(
+                value.GetRawText(),
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out var parsed
+            )
+            || parsed < 1
+        )
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
         }
     }
 
