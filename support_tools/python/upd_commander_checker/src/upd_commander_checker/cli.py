@@ -34,7 +34,7 @@ def main() -> int:
         return finish_report([f"E UPD000 {target}: missing"], output, 2)
 
     findings = filter_enabled_findings(
-        scan_path(target, ignores), config.enabled_rules
+        scan_path(target, ignores, config.upd301_max_inputs), config.enabled_rules
     )
     lines = []
     for finding in findings:
