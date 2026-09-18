@@ -36,10 +36,7 @@ public sealed class FlatLayerTests
         using var project = new TempProject();
         WriteFiles((project, 6, 0, 0));
 
-        Assert.Contains(
-            project.Scan((6, 80)),
-            finding => finding.Code == "UPD405"
-        );
+        Assert.Contains(project.Scan((6, 80)), finding => finding.Code == "UPD405");
     }
 
     private static void WriteFiles(
