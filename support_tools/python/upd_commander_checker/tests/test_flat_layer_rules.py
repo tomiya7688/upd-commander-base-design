@@ -6,7 +6,8 @@ from upd_commander_checker.scanner import scan_path
 
 
 class FlatLayerRuleTests(unittest.TestCase):
-    def _write_files(self, root: Path, direct: int, nested: int, excluded: int = 0) -> None:
+    def _write_files(self, root: Path, counts: tuple[int, int, int]) -> None:
+        direct, nested, excluded = counts
         layer = root / "process"
         layer.mkdir(parents=True, exist_ok=True)
         for index in range(direct):
@@ -23,12 +24,12 @@ class FlatLayerRuleTests(unittest.TestCase):
     def test_default_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_files(root, 9, 3)
+            self._write_files(root, (9, 3, 0))
             self.assertFalse(any(item.code == "UPD405" for item in scan_path(root)))
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_files(root, 10, 2)
+            self._write_files(root, (10, 2, 0))
             findings = [item for item in scan_path(root) if item.code == "UPD405"]
             self.assertEqual(1, len(findings))
             self.assertEqual(Path("process"), findings[0].path)
@@ -37,18 +38,18 @@ class FlatLayerRuleTests(unittest.TestCase):
     def test_small_and_generated_heavy_do_not_trigger(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_files(root, 8, 0)
+            self._write_files(root, (8, 0, 0))
             self.assertFalse(any(item.code == "UPD405" for item in scan_path(root)))
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_files(root, 5, 0, 20)
+            self._write_files(root, (5, 0, 20))
             self.assertFalse(any(item.code == "UPD405" for item in scan_path(root)))
 
     def test_custom_thresholds(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write_files(root, 6, 0)
+            self._write_files(root, (6, 0, 0))
             findings = scan_path(root, (), 2, 6, 80)
             self.assertTrue(any(item.code == "UPD405" for item in findings))
 
