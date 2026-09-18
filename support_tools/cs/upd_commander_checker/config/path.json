@@ -3,6 +3,7 @@
   "output": "",
   "ignore": [],
   "warnings_as_errors": false,
+  "upd301_max_inputs": 2,
   "enabled_rules": [
     "UPD001",
     "UPD002",
