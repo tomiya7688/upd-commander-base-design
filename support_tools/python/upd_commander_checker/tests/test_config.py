@@ -22,6 +22,7 @@ class ConfigTest(unittest.TestCase):
                         "ignore": ["generated/**"],
                         "warnings_as_errors": True,
                         "enabled_rules": ["UPD101", "UPD202"],
+                        "upd301_max_inputs": 3,
                     }
                 ),
                 encoding="utf-8",
@@ -37,6 +38,7 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(("generated/**",), config.ignore)
             self.assertTrue(config.warnings_as_errors)
             self.assertEqual(("UPD101", "UPD202"), config.enabled_rules)
+            self.assertEqual(3, config.upd301_max_inputs)
 
     def test_missing_enabled_rules_means_all_rules(self) -> None:
         original = Path.cwd()
@@ -50,6 +52,7 @@ class ConfigTest(unittest.TestCase):
             finally:
                 os.chdir(original)
             self.assertIsNone(config.enabled_rules)
+            self.assertEqual(2, config.upd301_max_inputs)
 
     def test_empty_enabled_rules_means_no_rules(self) -> None:
         original = Path.cwd()
