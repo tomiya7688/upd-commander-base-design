@@ -147,11 +147,11 @@ func globMatch(path string, pattern string) bool {
 }
 
 var flatLayerExcludedDirs = map[string]bool{
-	"generated": true,
+	"generated":   true,
 	"third_party": true,
-	"vendor": true,
-	"external": true,
-	"build": true,
+	"vendor":      true,
+	"external":    true,
+	"build":       true,
 }
 
 type flatLayerCount struct {
