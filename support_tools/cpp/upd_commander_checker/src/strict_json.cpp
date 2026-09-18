@@ -155,7 +155,8 @@ void consume_digits(Cursor& cursor) {
     }
 }
 
-void parse_number(Cursor& cursor) {
+std::string parse_number(Cursor& cursor) {
+    const std::size_t start = cursor.position;
     consume(cursor, '-');
     if (cursor.position >= cursor.text.size()) {
         fail();
@@ -184,6 +185,7 @@ void parse_number(Cursor& cursor) {
         }
         consume_digits(cursor);
     }
+    return cursor.text.substr(start, cursor.position - start);
 }
 
 void parse_literal(Cursor& cursor, const std::string& literal) {
@@ -275,7 +277,7 @@ JsonValue parse_value(Cursor& cursor) {
         return value;
     }
     if (ch == '-' || (ch >= '0' && ch <= '9')) {
-        parse_number(cursor);
+        value.number_value = parse_number(cursor);
         value.type = JsonValue::Type::number;
         return value;
     }
