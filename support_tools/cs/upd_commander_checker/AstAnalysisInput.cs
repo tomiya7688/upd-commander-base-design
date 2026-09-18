@@ -8,5 +8,6 @@ internal sealed record AstAnalysisInput(
     string Relative,
     IReadOnlyList<string> Lines,
     IReadOnlyList<IgnoreRule> IgnoreRules,
-    SemanticProject SemanticProject
+    SemanticProject SemanticProject,
+    int Upd301MaxInputs
 );
