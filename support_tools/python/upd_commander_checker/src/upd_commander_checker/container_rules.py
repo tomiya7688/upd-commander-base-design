@@ -8,7 +8,9 @@ _MIN_REDUCIBLE_LINES = 10
 _MIN_REDUCTION_RATIO = 0.20
 
 
-def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
+def check_containers(
+    tree: ast.AST, module: ModuleInfo, upd301_max_inputs: int = 2
+) -> list[Finding]:
     """Check the UPD one-class/one-container readability rule.
 
     Containerization is recommended rather than mandatory because packing and
@@ -35,8 +37,10 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
             if node.name in _CONSTRUCTION_HOOKS:
                 continue
 
-            parameters = _payload_parameters(node.args)
-            input_violation = len(parameters) > 1
+            parameters = _payload_parameters(node)
+            input_count = len(parameters)
+            input_violation = input_count > upd301_max_inputs
+            input_packable = input_count > 1
             if input_violation:
                 findings.append(
                     Finding(
@@ -61,9 +65,9 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     )
                 )
 
-            if input_violation or output_violation:
+            if input_packable or output_violation:
                 signature_lines = _signature_reducible_lines(node)
-                excess_values = max(0, len(parameters) - 1) + max(0, returned_values - 1)
+                excess_values = max(0, input_count - 1) + max(0, returned_values - 1)
                 reducible_lines += max(signature_lines, excess_values)
 
         if module.role in _BLOAT_ROLES and _large_compression_expected(
@@ -81,11 +85,35 @@ def check_containers(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
     return findings
 
 
-def _payload_parameters(arguments: ast.arguments) -> list[ast.arg]:
+def _payload_parameters(
+    function: ast.FunctionDef | ast.AsyncFunctionDef,
+) -> list[ast.arg]:
+    arguments = function.args
     positional = list(arguments.posonlyargs) + list(arguments.args)
-    if positional and positional[0].arg in {"self", "cls"}:
+    if (
+        not _has_decorator(function, "staticmethod")
+        and positional
+        and positional[0].arg in {"self", "cls"}
+    ):
         positional = positional[1:]
-    return positional + list(arguments.kwonlyargs)
+
+    parameters = positional + list(arguments.kwonlyargs)
+    if arguments.vararg is not None:
+        parameters.append(arguments.vararg)
+    if arguments.kwarg is not None:
+        parameters.append(arguments.kwarg)
+    return parameters
+
+
+def _has_decorator(
+    function: ast.FunctionDef | ast.AsyncFunctionDef, name: str
+) -> bool:
+    for decorator in function.decorator_list:
+        if isinstance(decorator, ast.Name) and decorator.id == name:
+            return True
+        if isinstance(decorator, ast.Attribute) and decorator.attr == name:
+            return True
+    return False
 
 
 def _max_multi_value_return(function: ast.FunctionDef | ast.AsyncFunctionDef) -> int:
