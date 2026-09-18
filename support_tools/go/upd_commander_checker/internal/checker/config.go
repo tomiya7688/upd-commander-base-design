@@ -12,11 +12,12 @@ type Config struct {
 	Output           string    `json:"output"`
 	Ignore           []string  `json:"ignore"`
 	WarningsAsErrors bool      `json:"warnings_as_errors"`
+	Upd301MaxInputs  int       `json:"upd301_max_inputs"`
 	EnabledRules     *[]string `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
-	config := Config{Input: "."}
+	config := Config{Input: ".", Upd301MaxInputs: 2}
 	path := findConfigPath()
 	if path == "" {
 		return config, nil
@@ -40,6 +41,9 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["warnings_as_errors"]; ok && !decodeConfigBool(value, &config.WarningsAsErrors) {
 		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
+	}
+	if value, ok := raw["upd301_max_inputs"]; ok && !decodeConfigPositiveInt(value, &config.Upd301MaxInputs) {
+		return Config{}, fmt.Errorf("invalid config field: upd301_max_inputs")
 	}
 	if value, ok := raw["enabled_rules"]; ok {
 		var enabled []string
