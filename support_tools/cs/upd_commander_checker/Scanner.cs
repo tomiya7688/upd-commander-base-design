@@ -39,20 +39,20 @@ internal static class Scanner
         );
         var includedFiles = new List<string>();
         var sources = new List<ParsedSource>();
-        foreach (var file in input.Files)
+        foreach (var file in files)
         {
-            var relative = Path.GetRelativePath(input.Root, file).Replace('\\', '/');
+            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
             if (
                 input.CliIgnore.Any(pattern =>
                     IgnoreRules.GlobMatch(new GlobMatchInput(relative, pattern))
-                ) || IgnoreRules.IsPathIgnored(new PathIgnoreCheckInput(relative, input.IgnoreRules))
+                ) || IgnoreRules.IsPathIgnored(new PathIgnoreCheckInput(relative, ignoreRules))
             )
             {
                 continue;
             }
 
             includedFiles.Add(file);
-            var parsed = SourceParser.Parse(new ScanFileInput(file, relative, input.IgnoreRules));
+            var parsed = SourceParser.Parse(new ScanFileInput(file, relative, ignoreRules));
             if (parsed.Finding is not null)
             {
                 findings.Add(parsed.Finding);
@@ -87,7 +87,7 @@ internal static class Scanner
                 var contextRelative = Path.GetRelativePath(contextRoot, contextFile)
                     .Replace('\\', '/');
                 var parsed = SourceParser.Parse(
-                    new ScanFileInput(contextFile, contextRelative, input.IgnoreRules)
+                    new ScanFileInput(contextFile, contextRelative, ignoreRules)
                 );
                 if (parsed.Source is not null)
                 {
@@ -117,7 +117,7 @@ internal static class Scanner
         }
         findings.AddRange(
             DataTypeLocationRules.Check(
-                new DataTypeLocationRuleContext(includedFiles, root, input.IgnoreRules)
+                new DataTypeLocationRuleContext(includedFiles, root, ignoreRules)
             )
         );
         if (targetIsDirectory)
