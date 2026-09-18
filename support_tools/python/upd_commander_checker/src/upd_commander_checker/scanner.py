@@ -13,7 +13,11 @@ from .models import Finding
 from .responsibility_rules import check_responsibilities
 
 
-def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Finding]:
+def scan_path(
+    target: Path,
+    ignore_patterns: tuple[str, ...] = (),
+    upd301_max_inputs: int = 2,
+) -> list[Finding]:
     root = target if target.is_dir() else target.parent
     classification_root = root if target.is_dir() else None
     try:
@@ -26,7 +30,14 @@ def scan_path(target: Path, ignore_patterns: tuple[str, ...] = ()) -> list[Findi
     internal_modules = _internal_module_names(paths, root)
     for path in paths:
         findings.extend(
-            _scan_file(path, root, classification_root, ignore_rules, internal_modules)
+            _scan_file(
+                path,
+                root,
+                classification_root,
+                ignore_rules,
+                internal_modules,
+                upd301_max_inputs,
+            )
         )
     findings.extend(
         _filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules)
@@ -110,6 +121,7 @@ def _scan_file(
     classification_root: Path | None,
     ignore_rules: tuple[IgnoreRule, ...],
     internal_modules: frozenset[str],
+    upd301_max_inputs: int,
 ) -> list[Finding]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -122,7 +134,7 @@ def _scan_file(
     module = classify_module(path, classification_root)
     findings = check_dependencies(tree, module, internal_modules)
     findings.extend(check_commander(tree, module))
-    findings.extend(check_containers(tree, module))
+    findings.extend(check_containers(tree, module, upd301_max_inputs))
     findings.extend(check_responsibilities(tree, module))
     return filter_findings(findings, source, _relative_text(path, root), ignore_rules)
 
