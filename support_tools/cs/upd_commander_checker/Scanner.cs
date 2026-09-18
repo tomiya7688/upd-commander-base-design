@@ -39,20 +39,20 @@ internal static class Scanner
         );
         var includedFiles = new List<string>();
         var sources = new List<ParsedSource>();
-        foreach (var file in files)
+        foreach (var file in input.Files)
         {
-            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+            var relative = Path.GetRelativePath(input.Root, file).Replace('\\', '/');
             if (
                 input.CliIgnore.Any(pattern =>
                     IgnoreRules.GlobMatch(new GlobMatchInput(relative, pattern))
-                ) || IgnoreRules.IsPathIgnored(new PathIgnoreCheckInput(relative, ignoreRules))
+                ) || IgnoreRules.IsPathIgnored(new PathIgnoreCheckInput(relative, input.IgnoreRules))
             )
             {
                 continue;
             }
 
             includedFiles.Add(file);
-            var parsed = SourceParser.Parse(new ScanFileInput(file, relative, ignoreRules));
+            var parsed = SourceParser.Parse(new ScanFileInput(file, relative, input.IgnoreRules));
             if (parsed.Finding is not null)
             {
                 findings.Add(parsed.Finding);
@@ -87,7 +87,7 @@ internal static class Scanner
                 var contextRelative = Path.GetRelativePath(contextRoot, contextFile)
                     .Replace('\\', '/');
                 var parsed = SourceParser.Parse(
-                    new ScanFileInput(contextFile, contextRelative, ignoreRules)
+                    new ScanFileInput(contextFile, contextRelative, input.IgnoreRules)
                 );
                 if (parsed.Source is not null)
                 {
@@ -117,18 +117,20 @@ internal static class Scanner
         }
         findings.AddRange(
             DataTypeLocationRules.Check(
-                new DataTypeLocationRuleContext(includedFiles, root, ignoreRules)
+                new DataTypeLocationRuleContext(includedFiles, root, input.IgnoreRules)
             )
         );
         if (targetIsDirectory)
         {
             findings.AddRange(
                 CheckFlatLayers(
-                    includedFiles,
-                    root,
-                    ignoreRules,
-                    input.FlatLayerMinFiles,
-                    input.FlatLayerMinDirectPercent
+                    (
+                        includedFiles,
+                        root,
+                        ignoreRules,
+                        input.FlatLayerMinFiles,
+                        input.FlatLayerMinDirectPercent
+                    )
                 )
             );
         }
@@ -162,17 +164,19 @@ internal static class Scanner
     private static readonly HashSet<string> LayerNames = ["ui", "process", "data"];
 
     private static IEnumerable<Finding> CheckFlatLayers(
-        IReadOnlyList<string> files,
-        string root,
-        IReadOnlyList<IgnoreRule> ignoreRules,
-        int minFiles,
-        int minDirectPercent
+        (
+            IReadOnlyList<string> Files,
+            string Root,
+            IReadOnlyList<IgnoreRule> IgnoreRules,
+            int MinFiles,
+            int MinDirectPercent
+        ) input
     )
     {
         var counts = new Dictionary<string, (int Total, int Direct)>(StringComparer.Ordinal);
-        foreach (var file in files)
+        foreach (var file in input.Files)
         {
-            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+            var relative = Path.GetRelativePath(input.Root, file).Replace('\\', '/');
             var parts = relative.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (
                 parts
@@ -202,10 +206,10 @@ internal static class Scanner
         foreach (var (layerRoot, count) in counts)
         {
             if (
-                count.Total < minFiles
-                || count.Direct * 100 < count.Total * minDirectPercent
+                count.Total < input.MinFiles
+                || count.Direct * 100 < count.Total * input.MinDirectPercent
                 || IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(layerRoot, "UPD405", string.Empty, ignoreRules)
+                    new IgnoreCheckInput(layerRoot, "UPD405", string.Empty, input.IgnoreRules)
                 )
             )
             {
