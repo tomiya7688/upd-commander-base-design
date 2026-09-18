@@ -93,6 +93,7 @@ UPD 適合性にも設計品質の主要部分にも直結せず、より読み�
 | UPD301 | 有効入力数が設定上限を超過 → Input Container 検討 |
 | UPD302 | 複数返却値 → Output Container 検討 |
 | UPD403 | データ専用型が別の型と同居（外部参照なし） |
+| UPD405 | 大規模な UI / Process / Data で大部分のソースが layer root 直下に集中 |
 
 ## 4. Self Check と一般利用の分離
 

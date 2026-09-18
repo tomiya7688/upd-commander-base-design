@@ -24,6 +24,12 @@ UPD Commander Checker の4言語実装は、同じルールを同じ意味で回
 | multiple-behavior-types | UPD402 | warning |
 | colocated-data-type | UPD403 | attention |
 | externally-used-colocated-data-type | UPD404 | warning |
+| flat-layer-small-flat | UPD405 | no finding |
+| flat-layer-large-nested | UPD405 | no finding |
+| flat-layer-large-flat | UPD405 | attention |
+| flat-layer-generated-heavy | UPD405 | no finding |
+| flat-layer-boundary-below-percent | UPD405 | no finding |
+| flat-layer-boundary-over-percent | UPD405 | attention |
 
 ## Ignore共通ケース
 

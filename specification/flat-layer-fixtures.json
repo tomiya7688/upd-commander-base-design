@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "rule": "UPD405",
+  "defaults": {
+    "flat_layer_min_files": 12,
+    "flat_layer_min_direct_percent": 80
+  },
+  "cases": [
+    {
+      "name": "small-flat",
+      "direct_files": 8,
+      "nested_files": 0,
+      "excluded_files": 0,
+      "expected": "none"
+    },
+    {
+      "name": "large-nested",
+      "direct_files": 4,
+      "nested_files": 8,
+      "excluded_files": 0,
+      "expected": "none"
+    },
+    {
+      "name": "large-flat",
+      "direct_files": 12,
+      "nested_files": 0,
+      "excluded_files": 0,
+      "expected": "attention"
+    },
+    {
+      "name": "generated-heavy",
+      "direct_files": 5,
+      "nested_files": 0,
+      "excluded_files": 20,
+      "expected": "none"
+    },
+    {
+      "name": "boundary-below-percent",
+      "direct_files": 9,
+      "nested_files": 3,
+      "excluded_files": 0,
+      "expected": "none"
+    },
+    {
+      "name": "boundary-over-percent",
+      "direct_files": 10,
+      "nested_files": 2,
+      "excluded_files": 0,
+      "expected": "attention"
+    },
+    {
+      "name": "custom-min-files",
+      "config": {
+        "flat_layer_min_files": 6,
+        "flat_layer_min_direct_percent": 80
+      },
+      "direct_files": 6,
+      "nested_files": 0,
+      "excluded_files": 0,
+      "expected": "attention"
+    },
+    {
+      "name": "custom-direct-percent",
+      "config": {
+        "flat_layer_min_files": 12,
+        "flat_layer_min_direct_percent": 90
+      },
+      "direct_files": 10,
+      "nested_files": 2,
+      "excluded_files": 0,
+      "expected": "none"
+    }
+  ]
+}
