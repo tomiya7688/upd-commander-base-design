@@ -21,6 +21,12 @@ func TestConfigRejectsNullAndInvalidTypedFields(t *testing.T) {
 		{"null enabled rules", `{"enabled_rules":null}`, "enabled_rules"},
 		{"number input", `{"input":1}`, "input"},
 		{"string warnings", `{"warnings_as_errors":"true"}`, "warnings_as_errors"},
+		{"null upd301 max", `{"upd301_max_inputs":null}`, "upd301_max_inputs"},
+		{"boolean upd301 max", `{"upd301_max_inputs":true}`, "upd301_max_inputs"},
+		{"string upd301 max", `{"upd301_max_inputs":"2"}`, "upd301_max_inputs"},
+		{"fraction upd301 max", `{"upd301_max_inputs":2.0}`, "upd301_max_inputs"},
+		{"zero upd301 max", `{"upd301_max_inputs":0}`, "upd301_max_inputs"},
+		{"negative upd301 max", `{"upd301_max_inputs":-1}`, "upd301_max_inputs"},
 	}
 
 	for _, testCase := range cases {
