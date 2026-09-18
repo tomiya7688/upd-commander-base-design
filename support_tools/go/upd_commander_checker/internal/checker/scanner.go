@@ -11,6 +11,10 @@ import (
 )
 
 func ScanPath(target string, cliIgnore []string) []Finding {
+	return ScanPathWithUpd301MaxInputs(target, cliIgnore, 2)
+}
+
+func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInputs int) []Finding {
 	root := target
 	info, err := os.Stat(target)
 	targetIsFile := err == nil && !info.IsDir()
@@ -71,7 +75,7 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 		}
 		findings = append(
 			findings,
-			scanFile(path, filepath.ToSlash(rel), filepath.ToSlash(classificationRel), rules, internalPackages)...,
+			scanFile(path, filepath.ToSlash(rel), filepath.ToSlash(classificationRel), rules, internalPackages, upd301MaxInputs)...,
 		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
@@ -87,7 +91,7 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	return findings
 }
 
-func scanFile(path string, rel string, classificationPath string, rules []IgnoreRule, internalPackages []string) []Finding {
+func scanFile(path string, rel string, classificationPath string, rules []IgnoreRule, internalPackages []string, upd301MaxInputs int) []Finding {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
@@ -98,7 +102,7 @@ func scanFile(path string, rel string, classificationPath string, rules []Ignore
 	var findings []Finding
 	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules, internalPackages)...)
 	findings = append(findings, checkCommander(file, fset, source, rel, lines, rules)...)
-	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules)...)
+	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules, upd301MaxInputs)...)
 	findings = append(findings, checkResponsibilities(file, fset, rel, lines, rules)...)
 	return findings
 }
