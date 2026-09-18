@@ -19,12 +19,12 @@ func decodeConfigBool(value json.RawMessage, target *bool) bool {
 	return json.Unmarshal(value, target) == nil
 }
 
-func decodeConfigIntRange(value json.RawMessage, target *int, minimum int, maximum int) bool {
+func decodeConfigPercent(value json.RawMessage, target *int) bool {
 	if isJSONNull(value) {
 		return false
 	}
 	var decoded int
-	if json.Unmarshal(value, &decoded) != nil || decoded < minimum || decoded > maximum {
+	if json.Unmarshal(value, &decoded) != nil || decoded < 1 || decoded > 100 {
 		return false
 	}
 	*target = decoded
