@@ -12,12 +12,14 @@ type Config struct {
 	Output           string    `json:"output"`
 	Ignore           []string  `json:"ignore"`
 	WarningsAsErrors bool      `json:"warnings_as_errors"`
-	Upd301MaxInputs  int       `json:"upd301_max_inputs"`
+	Upd301MaxInputs            int       `json:"upd301_max_inputs"`
+	FlatLayerMinFiles           int       `json:"flat_layer_min_files"`
+	FlatLayerMinDirectPercent   int       `json:"flat_layer_min_direct_percent"`
 	EnabledRules     *[]string `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
-	config := Config{Input: ".", Upd301MaxInputs: 2}
+	config := Config{Input: ".", Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80}
 	path := findConfigPath()
 	if path == "" {
 		return config, nil
@@ -44,6 +46,12 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["upd301_max_inputs"]; ok && !decodeConfigPositiveInt(value, &config.Upd301MaxInputs) {
 		return Config{}, fmt.Errorf("invalid config field: upd301_max_inputs")
+	}
+	if value, ok := raw["flat_layer_min_files"]; ok && !decodeConfigPositiveInt(value, &config.FlatLayerMinFiles) {
+		return Config{}, fmt.Errorf("invalid config field: flat_layer_min_files")
+	}
+	if value, ok := raw["flat_layer_min_direct_percent"]; ok && !decodeConfigIntRange(value, &config.FlatLayerMinDirectPercent, 1, 100) {
+		return Config{}, fmt.Errorf("invalid config field: flat_layer_min_direct_percent")
 	}
 	if value, ok := raw["enabled_rules"]; ok {
 		var enabled []string
