@@ -8,14 +8,14 @@ import (
 )
 
 type Config struct {
-	Input            string    `json:"input"`
-	Output           string    `json:"output"`
-	Ignore           []string  `json:"ignore"`
-	WarningsAsErrors bool      `json:"warnings_as_errors"`
-	Upd301MaxInputs            int       `json:"upd301_max_inputs"`
-	FlatLayerMinFiles           int       `json:"flat_layer_min_files"`
-	FlatLayerMinDirectPercent   int       `json:"flat_layer_min_direct_percent"`
-	EnabledRules     *[]string `json:"enabled_rules"`
+	Input                     string    `json:"input"`
+	Output                    string    `json:"output"`
+	Ignore                    []string  `json:"ignore"`
+	WarningsAsErrors          bool      `json:"warnings_as_errors"`
+	Upd301MaxInputs           int       `json:"upd301_max_inputs"`
+	FlatLayerMinFiles          int       `json:"flat_layer_min_files"`
+	FlatLayerMinDirectPercent int       `json:"flat_layer_min_direct_percent"`
+	EnabledRules              *[]string `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
