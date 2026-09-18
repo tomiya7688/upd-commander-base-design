@@ -26,6 +26,7 @@ struct AnalysisState {
     std::string relative;
     std::vector<std::string> lines;
     const std::vector<IgnoreRule>* rules;
+    int upd301_max_inputs = 2;
     std::vector<Finding> findings;
     int effective_lines = 0;
     int reducible_lines = 0;
@@ -197,6 +198,23 @@ int tuple_output_count(CXCursor cursor) {
     return count;
 }
 
+int effective_input_count(CXCursor cursor) {
+    int count = 0;
+    clang_visitChildren(
+        cursor,
+        [](CXCursor child, CXCursor, CXClientData client_data) {
+            if (clang_getCursorKind(child) == CXCursor_ParmDecl) {
+                ++(*static_cast<int*>(client_data));
+            }
+            return CXChildVisit_Continue;
+        },
+        &count);
+    if (clang_Cursor_isVariadic(cursor) != 0) {
+        ++count;
+    }
+    return count;
+}
+
 int signature_reducible_lines(CXCursor cursor) {
     const int start = cursor_line(cursor);
     int end = start;
@@ -286,9 +304,10 @@ void analyze_function(AnalysisState& state, CXCursor cursor) {
     if (!is_component_role(state.source.role)) {
         return;
     }
-    const int input_count = std::max(0, clang_Cursor_getNumArguments(cursor));
+    const int input_count = effective_input_count(cursor);
     const int output_count = tuple_output_count(cursor);
-    const bool input_violation = input_count > 1;
+    const bool input_violation = input_count > state.upd301_max_inputs;
+    const bool input_packable = input_count > 1;
     const bool output_violation = output_count > 1;
     const int line = cursor_line(cursor);
 
@@ -314,7 +333,7 @@ void analyze_function(AnalysisState& state, CXCursor cursor) {
             "multiple return values reduce readability; consider one Output Container",
             "attention");
     }
-    if (input_violation || output_violation) {
+    if (input_packable || output_violation) {
         const int excess = std::max(0, input_count - 1) + std::max(0, output_count - 1);
         state.reducible_lines += std::max(signature_reducible_lines(cursor), excess);
     }
@@ -359,7 +378,8 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     if (kind == CXCursor_ClassDecl || kind == CXCursor_StructDecl || kind == CXCursor_ClassTemplate) {
         analyze_class(state, cursor);
     }
-    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod) {
+    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod ||
+        kind == CXCursor_FunctionTemplate) {
         analyze_function(state, cursor);
     }
 
@@ -383,8 +403,10 @@ std::vector<Finding> analyze_cpp_ast(
     const std::filesystem::path& path,
     const std::filesystem::path& root,
     const std::string& relative,
-    const std::vector<IgnoreRule>& rules) {
+    const std::vector<IgnoreRule>& rules,
+    int upd301_max_inputs) {
     AnalysisState state{classify_path(relative), relative, {}, &rules};
+    state.upd301_max_inputs = upd301_max_inputs;
     std::ifstream source(path);
     if (!source) {
         return {Finding{relative, 1, "UPD001", "read failed", "error"}};

@@ -8,3 +8,4 @@ class CheckerConfig:
     ignore: tuple[str, ...] = ()
     warnings_as_errors: bool = False
     enabled_rules: tuple[str, ...] | None = None
+    upd301_max_inputs: int = 2

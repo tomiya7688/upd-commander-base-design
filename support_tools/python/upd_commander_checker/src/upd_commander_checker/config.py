@@ -30,6 +30,10 @@ def load_config() -> CheckerConfig:
         raise ConfigError("invalid config field: ignore")
     if "warnings_as_errors" in data and not isinstance(data["warnings_as_errors"], bool):
         raise ConfigError("invalid config field: warnings_as_errors")
+    if "upd301_max_inputs" in data and (
+        type(data["upd301_max_inputs"]) is not int or data["upd301_max_inputs"] < 1
+    ):
+        raise ConfigError("invalid config field: upd301_max_inputs")
     if "enabled_rules" in data and (
         not isinstance(data["enabled_rules"], list)
         or not all(isinstance(item, str) for item in data["enabled_rules"])
@@ -42,13 +46,21 @@ def load_config() -> CheckerConfig:
     output_path = _resolve_path(base, output_value) if output_value else ""
     ignore = tuple(data.get("ignore", []))
     warnings_as_errors = data.get("warnings_as_errors", False)
+    upd301_max_inputs = data.get("upd301_max_inputs", 2)
     enabled_rules = None
     if "enabled_rules" in data:
         try:
             enabled_rules = normalize_enabled_rules(data["enabled_rules"])
         except ValueError as exc:
             raise ConfigError("invalid config field: enabled_rules") from exc
-    return CheckerConfig(input_path, output_path, ignore, warnings_as_errors, enabled_rules)
+    return CheckerConfig(
+        input_path=input_path,
+        output_path=output_path,
+        ignore=ignore,
+        warnings_as_errors=warnings_as_errors,
+        enabled_rules=enabled_rules,
+        upd301_max_inputs=upd301_max_inputs,
+    )
 
 
 def config_path_for_write() -> Path:

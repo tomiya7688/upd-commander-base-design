@@ -18,6 +18,12 @@ class ConfigNullTest(unittest.TestCase):
             ({"enabled_rules": None}, "enabled_rules"),
             ({"input": 1}, "input"),
             ({"warnings_as_errors": "true"}, "warnings_as_errors"),
+            ({"upd301_max_inputs": None}, "upd301_max_inputs"),
+            ({"upd301_max_inputs": True}, "upd301_max_inputs"),
+            ({"upd301_max_inputs": "2"}, "upd301_max_inputs"),
+            ({"upd301_max_inputs": 2.0}, "upd301_max_inputs"),
+            ({"upd301_max_inputs": 0}, "upd301_max_inputs"),
+            ({"upd301_max_inputs": -1}, "upd301_max_inputs"),
         )
         for payload, field in cases:
             with self.subTest(field=field, payload=payload):

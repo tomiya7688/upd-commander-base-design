@@ -8,7 +8,7 @@ import (
 const containerMinReducibleLines = 10
 const containerMinReductionRatio = 0.20
 
-func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source ModuleInfo, rel string, lines []string, rules []IgnoreRule) []Finding {
+func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source ModuleInfo, rel string, lines []string, rules []IgnoreRule, upd301MaxInputs int) []Finding {
 	if source.Role == "compresser" {
 		return nil
 	}
@@ -29,7 +29,8 @@ func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source Module
 
 		inputCount := fieldCount(fn.Type.Params)
 		outputCount := fieldCount(fn.Type.Results)
-		inputViolation := inputCount > 1
+		inputViolation := inputCount > upd301MaxInputs
+		inputPackable := inputCount > 1
 		outputViolation := outputCount > 1
 
 		if inputViolation {
@@ -39,7 +40,7 @@ func checkContainerBoundaries(file *ast.File, fset *token.FileSet, source Module
 			addFinding(&findings, rel, line, "UPD302", "multiple return values reduce readability; consider one Output Container", "attention", lines, rules)
 		}
 
-		if inputViolation || outputViolation {
+		if inputPackable || outputViolation {
 			signatureLines := signatureReducibleLines(fn, fset)
 			excessValues := maxInt(0, inputCount-1) + maxInt(0, outputCount-1)
 			reducibleLines += maxInt(signatureLines, excessValues)

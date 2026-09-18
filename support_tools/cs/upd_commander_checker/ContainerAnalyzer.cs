@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace UpdCommanderChecker;
@@ -16,7 +17,7 @@ internal static class ContainerAnalyzer
         }
 
         var reducibleLines = 0;
-        SyntaxNode? firstOffendingNode = null;
+        SyntaxNode? firstCompressionNode = null;
 
         foreach (
             var method in context
@@ -29,18 +30,19 @@ internal static class ContainerAnalyzer
                 continue;
             }
 
-            var parameterCount = method.ParameterList.Parameters.Count;
+            var parameterCount = EffectiveInputCount(method);
             var outputCount =
                 method is MethodDeclarationSyntax declaration
                 && declaration.ReturnType is TupleTypeSyntax tuple
                     ? tuple.Elements.Count
                     : 0;
-            var inputViolation = parameterCount > 1;
+            var inputViolation = parameterCount > context.Analysis.Upd301MaxInputs;
+            var inputPackable = parameterCount > 1;
             var outputViolation = outputCount > 1;
 
             if (inputViolation)
             {
-                firstOffendingNode ??= method;
+                firstCompressionNode ??= method;
                 AstFindingEmitter.Add(
                     new NodeFindingInput(
                         context,
@@ -53,7 +55,7 @@ internal static class ContainerAnalyzer
             }
             if (outputViolation)
             {
-                firstOffendingNode ??= method;
+                firstCompressionNode ??= method;
                 AstFindingEmitter.Add(
                     new NodeFindingInput(
                         context,
@@ -65,8 +67,9 @@ internal static class ContainerAnalyzer
                 );
             }
 
-            if (inputViolation || outputViolation)
+            if (inputPackable || outputViolation)
             {
+                firstCompressionNode ??= method;
                 var signatureLines = GetMethodReducibleLines(method);
                 var excessValues = Math.Max(0, parameterCount - 1) + Math.Max(0, outputCount - 1);
                 reducibleLines += Math.Max(signatureLines, excessValues);
@@ -80,19 +83,34 @@ internal static class ContainerAnalyzer
         if (
             context.Analysis.Source.Role is "commander" or "messenger"
             && substantialCompression
-            && firstOffendingNode is not null
+            && firstCompressionNode is not null
         )
         {
             AstFindingEmitter.Add(
                 new NodeFindingInput(
                     context,
-                    firstOffendingNode,
+                    firstCompressionNode,
                     "UPD303",
                     "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
                     "warning"
                 )
             );
         }
+    }
+
+    private static int EffectiveInputCount(BaseMethodDeclarationSyntax method)
+    {
+        var parameters = method.ParameterList.Parameters;
+        var count = parameters.Count;
+        if (
+            method is MethodDeclarationSyntax
+            && count > 0
+            && parameters[0].Modifiers.Any(SyntaxKind.ThisKeyword)
+        )
+        {
+            count--;
+        }
+        return count;
     }
 
     private static int GetMethodReducibleLines(BaseMethodDeclarationSyntax method)

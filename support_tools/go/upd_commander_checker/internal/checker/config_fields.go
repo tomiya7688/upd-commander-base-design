@@ -19,6 +19,18 @@ func decodeConfigBool(value json.RawMessage, target *bool) bool {
 	return json.Unmarshal(value, target) == nil
 }
 
+func decodeConfigPositiveInt(value json.RawMessage, target *int) bool {
+	if isJSONNull(value) {
+		return false
+	}
+	var decoded int
+	if json.Unmarshal(value, &decoded) != nil || decoded < 1 {
+		return false
+	}
+	*target = decoded
+	return true
+}
+
 func decodeConfigStrings(value json.RawMessage, target *[]string) bool {
 	if isJSONNull(value) {
 		return false

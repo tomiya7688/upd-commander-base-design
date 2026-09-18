@@ -49,7 +49,7 @@ func TestContainerRulesMatrix(t *testing.T) {
 func TestUnexportedReceiverMethodIsChecked(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "process", "private_processing.go")
-	writeTestFile(t, path, "package process\ntype worker struct{}\nfunc (worker) run(left, right int) (int, int) { return left, right }\n")
+	writeTestFile(t, path, "package process\ntype worker struct{}\nfunc (worker) run(left, right, mode int) (int, int) { return left, right }\n")
 	findings := ScanPath(root, nil)
 	assertHasCode(t, findings, "UPD301")
 	assertHasCode(t, findings, "UPD302")

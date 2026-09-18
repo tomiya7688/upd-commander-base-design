@@ -18,4 +18,7 @@ internal sealed class CheckerConfig
 
     [JsonPropertyName("enabled_rules")]
     public List<string>? EnabledRules { get; set; }
+
+    [JsonPropertyName("upd301_max_inputs")]
+    public int Upd301MaxInputs { get; set; } = 2;
 }

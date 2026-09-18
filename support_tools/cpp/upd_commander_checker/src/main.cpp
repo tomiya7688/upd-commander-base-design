@@ -31,7 +31,8 @@ int main(int argc, char* argv[]) {
             {"E UPD000 " + options.target + " missing"}, options.output, 2);
     }
 
-    const auto scanned_findings = upd_checker::scan_path(options.target, options.ignores);
+    const auto scanned_findings =
+        upd_checker::scan_path(options.target, options.ignores, config.upd301_max_inputs);
     const auto findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,

@@ -182,7 +182,8 @@ jobs:
 
               internal void NeedsContainer(
                   int left,
-                  int right)
+                  int right,
+                  int mode)
               {
               }
           }
