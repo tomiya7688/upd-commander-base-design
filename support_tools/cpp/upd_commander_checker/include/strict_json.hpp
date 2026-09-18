@@ -18,6 +18,7 @@ struct JsonValue {
 
     Type type = Type::null_value;
     bool boolean_value = false;
+    std::string number_value;
     std::string string_value;
     std::vector<JsonValue> array_value;
     std::map<std::string, JsonValue> object_value;
