@@ -16,7 +16,7 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"]}`
+	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"],"upd301_max_inputs":3}`
 	if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -43,6 +43,9 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	}
 	if config.EnabledRules == nil || len(*config.EnabledRules) != 2 || (*config.EnabledRules)[0] != "UPD101" {
 		t.Fatalf("unexpected enabled rules: %#v", config.EnabledRules)
+	}
+	if config.Upd301MaxInputs != 3 {
+		t.Fatalf("unexpected upd301 max inputs: %d", config.Upd301MaxInputs)
 	}
 }
 
@@ -83,5 +86,30 @@ func TestNullEnabledRulesReturnsError(t *testing.T) {
 
 	if _, err := LoadConfig(); err == nil {
 		t.Fatal("expected config error")
+	}
+}
+
+
+func TestMissingUpd301MaxInputsUsesDefault(t *testing.T) {
+	original, _ := os.Getwd()
+	root := t.TempDir()
+	configDir := filepath.Join(root, "config")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = os.Chdir(original) }()
+
+	config, err := LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Upd301MaxInputs != 2 {
+		t.Fatalf("unexpected default: %d", config.Upd301MaxInputs)
 	}
 }
