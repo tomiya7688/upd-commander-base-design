@@ -11,10 +11,14 @@ import (
 )
 
 func ScanPath(target string, cliIgnore []string) []Finding {
-	return ScanPathWithUpd301MaxInputs(target, cliIgnore, 2)
+	return ScanPathWithThresholds(target, cliIgnore, 2, 12, 80)
 }
 
 func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInputs int) []Finding {
+	return ScanPathWithThresholds(target, cliIgnore, upd301MaxInputs, 12, 80)
+}
+
+func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int) []Finding {
 	root := target
 	info, err := os.Stat(target)
 	targetIsFile := err == nil && !info.IsDir()
@@ -79,6 +83,9 @@ func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInp
 		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
+	if !targetIsFile {
+		findings = append(findings, checkFlatLayers(paths, root, rules, flatLayerMinFiles, flatLayerMinDirectPercent)...)
+	}
 	sort.Slice(findings, func(i, j int) bool {
 		if findings[i].Path != findings[j].Path {
 			return findings[i].Path < findings[j].Path
@@ -137,4 +144,87 @@ func globMatch(path string, pattern string) bool {
 	}
 	matched, _ := filepath.Match(pattern, path)
 	return matched
+}
+
+
+var flatLayerExcludedDirs = map[string]bool{
+	"generated": true,
+	"third_party": true,
+	"vendor": true,
+	"external": true,
+	"build": true,
+}
+
+type flatLayerCount struct {
+	total  int
+	direct int
+}
+
+func checkFlatLayers(paths []string, root string, rules []IgnoreRule, minFiles int, minDirectPercent int) []Finding {
+	counts := map[string]flatLayerCount{}
+	for _, path := range paths {
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			continue
+		}
+		relative = filepath.ToSlash(relative)
+		parts := strings.Split(relative, "/")
+		if hasExcludedFlatLayerDirectory(parts) {
+			continue
+		}
+		layerIndex := flatLayerRootIndex(parts)
+		if layerIndex < 0 {
+			continue
+		}
+		layerRoot := strings.Join(parts[:layerIndex+1], "/")
+		count := counts[layerRoot]
+		count.total++
+		if len(parts) == layerIndex+2 {
+			count.direct++
+		}
+		counts[layerRoot] = count
+	}
+
+	findings := []Finding{}
+	for layerRoot, count := range counts {
+		if count.total < minFiles || count.direct*100 < count.total*minDirectPercent {
+			continue
+		}
+		if IsIgnored(layerRoot, "UPD405", "", rules) {
+			continue
+		}
+		findings = append(findings, Finding{
+			Path: layerRoot,
+			Line: 1,
+			Code: "UPD405",
+			Message: "large flat layer reduces navigability; consider grouping related responsibilities",
+			Severity: "attention",
+		})
+	}
+	return findings
+}
+
+func hasExcludedFlatLayerDirectory(parts []string) bool {
+	for _, part := range parts[:max(0, len(parts)-1)] {
+		if flatLayerExcludedDirs[strings.ToLower(part)] {
+			return true
+		}
+	}
+	return false
+}
+
+func flatLayerRootIndex(parts []string) int {
+	scopeStart := 0
+	for index := 0; index+2 < len(parts); index++ {
+		if appRoots[strings.ToLower(parts[index])] {
+			scopeStart = index + 2
+		}
+	}
+	layerIndex := -1
+	for index := scopeStart; index+1 < len(parts); index++ {
+		if layerNames[strings.ToLower(parts[index])] {
+			layerIndex = index
+		}
+	}
+	return layerIndex
 }
