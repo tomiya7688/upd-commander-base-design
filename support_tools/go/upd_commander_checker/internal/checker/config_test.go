@@ -89,7 +89,6 @@ func TestNullEnabledRulesReturnsError(t *testing.T) {
 	}
 }
 
-
 func TestMissingUpd301MaxInputsUsesDefault(t *testing.T) {
 	original, _ := os.Getwd()
 	root := t.TempDir()
