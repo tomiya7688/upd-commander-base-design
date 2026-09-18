@@ -44,6 +44,40 @@ void test_invalid_json_is_rejected() {
     }
 }
 
+void test_flat_layer_config() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_flat_layer";
+    std::filesystem::remove_all(root);
+    write_config(
+        root,
+        "{\"flat_layer_min_files\":14,\"flat_layer_min_direct_percent\":90}");
+    const auto config = upd_checker::load_config((root / "checker").string());
+    assert(config.flat_layer_min_files == 14);
+    assert(config.flat_layer_min_direct_percent == 90);
+    std::filesystem::remove_all(root);
+
+    const std::vector<std::string> invalid_cases = {
+        "{\"flat_layer_min_files\":0}",
+        "{\"flat_layer_min_files\":true}",
+        "{\"flat_layer_min_direct_percent\":0}",
+        "{\"flat_layer_min_direct_percent\":101}",
+        "{\"flat_layer_min_direct_percent\":80.0}",
+    };
+    for (const auto& content : invalid_cases) {
+        const auto invalid_root =
+            std::filesystem::temp_directory_path() / "upd_cpp_config_flat_layer_invalid";
+        std::filesystem::remove_all(invalid_root);
+        write_config(invalid_root, content);
+        bool rejected = false;
+        try {
+            (void)upd_checker::load_config((invalid_root / "checker").string());
+        } catch (const upd_checker::ConfigError&) {
+            rejected = true;
+        }
+        assert(rejected);
+        std::filesystem::remove_all(invalid_root);
+    }
+}
+
 void test_unicode_and_unknown_fields_are_supported() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_json_unicode";
     std::filesystem::remove_all(root);
@@ -74,5 +108,6 @@ void test_unicode_and_unknown_fields_are_supported() {
 int main() {
     test_invalid_json_is_rejected();
     test_unicode_and_unknown_fields_are_supported();
+    test_flat_layer_config();
     return 0;
 }

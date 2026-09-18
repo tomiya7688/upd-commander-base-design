@@ -21,4 +21,10 @@ internal sealed class CheckerConfig
 
     [JsonPropertyName("upd301_max_inputs")]
     public int Upd301MaxInputs { get; set; } = 2;
+
+    [JsonPropertyName("flat_layer_min_files")]
+    public int FlatLayerMinFiles { get; set; } = 12;
+
+    [JsonPropertyName("flat_layer_min_direct_percent")]
+    public int FlatLayerMinDirectPercent { get; set; } = 80;
 }

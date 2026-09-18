@@ -19,6 +19,13 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"upd301_max_inputs\":2.0}", "upd301_max_inputs")]
     [InlineData("{\"upd301_max_inputs\":0}", "upd301_max_inputs")]
     [InlineData("{\"upd301_max_inputs\":-1}", "upd301_max_inputs")]
+    [InlineData("{\"flat_layer_min_files\":null}", "flat_layer_min_files")]
+    [InlineData("{\"flat_layer_min_files\":true}", "flat_layer_min_files")]
+    [InlineData("{\"flat_layer_min_files\":0}", "flat_layer_min_files")]
+    [InlineData("{\"flat_layer_min_direct_percent\":null}", "flat_layer_min_direct_percent")]
+    [InlineData("{\"flat_layer_min_direct_percent\":0}", "flat_layer_min_direct_percent")]
+    [InlineData("{\"flat_layer_min_direct_percent\":101}", "flat_layer_min_direct_percent")]
+    [InlineData("{\"flat_layer_min_direct_percent\":80.0}", "flat_layer_min_direct_percent")]
     public void InvalidTypedFieldsAreRejected(string content, string field)
     {
         var path = WriteConfig(content);
@@ -46,6 +53,20 @@ public sealed class ConfigLoaderTests
         var config = ConfigLoader.LoadFromPath(path);
 
         Assert.Equal(3, config.Upd301MaxInputs);
+    }
+
+    [Fact]
+    public void FlatLayerThresholdsDefaultAndLoad()
+    {
+        var defaults = ConfigLoader.LoadFromPath(WriteConfig("{}"));
+        Assert.Equal(12, defaults.FlatLayerMinFiles);
+        Assert.Equal(80, defaults.FlatLayerMinDirectPercent);
+
+        var configured = ConfigLoader.LoadFromPath(
+            WriteConfig("{\"flat_layer_min_files\":14,\"flat_layer_min_direct_percent\":90}")
+        );
+        Assert.Equal(14, configured.FlatLayerMinFiles);
+        Assert.Equal(90, configured.FlatLayerMinDirectPercent);
     }
 
     [Fact]

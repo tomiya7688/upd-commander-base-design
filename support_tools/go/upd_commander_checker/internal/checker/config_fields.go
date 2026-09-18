@@ -19,6 +19,18 @@ func decodeConfigBool(value json.RawMessage, target *bool) bool {
 	return json.Unmarshal(value, target) == nil
 }
 
+func decodeConfigPercent(value json.RawMessage, target *int) bool {
+	if isJSONNull(value) {
+		return false
+	}
+	var decoded int
+	if json.Unmarshal(value, &decoded) != nil || decoded < 1 || decoded > 100 {
+		return false
+	}
+	*target = decoded
+	return true
+}
+
 func decodeConfigPositiveInt(value json.RawMessage, target *int) bool {
 	if isJSONNull(value) {
 		return false

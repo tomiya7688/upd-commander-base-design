@@ -9,3 +9,5 @@ class CheckerConfig:
     warnings_as_errors: bool = False
     enabled_rules: tuple[str, ...] | None = None
     upd301_max_inputs: int = 2
+    flat_layer_min_files: int = 12
+    flat_layer_min_direct_percent: int = 80

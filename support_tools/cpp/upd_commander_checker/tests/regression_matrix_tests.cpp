@@ -178,6 +178,65 @@ void test_included_header_reference_is_not_main_file_reference() {
     std::filesystem::remove_all(root);
 }
 
+
+void write_flat_layer_files(
+    const std::filesystem::path& root,
+    int direct,
+    int nested,
+    int excluded) {
+    for (int index = 0; index < direct; ++index) {
+        write_file(
+            root / "process" / ("direct_" + std::to_string(index) + ".cpp"),
+            "int direct_" + std::to_string(index) + " = 0;\n");
+    }
+    for (int index = 0; index < nested; ++index) {
+        write_file(
+            root / "process" / "group" / ("nested_" + std::to_string(index) + ".cpp"),
+            "int nested_" + std::to_string(index) + " = 0;\n");
+    }
+    for (int index = 0; index < excluded; ++index) {
+        write_file(
+            root / "process" / "generated" / ("generated_" + std::to_string(index) + ".cpp"),
+            "int generated_" + std::to_string(index) + " = 0;\n");
+    }
+}
+
+void test_flat_layer_default_boundary() {
+    const auto below = std::filesystem::temp_directory_path() / "upd_cpp_flat_below";
+    std::filesystem::remove_all(below);
+    write_flat_layer_files(below, 9, 3, 0);
+    assert(!has_code(upd_checker::scan_path(below.string(), {}), "UPD405"));
+    std::filesystem::remove_all(below);
+
+    const auto over = std::filesystem::temp_directory_path() / "upd_cpp_flat_over";
+    std::filesystem::remove_all(over);
+    write_flat_layer_files(over, 10, 2, 0);
+    assert(has_code(upd_checker::scan_path(over.string(), {}), "UPD405"));
+    std::filesystem::remove_all(over);
+}
+
+void test_flat_layer_small_and_generated_heavy() {
+    const auto small = std::filesystem::temp_directory_path() / "upd_cpp_flat_small";
+    std::filesystem::remove_all(small);
+    write_flat_layer_files(small, 8, 0, 0);
+    assert(!has_code(upd_checker::scan_path(small.string(), {}), "UPD405"));
+    std::filesystem::remove_all(small);
+
+    const auto generated = std::filesystem::temp_directory_path() / "upd_cpp_flat_generated";
+    std::filesystem::remove_all(generated);
+    write_flat_layer_files(generated, 5, 0, 20);
+    assert(!has_code(upd_checker::scan_path(generated.string(), {}), "UPD405"));
+    std::filesystem::remove_all(generated);
+}
+
+void test_flat_layer_custom_thresholds() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_flat_custom";
+    std::filesystem::remove_all(root);
+    write_flat_layer_files(root, 6, 0, 0);
+    assert(has_code(upd_checker::scan_path(root.string(), {}, 2, 6, 80), "UPD405"));
+    std::filesystem::remove_all(root);
+}
+
 }  // namespace
 
 int main() {
@@ -192,5 +251,8 @@ int main() {
     test_data_type_location_matrix();
     test_data_type_reference_uses_exact_declaration();
     test_included_header_reference_is_not_main_file_reference();
+    test_flat_layer_default_boundary();
+    test_flat_layer_small_and_generated_heavy();
+    test_flat_layer_custom_thresholds();
     return 0;
 }

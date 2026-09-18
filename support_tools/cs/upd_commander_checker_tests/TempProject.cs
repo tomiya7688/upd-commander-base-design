@@ -43,6 +43,21 @@ internal sealed class TempProject : IDisposable
         return Scanner.ScanPath(new ScanPathInput(root, ignore ?? [], upd301MaxInputs));
     }
 
+    internal List<Finding> Scan(
+        (int FlatLayerMinFiles, int FlatLayerMinDirectPercent) flatLayerThresholds
+    )
+    {
+        return Scanner.ScanPath(
+            new ScanPathInput(
+                root,
+                [],
+                2,
+                flatLayerThresholds.FlatLayerMinFiles,
+                flatLayerThresholds.FlatLayerMinDirectPercent
+            )
+        );
+    }
+
     public void Dispose()
     {
         Directory.Delete(root, recursive: true);

@@ -38,6 +38,7 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "gofmt required:"
             echo "$unformatted"
+            gofmt -d .
             exit 1
           fi
       - name: Vet

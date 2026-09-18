@@ -23,6 +23,8 @@ class ConfigTest(unittest.TestCase):
                         "warnings_as_errors": True,
                         "enabled_rules": ["UPD101", "UPD202"],
                         "upd301_max_inputs": 3,
+                        "flat_layer_min_files": 14,
+                        "flat_layer_min_direct_percent": 90,
                     }
                 ),
                 encoding="utf-8",
@@ -39,6 +41,8 @@ class ConfigTest(unittest.TestCase):
             self.assertTrue(config.warnings_as_errors)
             self.assertEqual(("UPD101", "UPD202"), config.enabled_rules)
             self.assertEqual(3, config.upd301_max_inputs)
+            self.assertEqual(14, config.flat_layer_min_files)
+            self.assertEqual(90, config.flat_layer_min_direct_percent)
 
     def test_missing_enabled_rules_means_all_rules(self) -> None:
         original = Path.cwd()
@@ -53,6 +57,8 @@ class ConfigTest(unittest.TestCase):
                 os.chdir(original)
             self.assertIsNone(config.enabled_rules)
             self.assertEqual(2, config.upd301_max_inputs)
+            self.assertEqual(12, config.flat_layer_min_files)
+            self.assertEqual(80, config.flat_layer_min_direct_percent)
 
     def test_empty_enabled_rules_means_no_rules(self) -> None:
         original = Path.cwd()
@@ -111,6 +117,27 @@ class ConfigTest(unittest.TestCase):
                     load_config()
             finally:
                 os.chdir(original)
+
+    def test_invalid_flat_layer_thresholds_raise_config_error(self) -> None:
+        invalid_values = (
+            '{"flat_layer_min_files": 0}',
+            '{"flat_layer_min_files": true}',
+            '{"flat_layer_min_direct_percent": 0}',
+            '{"flat_layer_min_direct_percent": 101}',
+            '{"flat_layer_min_direct_percent": 80.0}',
+        )
+        original = Path.cwd()
+        for content in invalid_values:
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "config").mkdir()
+                (root / "config" / "path.json").write_text(content, encoding="utf-8")
+                try:
+                    os.chdir(root)
+                    with self.assertRaises(ConfigError):
+                        load_config()
+                finally:
+                    os.chdir(original)
 
 
 if __name__ == "__main__":

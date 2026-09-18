@@ -36,7 +36,13 @@ internal static class Program
         var findings = RuleSelection.Filter(
             new RuleSelectionInput(
                 Scanner.ScanPath(
-                    new ScanPathInput(options.Target, options.Ignores, config.Upd301MaxInputs)
+                    new ScanPathInput(
+                        options.Target,
+                        options.Ignores,
+                        config.Upd301MaxInputs,
+                        config.FlatLayerMinFiles,
+                        config.FlatLayerMinDirectPercent
+                    )
                 ),
                 config.EnabledRules
             )

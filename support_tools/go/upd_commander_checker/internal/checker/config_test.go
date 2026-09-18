@@ -16,7 +16,7 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"],"upd301_max_inputs":3}`
+	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"],"upd301_max_inputs":3,"flat_layer_min_files":14,"flat_layer_min_direct_percent":90}`
 	if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -46,6 +46,9 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	}
 	if config.Upd301MaxInputs != 3 {
 		t.Fatalf("unexpected upd301 max inputs: %d", config.Upd301MaxInputs)
+	}
+	if config.FlatLayerMinFiles != 14 || config.FlatLayerMinDirectPercent != 90 {
+		t.Fatalf("unexpected flat layer thresholds: %d/%d", config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent)
 	}
 }
 
@@ -110,5 +113,38 @@ func TestMissingUpd301MaxInputsUsesDefault(t *testing.T) {
 	}
 	if config.Upd301MaxInputs != 2 {
 		t.Fatalf("unexpected default: %d", config.Upd301MaxInputs)
+	}
+	if config.FlatLayerMinFiles != 12 || config.FlatLayerMinDirectPercent != 80 {
+		t.Fatalf("unexpected flat layer defaults: %d/%d", config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent)
+	}
+}
+
+func TestInvalidFlatLayerThresholdsReturnError(t *testing.T) {
+	cases := []string{
+		`{"flat_layer_min_files":0}`,
+		`{"flat_layer_min_files":true}`,
+		`{"flat_layer_min_direct_percent":0}`,
+		`{"flat_layer_min_direct_percent":101}`,
+		`{"flat_layer_min_direct_percent":80.0}`,
+	}
+	for _, content := range cases {
+		t.Run(content, func(t *testing.T) {
+			original, _ := os.Getwd()
+			root := t.TempDir()
+			configDir := filepath.Join(root, "config")
+			if err := os.MkdirAll(configDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chdir(root); err != nil {
+				t.Fatal(err)
+			}
+			defer func() { _ = os.Chdir(original) }()
+			if _, err := LoadConfig(); err == nil {
+				t.Fatal("expected config error")
+			}
+		})
 	}
 }
