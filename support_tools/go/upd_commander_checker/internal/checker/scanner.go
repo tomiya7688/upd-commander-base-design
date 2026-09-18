@@ -146,7 +146,6 @@ func globMatch(path string, pattern string) bool {
 	return matched
 }
 
-
 var flatLayerExcludedDirs = map[string]bool{
 	"generated": true,
 	"third_party": true,
@@ -194,10 +193,10 @@ func checkFlatLayers(paths []string, root string, rules []IgnoreRule, minFiles i
 			continue
 		}
 		findings = append(findings, Finding{
-			Path: layerRoot,
-			Line: 1,
-			Code: "UPD405",
-			Message: "large flat layer reduces navigability; consider grouping related responsibilities",
+			Path:     layerRoot,
+			Line:     1,
+			Code:     "UPD405",
+			Message:  "large flat layer reduces navigability; consider grouping related responsibilities",
 			Severity: "attention",
 		})
 	}
