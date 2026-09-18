@@ -73,7 +73,10 @@ std::filesystem::path single_file_context_root(const std::filesystem::path& file
 
 }  // namespace
 
-std::vector<Finding> scan_path(const std::string& target, const std::vector<std::string>& cli_ignore) {
+std::vector<Finding> scan_path(
+    const std::string& target,
+    const std::vector<std::string>& cli_ignore,
+    int upd301_max_inputs) {
     const std::filesystem::path target_path(target);
     std::error_code target_error;
     const bool target_is_directory = std::filesystem::is_directory(target_path, target_error);
@@ -112,7 +115,7 @@ std::vector<Finding> scan_path(const std::string& target, const std::vector<std:
             continue;
         }
         included_paths.push_back(path);
-        auto current = analyze_cpp_ast(path, root, relative, rules);
+        auto current = analyze_cpp_ast(path, root, relative, rules, upd301_max_inputs);
         findings.insert(findings.end(), current.begin(), current.end());
     }
 
