@@ -46,7 +46,7 @@ func main() {
 		finish([]string{fmt.Sprintf("E UPD000 %s missing", target)}, output, 2)
 	}
 
-	findings := checker.FilterEnabledFindings(checker.ScanPath(target, ignores), config.EnabledRules)
+	findings := checker.FilterEnabledFindings(checker.ScanPathWithUpd301MaxInputs(target, ignores, config.Upd301MaxInputs), config.EnabledRules)
 	errors := 0
 	warnings := 0
 	attentions := 0
