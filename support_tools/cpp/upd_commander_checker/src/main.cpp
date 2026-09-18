@@ -32,7 +32,12 @@ int main(int argc, char* argv[]) {
     }
 
     const auto scanned_findings =
-        upd_checker::scan_path(options.target, options.ignores, config.upd301_max_inputs);
+        upd_checker::scan_path(
+            options.target,
+            options.ignores,
+            config.upd301_max_inputs,
+            config.flat_layer_min_files,
+            config.flat_layer_min_direct_percent);
     const auto findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,
