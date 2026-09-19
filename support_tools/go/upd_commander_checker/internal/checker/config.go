@@ -15,11 +15,13 @@ type Config struct {
 	Upd301MaxInputs           int       `json:"upd301_max_inputs"`
 	FlatLayerMinFiles         int       `json:"flat_layer_min_files"`
 	FlatLayerMinDirectPercent int       `json:"flat_layer_min_direct_percent"`
+	ModelGroupMinItems        int       `json:"model_group_min_items"`
+	ModelGroupMinOccurrences  int       `json:"model_group_min_occurrences"`
 	EnabledRules              *[]string `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
-	config := Config{Input: ".", Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80}
+	config := Config{Input: ".", Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80, ModelGroupMinItems: 3, ModelGroupMinOccurrences: 2}
 	path := findConfigPath()
 	if path == "" {
 		return config, nil
@@ -52,6 +54,12 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["flat_layer_min_direct_percent"]; ok && !decodeConfigPercent(value, &config.FlatLayerMinDirectPercent) {
 		return Config{}, fmt.Errorf("invalid config field: flat_layer_min_direct_percent")
+	}
+	if value, ok := raw["model_group_min_items"]; ok && !decodeConfigMinInt(value, &config.ModelGroupMinItems, 3) {
+		return Config{}, fmt.Errorf("invalid config field: model_group_min_items")
+	}
+	if value, ok := raw["model_group_min_occurrences"]; ok && !decodeConfigMinInt(value, &config.ModelGroupMinOccurrences, 2) {
+		return Config{}, fmt.Errorf("invalid config field: model_group_min_occurrences")
 	}
 	if value, ok := raw["enabled_rules"]; ok {
 		var enabled []string
