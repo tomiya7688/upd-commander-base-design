@@ -26,6 +26,12 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"flat_layer_min_direct_percent\":0}", "flat_layer_min_direct_percent")]
     [InlineData("{\"flat_layer_min_direct_percent\":101}", "flat_layer_min_direct_percent")]
     [InlineData("{\"flat_layer_min_direct_percent\":80.0}", "flat_layer_min_direct_percent")]
+    [InlineData("{\"model_group_min_items\":null}", "model_group_min_items")]
+    [InlineData("{\"model_group_min_items\":2}", "model_group_min_items")]
+    [InlineData("{\"model_group_min_items\":3.0}", "model_group_min_items")]
+    [InlineData("{\"model_group_min_occurrences\":null}", "model_group_min_occurrences")]
+    [InlineData("{\"model_group_min_occurrences\":1}", "model_group_min_occurrences")]
+    [InlineData("{\"model_group_min_occurrences\":2.0}", "model_group_min_occurrences")]
     public void InvalidTypedFieldsAreRejected(string content, string field)
     {
         var path = WriteConfig(content);
@@ -67,6 +73,20 @@ public sealed class ConfigLoaderTests
         );
         Assert.Equal(14, configured.FlatLayerMinFiles);
         Assert.Equal(90, configured.FlatLayerMinDirectPercent);
+    }
+
+    [Fact]
+    public void ModelThresholdsDefaultAndLoad()
+    {
+        var defaults = ConfigLoader.LoadFromPath(WriteConfig("{}"));
+        Assert.Equal(3, defaults.ModelGroupMinItems);
+        Assert.Equal(2, defaults.ModelGroupMinOccurrences);
+
+        var configured = ConfigLoader.LoadFromPath(
+            WriteConfig("{\"model_group_min_items\":4,\"model_group_min_occurrences\":3}")
+        );
+        Assert.Equal(4, configured.ModelGroupMinItems);
+        Assert.Equal(3, configured.ModelGroupMinOccurrences);
     }
 
     [Fact]
