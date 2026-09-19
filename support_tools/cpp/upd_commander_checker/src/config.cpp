@@ -161,6 +161,16 @@ Config load_config(const std::string& executable_path) {
     if (flat_layer_min_direct_percent > 100) {
         throw ConfigError("invalid config field: flat_layer_min_direct_percent");
     }
+    const int model_group_min_items =
+        read_positive_int_field(root, "model_group_min_items", 3);
+    if (model_group_min_items < 3) {
+        throw ConfigError("invalid config field: model_group_min_items");
+    }
+    const int model_group_min_occurrences =
+        read_positive_int_field(root, "model_group_min_occurrences", 2);
+    if (model_group_min_occurrences < 2) {
+        throw ConfigError("invalid config field: model_group_min_occurrences");
+    }
     bool enabled_rules_configured = false;
     std::vector<std::string> enabled_rules =
         read_string_array_field(root, "enabled_rules", &enabled_rules_configured);
@@ -176,6 +186,8 @@ Config load_config(const std::string& executable_path) {
     config.upd301_max_inputs = upd301_max_inputs;
     config.flat_layer_min_files = flat_layer_min_files;
     config.flat_layer_min_direct_percent = flat_layer_min_direct_percent;
+    config.model_group_min_items = model_group_min_items;
+    config.model_group_min_occurrences = model_group_min_occurrences;
     config.enabled_rules = std::move(enabled_rules);
     config.enabled_rules_configured = enabled_rules_configured;
     return config;
