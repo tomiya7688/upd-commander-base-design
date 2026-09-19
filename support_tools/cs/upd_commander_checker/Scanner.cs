@@ -156,5 +156,4 @@ internal static class Scanner
             .ThenBy(item => item.Code, StringComparer.Ordinal)
             .ToList();
     }
-
 }
