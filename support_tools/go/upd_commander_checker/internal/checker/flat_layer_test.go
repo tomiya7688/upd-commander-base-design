@@ -34,7 +34,7 @@ func TestFlatLayerDefaultBoundary(t *testing.T) {
 	over := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: over, direct: 10, nested: 2})
 	findings := ScanPath(over, nil)
-	assertHasCode(t, findings, "UPD405")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD405"})
 }
 
 func TestFlatLayerSmallAndGeneratedHeavyDoNotTrigger(t *testing.T) {
