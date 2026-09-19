@@ -196,8 +196,9 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     }
 
     const auto kind = clang_getCursorKind(cursor);
-    if (kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod ||
-        kind == CXCursor_FunctionTemplate) {
+    if ((kind == CXCursor_FunctionDecl || kind == CXCursor_CXXMethod ||
+         kind == CXCursor_FunctionTemplate) &&
+        clang_isCursorDefinition(cursor) != 0) {
         add_occurrence(
             state,
             cursor_line(cursor),
