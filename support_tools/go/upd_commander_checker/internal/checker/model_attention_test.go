@@ -47,7 +47,7 @@ func TestModelAttentionTwoItemsOrderAndCrossLayerDoNotTrigger(t *testing.T) {
 		filepath.Join(root, "ui", "cross.go"),
 		"package ui\nfunc cross(id int, name string, email string) {}\n",
 	)
-	assertNoCode(t, ScanPath(root, nil), "UPD406")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD406"})
 }
 
 func TestModelAttentionTupleAndPerformanceIgnore(t *testing.T) {
@@ -75,7 +75,7 @@ func TestModelAttentionTupleAndPerformanceIgnore(t *testing.T) {
 		"package process\nfunc one(xs,ys,zs []int, i int) { _ = xs[i] + ys[i] + zs[i] }\nfunc two(xs,ys,zs []int, i int) { _ = xs[i] + ys[i] + zs[i] }\n",
 	)
 	writeTestFile(t, filepath.Join(ignoredRoot, ".updcommanderignore"), "UPD406 process/parallel.go\n")
-	assertNoCode(t, ScanPath(ignoredRoot, nil), "UPD406")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(ignoredRoot, nil), code: "UPD406"})
 }
 
 func TestModelAttentionCustomThresholds(t *testing.T) {
@@ -85,5 +85,5 @@ func TestModelAttentionCustomThresholds(t *testing.T) {
 		filepath.Join(root, "process", "sample.go"),
 		"package process\nfunc first(id int, name string, email string) {}\nfunc second(id int, name string, email string) {}\n",
 	)
-	assertNoCode(t, ScanPathWithAllThresholds(root, nil, 2, 12, 80, 4, 2), "UPD406")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPathWithAllThresholds(root, nil, 2, 12, 80, 4, 2), code: "UPD406"})
 }
