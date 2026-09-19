@@ -58,9 +58,7 @@ internal sealed class TempProject : IDisposable
         );
     }
 
-    internal List<Finding> ScanModel(
-        (int MinItems, int MinOccurrences) modelThresholds
-    )
+    internal List<Finding> ScanModel((int MinItems, int MinOccurrences) modelThresholds)
     {
         return Scanner.ScanPath(
             new ScanPathInput(
