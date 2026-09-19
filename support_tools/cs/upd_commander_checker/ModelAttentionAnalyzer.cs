@@ -23,9 +23,9 @@ internal static class ModelAttentionAnalyzer
                     module,
                     ignoreRules,
                     minItems,
-                method.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                "parameters",
-                ParameterKeys(method.ParameterList)
+                    method.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                    "parameters",
+                    ParameterKeys(method.ParameterList)
                 )
             );
         }
@@ -39,9 +39,9 @@ internal static class ModelAttentionAnalyzer
                     module,
                     ignoreRules,
                     minItems,
-                local.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                "parameters",
-                ParameterKeys(local.ParameterList)
+                    local.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                    "parameters",
+                    ParameterKeys(local.ParameterList)
                 )
             );
         }
@@ -52,14 +52,15 @@ internal static class ModelAttentionAnalyzer
             if (keys.All(key => key.Length > 0))
             {
                 Add(
-                    occurrences,
-                    source,
-                    module,
-                    ignoreRules,
-                    minItems,
-                    tuple.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                    "tuple",
-                    keys
+                    new ModelAttentionAddInput(
+                        occurrences,
+                        source,
+                        module,
+                        ignoreRules,
+                        minItems,
+                        tuple.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                        "tuple",
+                        keys
                     )
                 );
             }
@@ -76,7 +77,11 @@ internal static class ModelAttentionAnalyzer
         foreach (var statement in statements)
         {
             var groups = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-            foreach (var access in statement.DescendantNodesAndSelf().OfType<ElementAccessExpressionSyntax>())
+            foreach (
+                var access in statement
+                    .DescendantNodesAndSelf()
+                    .OfType<ElementAccessExpressionSyntax>()
+            )
             {
                 if (access.ArgumentList.Arguments.Count != 1)
                 {
@@ -101,14 +106,15 @@ internal static class ModelAttentionAnalyzer
             foreach (var items in groups.Values)
             {
                 Add(
-                    occurrences,
-                    source,
-                    module,
-                    ignoreRules,
-                    minItems,
-                    statement.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
-                    "parallel_collection",
-                    items
+                    new ModelAttentionAddInput(
+                        occurrences,
+                        source,
+                        module,
+                        ignoreRules,
+                        minItems,
+                        statement.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
+                        "parallel_collection",
+                        items
                     )
                 );
             }
@@ -175,38 +181,39 @@ internal static class ModelAttentionAnalyzer
 
     private static void Add(ModelAttentionAddInput input)
     {
-        var occurrences = input.Occurrences;
-        var source = input.Source;
-        var module = input.Module;
-        var ignoreRules = input.IgnoreRules;
-        var minItems = input.MinItems;
-        var line = input.Line;
-        var kind = input.Kind;
         var items = input.Items;
         if (
-            items.Count < minItems
+            items.Count < input.MinItems
             || items.Any(string.IsNullOrWhiteSpace)
             || items.Distinct(StringComparer.Ordinal).Count() != items.Count
         )
         {
             return;
         }
-        var lineText = line >= 1 && line <= source.Lines.Count ? source.Lines[line - 1] : string.Empty;
+        var lineText =
+            input.Line >= 1 && input.Line <= input.Source.Lines.Count
+                ? input.Source.Lines[input.Line - 1]
+                : string.Empty;
         if (
             IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(source.Relative, "UPD406", lineText, ignoreRules)
+                new IgnoreCheckInput(
+                    input.Source.Relative,
+                    "UPD406",
+                    lineText,
+                    input.IgnoreRules
+                )
             )
         )
         {
             return;
         }
-        occurrences.Add(
+        input.Occurrences.Add(
             new ModelGroupOccurrence(
-                source.Relative,
-                line,
-                module.ApplicationId,
-                module.Layer,
-                kind,
+                input.Source.Relative,
+                input.Line,
+                input.Module.ApplicationId,
+                input.Module.Layer,
+                input.Kind,
                 items
             )
         );
