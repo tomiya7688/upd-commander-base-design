@@ -20,7 +20,7 @@ func TestSingleFileScanPreservesUILayer(t *testing.T) {
 	)
 
 	findings := ScanPath(target, nil)
-	assertHasCode(t, findings, "UPD101")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD101"})
 }
 
 func TestSingleFileScanPreservesApplicationBoundary(t *testing.T) {
@@ -45,5 +45,5 @@ func TestSingleFileScanPreservesApplicationBoundary(t *testing.T) {
 	)
 
 	findings := ScanPath(target, nil)
-	assertHasCode(t, findings, "UPD102")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }
