@@ -10,12 +10,6 @@ import (
 
 type stringList []string
 
-type finishInput struct {
-	lines  []string
-	output string
-	code   int
-}
-
 func (items *stringList) String() string { return fmt.Sprint([]string(*items)) }
 func (items *stringList) Set(value string) error {
 	*items = append(*items, value)
