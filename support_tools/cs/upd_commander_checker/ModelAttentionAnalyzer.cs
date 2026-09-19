@@ -70,9 +70,10 @@ internal static class ModelAttentionAnalyzer
             .Root.DescendantNodes()
             .OfType<StatementSyntax>()
             .Where(statement =>
-                statement is ExpressionStatementSyntax
-                    or ReturnStatementSyntax
-                    or LocalDeclarationStatementSyntax
+                statement
+                    is ExpressionStatementSyntax
+                        or ReturnStatementSyntax
+                        or LocalDeclarationStatementSyntax
             );
         foreach (var statement in statements)
         {
