@@ -20,6 +20,7 @@ SUPPORTED_RULES = (
     "UPD403",
     "UPD404",
     "UPD405",
+    "UPD406",
 )
 _SUPPORTED_RULE_SET = frozenset(SUPPORTED_RULES)
 
