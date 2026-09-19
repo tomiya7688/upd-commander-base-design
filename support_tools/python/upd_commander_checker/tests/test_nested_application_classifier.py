@@ -38,11 +38,11 @@ class NestedApplicationClassifierTest(unittest.TestCase):
         self.assertEqual("commander", module.role)
 
     def test_nested_import_uses_nearest_application_scope(self) -> None:
-        layer, role, application = classify_import(
+        module = classify_import(
             "apps.product.ui.commander.applications.settings.data.storage"
         )
-        self.assertEqual("settings", application)
-        self.assertEqual("data", layer)
+        self.assertEqual("settings", module.application)
+        self.assertEqual("data", module.layer)
         self.assertIsNone(role)
 
 
