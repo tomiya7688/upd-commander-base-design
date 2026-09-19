@@ -31,6 +31,18 @@ func decodeConfigPercent(value json.RawMessage, target *int) bool {
 	return true
 }
 
+func decodeConfigMinInt(value json.RawMessage, target *int, minimum int) bool {
+	if isJSONNull(value) {
+		return false
+	}
+	var decoded int
+	if json.Unmarshal(value, &decoded) != nil || decoded < minimum {
+		return false
+	}
+	*target = decoded
+	return true
+}
+
 func decodeConfigPositiveInt(value json.RawMessage, target *int) bool {
 	if isJSONNull(value) {
 		return false
