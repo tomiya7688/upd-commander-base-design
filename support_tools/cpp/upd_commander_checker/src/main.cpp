@@ -37,7 +37,9 @@ int main(int argc, char* argv[]) {
             options.ignores,
             config.upd301_max_inputs,
             config.flat_layer_min_files,
-            config.flat_layer_min_direct_percent);
+            config.flat_layer_min_direct_percent,
+            config.model_group_min_items,
+            config.model_group_min_occurrences);
     const auto findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,
