@@ -64,7 +64,7 @@ class _Collector(ast.NodeVisitor):
     def visit_Tuple(self, node: ast.Tuple) -> None:
         items = tuple(filter(None, (_item_key(item) for item in node.elts)))
         if len(items) == len(node.elts):
-            self._add(node.lineno, "tuple", items)
+            self._add((node.lineno, "tuple", items))
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -92,7 +92,7 @@ class _Collector(ast.NodeVisitor):
             parameters.append(node.args.vararg)
         if node.args.kwarg is not None:
             parameters.append(node.args.kwarg)
-        self._add(node.lineno, "parameters", tuple(_normalize(item.arg) for item in parameters))
+        self._add((node.lineno, "parameters", tuple(_normalize(item.arg) for item in parameters)))
 
     def _parallel_group(self, node: ast.AST) -> None:
         groups: dict[str, list[str]] = {}
@@ -105,9 +105,10 @@ class _Collector(ast.NodeVisitor):
                 groups.setdefault(index, []).append(collection)
         for items in groups.values():
             ordered = tuple(dict.fromkeys(items))
-            self._add(getattr(node, "lineno", 1), "parallel_collection", ordered)
+            self._add((getattr(node, "lineno", 1), "parallel_collection", ordered))
 
-    def _add(self, line: int, kind: str, items: tuple[str, ...]) -> None:
+    def _add(self, occurrence: tuple[int, str, tuple[str, ...]]) -> None:
+        line, kind, items = occurrence
         if len(items) < self.min_items or len(set(items)) != len(items):
             return
         if self._ignored(line):
