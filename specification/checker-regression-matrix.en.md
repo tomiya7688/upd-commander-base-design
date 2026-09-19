@@ -32,6 +32,15 @@ The four UPD Commander Checker implementations must regression-test the same rul
 | flat-layer-generated-heavy | UPD405 | no finding |
 | flat-layer-boundary-below-percent | UPD405 | no finding |
 | flat-layer-boundary-over-percent | UPD405 | attention |
+| model-two-item-repeat | UPD406 | no finding |
+| model-repeated-parameters | UPD406 | attention |
+| model-one-off-parameters | UPD406 | no finding |
+| model-repeated-tuple | UPD406 | attention |
+| model-repeated-parallel-index | UPD406 | attention |
+| model-existing-aggregate | UPD406 | no finding |
+| model-performance-suppressed | UPD406 | no finding |
+| model-different-order | UPD406 | no finding |
+| model-cross-layer-only | UPD406 | no finding |
 
 ## Common Ignore cases
 

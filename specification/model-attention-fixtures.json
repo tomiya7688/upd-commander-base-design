@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "rule": "UPD406",
+  "defaults": {
+    "model_group_min_items": 3,
+    "model_group_min_occurrences": 2
+  },
+  "cases": [
+    {
+      "name": "two-item-repeat",
+      "kind": "parameters",
+      "items": [
+        "id",
+        "name"
+      ],
+      "occurrences": 3,
+      "expected": "none"
+    },
+    {
+      "name": "repeated-parameters",
+      "kind": "parameters",
+      "items": [
+        "id",
+        "name",
+        "email"
+      ],
+      "occurrences": 2,
+      "expected": "attention"
+    },
+    {
+      "name": "one-off-parameters",
+      "kind": "parameters",
+      "items": [
+        "x",
+        "y",
+        "z",
+        "w"
+      ],
+      "occurrences": 1,
+      "expected": "none"
+    },
+    {
+      "name": "repeated-tuple",
+      "kind": "tuple",
+      "items": [
+        "x",
+        "y",
+        "z"
+      ],
+      "occurrences": 2,
+      "expected": "attention"
+    },
+    {
+      "name": "repeated-parallel-index",
+      "kind": "parallel_collection",
+      "items": [
+        "xs",
+        "ys",
+        "zs"
+      ],
+      "occurrences": 2,
+      "expected": "attention"
+    },
+    {
+      "name": "existing-model",
+      "kind": "aggregate_definition",
+      "items": [
+        "id",
+        "name",
+        "email",
+        "age"
+      ],
+      "occurrences": 3,
+      "expected": "none"
+    },
+    {
+      "name": "performance-suppressed",
+      "kind": "parallel_collection",
+      "items": [
+        "xs",
+        "ys",
+        "zs"
+      ],
+      "occurrences": 3,
+      "suppression": "rule-specific-ignore",
+      "expected": "none"
+    },
+    {
+      "name": "different-order",
+      "kind": "parameters",
+      "signatures": [
+        [
+          "id",
+          "name",
+          "email"
+        ],
+        [
+          "email",
+          "name",
+          "id"
+        ]
+      ],
+      "occurrences_per_signature": 1,
+      "expected": "none"
+    },
+    {
+      "name": "cross-layer-only",
+      "kind": "parameters",
+      "items": [
+        "id",
+        "name",
+        "email"
+      ],
+      "occurrences_by_layer": {
+        "ui": 1,
+        "process": 1
+      },
+      "expected": "none"
+    },
+    {
+      "name": "custom-min-items",
+      "config": {
+        "model_group_min_items": 4,
+        "model_group_min_occurrences": 2
+      },
+      "kind": "parameters",
+      "items": [
+        "id",
+        "name",
+        "email"
+      ],
+      "occurrences": 2,
+      "expected": "none"
+    },
+    {
+      "name": "custom-min-occurrences",
+      "config": {
+        "model_group_min_items": 3,
+        "model_group_min_occurrences": 3
+      },
+      "kind": "parameters",
+      "items": [
+        "id",
+        "name",
+        "email"
+      ],
+      "occurrences": 2,
+      "expected": "none"
+    }
+  ]
+}
