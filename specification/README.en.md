@@ -16,6 +16,7 @@ While `docs/` explains the design and its concepts, `specification/` defines the
 - [Compresser / Container Checker Rules](compresser-check-rules.en.md) — Attention/Warning rules for Containerization and Self Check
 - [Responsibility Check Rules](responsibility-check-rules.en.md) — common responsibility-unit rules and UPD401–UPD404
 - [Flat Layer Checker Rules](flat-layer-check-rules.en.md) — UPD405 Attention contract for large, predominantly flat UI / Process / Data layers
+- [Model Attention Checker Rules](model-attention-check-rules.en.md) — UPD406 Attention contract for repeated value groups that may benefit from a Model/DTO
 - [Processing Specification](processing-spec.en.md) — actual processing responsibilities in each layer
 - [Dependency Rules](dependency-rules.en.md) — allowed and prohibited dependencies
 - [Data Commander Communication](data-commander-communication.en.md) — warning rules for direct Data Commander-to-Commander communication
