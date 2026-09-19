@@ -58,6 +58,23 @@ internal sealed class TempProject : IDisposable
         );
     }
 
+    internal List<Finding> ScanModel(
+        (int MinItems, int MinOccurrences) modelThresholds
+    )
+    {
+        return Scanner.ScanPath(
+            new ScanPathInput(
+                root,
+                [],
+                2,
+                12,
+                80,
+                modelThresholds.MinItems,
+                modelThresholds.MinOccurrences
+            )
+        );
+    }
+
     public void Dispose()
     {
         Directory.Delete(root, recursive: true);
