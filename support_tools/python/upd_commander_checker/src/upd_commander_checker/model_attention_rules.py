@@ -1,27 +1,34 @@
-from dataclasses import dataclass
 import ast
 from fnmatch import fnmatch
+from pathlib import Path
 import re
 
+from .classifier import classify_module
 from .ignore_rules import IgnoreRule
-from .models import ModuleInfo
+from .models import Finding, ModuleInfo
 
 
 _INLINE_IGNORE = re.compile(r"#\s*upd:\s*ignore\s+(UPD\d+|all)\b", re.IGNORECASE)
+ModelGroupOccurrence = tuple[str, int, str, str, str, tuple[str, ...]]
 
 
-@dataclass(frozen=True)
-class ModelGroupOccurrence:
-    path: str
-    line: int
-    application: str
-    layer: str
-    kind: str
-    items: tuple[str, ...]
-
-    @property
-    def signature(self) -> tuple[str, str, str, tuple[str, ...]]:
-        return (self.application, self.layer, self.kind, self.items)
+def collect_path_model_group_occurrences(
+    path: Path,
+    root: Path,
+    classification_root: Path | None,
+    ignore_rules: tuple[IgnoreRule, ...],
+    min_items: int,
+) -> list[ModelGroupOccurrence]:
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+    except (OSError, UnicodeError, SyntaxError):
+        return []
+    module = classify_module(path, classification_root)
+    relative = _relative_text(path, root)
+    return collect_model_group_occurrences(
+        tree, module, source, relative, ignore_rules, min_items
+    )
 
 
 def collect_model_group_occurrences(
@@ -35,6 +42,32 @@ def collect_model_group_occurrences(
     collector = _Collector(module, source, relative_path, ignore_rules, min_items)
     collector.visit(tree)
     return collector.occurrences
+
+
+def model_attention_findings(
+    occurrences: list[ModelGroupOccurrence],
+    min_occurrences: int,
+) -> list[Finding]:
+    grouped: dict[str, list[ModelGroupOccurrence]] = {}
+    for occurrence in occurrences:
+        grouped.setdefault(_signature(occurrence), []).append(occurrence)
+
+    findings: list[Finding] = []
+    for group in grouped.values():
+        if len(group) < min_occurrences:
+            continue
+        first = min(group, key=lambda item: (item[0], item[1]))
+        items = ",".join(first[5])
+        findings.append(
+            Finding(
+                Path(first[0]),
+                first[1],
+                "UPD406",
+                f"repeated value group may benefit from a Model/DTO; items={items} occurrences={len(group)} kind={first[4]}",
+                "attention",
+            )
+        )
+    return findings
 
 
 class _Collector(ast.NodeVisitor):
@@ -61,17 +94,15 @@ class _Collector(ast.NodeVisitor):
         self._parameter_group(node)
         self.generic_visit(node)
 
-    def visit_Tuple(self, node: ast.Tuple) -> None:
-        items = tuple(filter(None, (_item_key(item) for item in node.elts)))
-        if len(items) == len(node.elts):
-            self._add((node.lineno, "tuple", items))
-        self.generic_visit(node)
-
     def visit_Assign(self, node: ast.Assign) -> None:
+        if isinstance(node.value, ast.Tuple):
+            self._tuple_group(node.value)
         self._parallel_group(node)
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if isinstance(node.value, ast.Tuple):
+            self._tuple_group(node.value)
         self._parallel_group(node)
         self.generic_visit(node)
 
@@ -80,8 +111,15 @@ class _Collector(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Return(self, node: ast.Return) -> None:
+        if isinstance(node.value, ast.Tuple):
+            self._tuple_group(node.value)
         self._parallel_group(node)
         self.generic_visit(node)
+
+    def _tuple_group(self, node: ast.Tuple) -> None:
+        items = tuple(filter(None, (_item_key(item) for item in node.elts)))
+        if len(items) == len(node.elts):
+            self._add((node.lineno, "tuple", items))
 
     def _parameter_group(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         positional = list(node.args.posonlyargs) + list(node.args.args)
@@ -92,7 +130,8 @@ class _Collector(ast.NodeVisitor):
             parameters.append(node.args.vararg)
         if node.args.kwarg is not None:
             parameters.append(node.args.kwarg)
-        self._add((node.lineno, "parameters", tuple(_normalize(item.arg) for item in parameters)))
+        items = tuple(_normalize(item.arg) for item in parameters)
+        self._add((node.lineno, "parameters", items))
 
     def _parallel_group(self, node: ast.AST) -> None:
         groups: dict[str, list[str]] = {}
@@ -114,7 +153,7 @@ class _Collector(ast.NodeVisitor):
         if self._ignored(line):
             return
         self.occurrences.append(
-            ModelGroupOccurrence(
+            (
                 self.relative_path,
                 line,
                 self.module.application or "",
@@ -134,6 +173,12 @@ class _Collector(ast.NodeVisitor):
             return False
         match = _INLINE_IGNORE.search(self.lines[line - 1])
         return bool(match and match.group(1).upper() in {"ALL", "UPD406"})
+
+
+def _signature(occurrence: ModelGroupOccurrence) -> str:
+    return "\x1f".join(
+        (occurrence[2], occurrence[3], occurrence[4], "\x1e".join(occurrence[5]))
+    )
 
 
 def _item_key(node: ast.AST) -> str:
@@ -164,3 +209,10 @@ def _has_staticmethod(node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
         or isinstance(item, ast.Attribute) and item.attr == "staticmethod"
         for item in node.decorator_list
     )
+
+
+def _relative_text(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
