@@ -10,7 +10,11 @@ from .data_type_location_rules import check_data_type_locations
 from .dependency_rules import check_dependencies
 from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
-from .model_attention_rules import ModelGroupOccurrence, collect_model_group_occurrences
+from .model_attention_rules import (
+    ModelGroupOccurrence,
+    collect_path_model_group_occurrences,
+    model_attention_findings,
+)
 from .responsibility_rules import check_responsibilities
 
 
@@ -46,7 +50,7 @@ def scan_path(
             )
         )
         model_occurrences.extend(
-            _collect_model_occurrences(
+            collect_path_model_group_occurrences(
                 path,
                 root,
                 classification_root,
@@ -57,7 +61,7 @@ def scan_path(
     findings.extend(
         _filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules)
     )
-    findings.extend(_model_attention_findings(model_occurrences, model_group_min_occurrences))
+    findings.extend(model_attention_findings(model_occurrences, model_group_min_occurrences))
     if target.is_dir():
         findings.extend(
             _check_flat_layers(
@@ -256,51 +260,3 @@ def _layer_root_index(parts: tuple[str, ...]) -> int | None:
     return layer_index
 
 
-
-def _collect_model_occurrences(
-    path: Path,
-    root: Path,
-    classification_root: Path | None,
-    ignore_rules: tuple[IgnoreRule, ...],
-    min_items: int,
-) -> list[ModelGroupOccurrence]:
-    try:
-        source = path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(path))
-    except (OSError, UnicodeError, SyntaxError):
-        return []
-    module = classify_module(path, classification_root)
-    return collect_model_group_occurrences(
-        tree,
-        module,
-        source,
-        _relative_text(path, root),
-        ignore_rules,
-        min_items,
-    )
-
-
-def _model_attention_findings(
-    occurrences: list[ModelGroupOccurrence],
-    min_occurrences: int,
-) -> list[Finding]:
-    grouped: dict[tuple[str, str, str, tuple[str, ...]], list[ModelGroupOccurrence]] = {}
-    for occurrence in occurrences:
-        grouped.setdefault(occurrence.signature, []).append(occurrence)
-
-    findings: list[Finding] = []
-    for group in grouped.values():
-        if len(group) < min_occurrences:
-            continue
-        first = min(group, key=lambda item: (item.path, item.line))
-        items = ",".join(first.items)
-        findings.append(
-            Finding(
-                Path(first.path),
-                first.line,
-                "UPD406",
-                f"repeated value group may benefit from a Model/DTO; items={items} occurrences={len(group)} kind={first.kind}",
-                "attention",
-            )
-        )
-    return findings
