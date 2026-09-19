@@ -40,6 +40,8 @@ def main() -> int:
             config.upd301_max_inputs,
             config.flat_layer_min_files,
             config.flat_layer_min_direct_percent,
+            config.model_group_min_items,
+            config.model_group_min_occurrences,
         ),
         config.enabled_rules,
     )
