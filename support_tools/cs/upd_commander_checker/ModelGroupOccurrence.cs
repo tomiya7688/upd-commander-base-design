@@ -10,11 +10,5 @@ internal sealed record ModelGroupOccurrence(
 )
 {
     internal string Signature =>
-        string.Join(
-            "\u001f",
-            Application,
-            Layer,
-            Kind,
-            string.Join("\u001e", Items)
-        );
+        string.Join("\u001f", Application, Layer, Kind, string.Join("\u001e", Items));
 }
