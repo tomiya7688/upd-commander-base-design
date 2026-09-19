@@ -198,12 +198,7 @@ internal static class ModelAttentionAnalyzer
                 : string.Empty;
         if (
             IgnoreRules.IsIgnored(
-                new IgnoreCheckInput(
-                    input.Source.Relative,
-                    "UPD406",
-                    lineText,
-                    input.IgnoreRules
-                )
+                new IgnoreCheckInput(input.Source.Relative, "UPD406", lineText, input.IgnoreRules)
             )
         )
         {
