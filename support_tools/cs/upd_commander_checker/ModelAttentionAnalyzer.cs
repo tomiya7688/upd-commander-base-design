@@ -6,40 +6,43 @@ namespace UpdCommanderChecker;
 
 internal static class ModelAttentionAnalyzer
 {
-    internal static IReadOnlyList<ModelGroupOccurrence> Collect(
-        ParsedSource source,
-        ModuleInfo module,
-        IReadOnlyList<IgnoreRule> ignoreRules,
-        int minItems
-    )
+    internal static IReadOnlyList<ModelGroupOccurrence> Collect(ModelAttentionCollectInput input)
     {
+        var source = input.Source;
+        var module = input.Module;
+        var ignoreRules = input.IgnoreRules;
+        var minItems = input.MinItems;
         var occurrences = new List<ModelGroupOccurrence>();
 
         foreach (var method in source.Root.DescendantNodes().OfType<MethodDeclarationSyntax>())
         {
             Add(
-                occurrences,
-                source,
-                module,
-                ignoreRules,
-                minItems,
+                new ModelAttentionAddInput(
+                    occurrences,
+                    source,
+                    module,
+                    ignoreRules,
+                    minItems,
                 method.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                 "parameters",
                 ParameterKeys(method.ParameterList)
+                )
             );
         }
 
         foreach (var local in source.Root.DescendantNodes().OfType<LocalFunctionStatementSyntax>())
         {
             Add(
-                occurrences,
-                source,
-                module,
-                ignoreRules,
-                minItems,
+                new ModelAttentionAddInput(
+                    occurrences,
+                    source,
+                    module,
+                    ignoreRules,
+                    minItems,
                 local.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                 "parameters",
                 ParameterKeys(local.ParameterList)
+                )
             );
         }
 
@@ -57,6 +60,7 @@ internal static class ModelAttentionAnalyzer
                     tuple.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                     "tuple",
                     keys
+                    )
                 );
             }
         }
@@ -105,6 +109,7 @@ internal static class ModelAttentionAnalyzer
                     statement.GetLocation().GetLineSpan().StartLinePosition.Line + 1,
                     "parallel_collection",
                     items
+                    )
                 );
             }
         }
@@ -168,17 +173,16 @@ internal static class ModelAttentionAnalyzer
         };
     }
 
-    private static void Add(
-        List<ModelGroupOccurrence> occurrences,
-        ParsedSource source,
-        ModuleInfo module,
-        IReadOnlyList<IgnoreRule> ignoreRules,
-        int minItems,
-        int line,
-        string kind,
-        IReadOnlyList<string> items
-    )
+    private static void Add(ModelAttentionAddInput input)
     {
+        var occurrences = input.Occurrences;
+        var source = input.Source;
+        var module = input.Module;
+        var ignoreRules = input.IgnoreRules;
+        var minItems = input.MinItems;
+        var line = input.Line;
+        var kind = input.Kind;
+        var items = input.Items;
         if (
             items.Count < minItems
             || items.Any(string.IsNullOrWhiteSpace)
