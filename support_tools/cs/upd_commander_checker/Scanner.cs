@@ -118,10 +118,12 @@ internal static class Scanner
             );
             modelOccurrences.AddRange(
                 ModelAttentionAnalyzer.Collect(
-                    source,
-                    module,
-                    ignoreRules,
-                    input.ModelGroupMinItems
+                    new ModelAttentionCollectInput(
+                        source,
+                        module,
+                        ignoreRules,
+                        input.ModelGroupMinItems
+                    )
                 )
             );
         }
