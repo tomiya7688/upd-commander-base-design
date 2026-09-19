@@ -43,6 +43,16 @@ def load_config() -> CheckerConfig:
         or not 1 <= data["flat_layer_min_direct_percent"] <= 100
     ):
         raise ConfigError("invalid config field: flat_layer_min_direct_percent")
+    if "model_group_min_items" in data and (
+        type(data["model_group_min_items"]) is not int
+        or data["model_group_min_items"] < 3
+    ):
+        raise ConfigError("invalid config field: model_group_min_items")
+    if "model_group_min_occurrences" in data and (
+        type(data["model_group_min_occurrences"]) is not int
+        or data["model_group_min_occurrences"] < 2
+    ):
+        raise ConfigError("invalid config field: model_group_min_occurrences")
     if "enabled_rules" in data and (
         not isinstance(data["enabled_rules"], list)
         or not all(isinstance(item, str) for item in data["enabled_rules"])
@@ -58,6 +68,8 @@ def load_config() -> CheckerConfig:
     upd301_max_inputs = data.get("upd301_max_inputs", 2)
     flat_layer_min_files = data.get("flat_layer_min_files", 12)
     flat_layer_min_direct_percent = data.get("flat_layer_min_direct_percent", 80)
+    model_group_min_items = data.get("model_group_min_items", 3)
+    model_group_min_occurrences = data.get("model_group_min_occurrences", 2)
     enabled_rules = None
     if "enabled_rules" in data:
         try:
@@ -73,6 +85,8 @@ def load_config() -> CheckerConfig:
         upd301_max_inputs=upd301_max_inputs,
         flat_layer_min_files=flat_layer_min_files,
         flat_layer_min_direct_percent=flat_layer_min_direct_percent,
+        model_group_min_items=model_group_min_items,
+        model_group_min_occurrences=model_group_min_occurrences,
     )
 
 
