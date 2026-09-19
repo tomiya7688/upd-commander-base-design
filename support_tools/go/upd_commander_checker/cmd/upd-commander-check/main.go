@@ -46,7 +46,7 @@ func main() {
 		finish([]string{fmt.Sprintf("E UPD000 %s missing", target)}, output, 2)
 	}
 
-	findings := checker.FilterEnabledFindings(checker.ScanPathWithThresholds(target, ignores, config.Upd301MaxInputs, config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent, config.ModelGroupMinItems, config.ModelGroupMinOccurrences), config.EnabledRules)
+	findings := checker.FilterEnabledFindings(checker.ScanPathWithAllThresholds(target, ignores, config.Upd301MaxInputs, config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent, config.ModelGroupMinItems, config.ModelGroupMinOccurrences), config.EnabledRules)
 	errors := 0
 	warnings := 0
 	attentions := 0
