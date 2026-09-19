@@ -97,15 +97,17 @@ internal static class Scanner
         }
 
         var semanticProject = SemanticProject.Create(semanticSources);
+        var modelOccurrences = new List<ModelGroupOccurrence>();
         foreach (var source in sources)
         {
             var classificationRelative = Path.GetRelativePath(contextRoot, source.File)
                 .Replace('\\', '/');
+            var module = Classifier.ClassifyPath(classificationRelative);
             findings.AddRange(
                 CSharpAstAnalyzer.Analyze(
                     new AstAnalysisInput(
                         source.Root,
-                        Classifier.ClassifyPath(classificationRelative),
+                        module,
                         source.Relative,
                         source.Lines,
                         ignoreRules,
@@ -114,7 +116,21 @@ internal static class Scanner
                     )
                 )
             );
+            modelOccurrences.AddRange(
+                ModelAttentionAnalyzer.Collect(
+                    source,
+                    module,
+                    ignoreRules,
+                    input.ModelGroupMinItems
+                )
+            );
         }
+        findings.AddRange(
+            ModelAttentionAnalyzer.BuildFindings(
+                modelOccurrences,
+                input.ModelGroupMinOccurrences
+            )
+        );
         findings.AddRange(
             DataTypeLocationRules.Check(
                 new DataTypeLocationRuleContext(includedFiles, root, ignoreRules)
