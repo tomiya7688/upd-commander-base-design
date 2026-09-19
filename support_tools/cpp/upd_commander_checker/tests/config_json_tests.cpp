@@ -78,6 +78,39 @@ void test_flat_layer_config() {
     }
 }
 
+void test_model_attention_config() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_model";
+    std::filesystem::remove_all(root);
+    write_config(
+        root,
+        "{\"model_group_min_items\":4,\"model_group_min_occurrences\":3}");
+    const auto config = upd_checker::load_config((root / "checker").string());
+    assert(config.model_group_min_items == 4);
+    assert(config.model_group_min_occurrences == 3);
+    std::filesystem::remove_all(root);
+
+    const std::vector<std::string> invalid_cases = {
+        "{\"model_group_min_items\":2}",
+        "{\"model_group_min_items\":3.0}",
+        "{\"model_group_min_occurrences\":1}",
+        "{\"model_group_min_occurrences\":2.0}",
+    };
+    for (const auto& content : invalid_cases) {
+        const auto invalid_root =
+            std::filesystem::temp_directory_path() / "upd_cpp_config_model_invalid";
+        std::filesystem::remove_all(invalid_root);
+        write_config(invalid_root, content);
+        bool rejected = false;
+        try {
+            (void)upd_checker::load_config((invalid_root / "checker").string());
+        } catch (const upd_checker::ConfigError&) {
+            rejected = true;
+        }
+        assert(rejected);
+        std::filesystem::remove_all(invalid_root);
+    }
+}
+
 void test_unicode_and_unknown_fields_are_supported() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_json_unicode";
     std::filesystem::remove_all(root);
@@ -109,5 +142,6 @@ int main() {
     test_invalid_json_is_rejected();
     test_unicode_and_unknown_fields_are_supported();
     test_flat_layer_config();
+    test_model_attention_config();
     return 0;
 }
