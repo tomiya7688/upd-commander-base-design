@@ -11,7 +11,7 @@ func TestPathOnlyIgnoreSkipsBrokenFileBeforeParsing(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "generated", "broken.go"), "package generated\nfunc broken(\n")
 
 	findings := ScanPath(root, nil)
-	assertNoCode(t, findings, "UPD002")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD002"})
 }
 
 func TestRuleSpecificIgnoreDoesNotSkipBrokenFile(t *testing.T) {
@@ -20,5 +20,5 @@ func TestRuleSpecificIgnoreDoesNotSkipBrokenFile(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "generated", "broken.go"), "package generated\nfunc broken(\n")
 
 	findings := ScanPath(root, nil)
-	assertHasCode(t, findings, "UPD002")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD002"})
 }
