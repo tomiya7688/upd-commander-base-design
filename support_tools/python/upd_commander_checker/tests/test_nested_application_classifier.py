@@ -43,7 +43,7 @@ class NestedApplicationClassifierTest(unittest.TestCase):
         )
         self.assertEqual("settings", module.application)
         self.assertEqual("data", module.layer)
-        self.assertIsNone(role)
+        self.assertIsNone(module.role)
 
 
 if __name__ == "__main__":
