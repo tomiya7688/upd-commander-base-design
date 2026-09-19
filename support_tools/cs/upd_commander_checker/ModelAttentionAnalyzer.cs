@@ -200,8 +200,8 @@ internal static class ModelAttentionAnalyzer
             new ModelGroupOccurrence(
                 source.Relative,
                 line,
-                module.Application ?? string.Empty,
-                module.Layer ?? string.Empty,
+                module.ApplicationId,
+                module.Layer,
                 kind,
                 items
             )
