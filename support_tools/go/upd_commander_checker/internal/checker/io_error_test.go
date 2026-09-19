@@ -11,7 +11,7 @@ func TestMissingIgnoreFileIsNormal(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "plain.go"), "package plain\n")
 
 	findings := ScanPath(root, nil)
-	assertNoCode(t, findings, "UPD001")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD001"})
 }
 
 func TestUnreadableIgnoreFileReportsUPD001AndStopsScan(t *testing.T) {
@@ -28,8 +28,8 @@ func TestUnreadableIgnoreFileReportsUPD001AndStopsScan(t *testing.T) {
 	}
 
 	findings := ScanPath(root, nil)
-	assertHasCode(t, findings, "UPD001")
-	assertNoCode(t, findings, "UPD002")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD001"})
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD002"})
 }
 
 func TestUnreadableDirectoryReportsUPD001AndContinues(t *testing.T) {
@@ -50,6 +50,6 @@ func TestUnreadableDirectoryReportsUPD001AndContinues(t *testing.T) {
 	}
 
 	findings := ScanPath(root, nil)
-	assertHasCode(t, findings, "UPD001")
-	assertHasCode(t, findings, "UPD201")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD001"})
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD201"})
 }
