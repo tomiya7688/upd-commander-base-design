@@ -21,7 +21,7 @@ def classify_module(path: Path, root: Path | None = None) -> ModuleInfo:
     return ModuleInfo(path=path, layer=layer, role=role, application=application)
 
 
-def classify_import(module_name: str) -> tuple[str | None, str | None, str | None]:
+def classify_import(module_name: str) -> ModuleInfo:
     path_parts = module_name.lower().replace("-", "_").split(".")
     scoped_parts = _application_scope(path_parts)
     token_parts: list[str] = []
@@ -31,7 +31,12 @@ def classify_import(module_name: str) -> tuple[str | None, str | None, str | Non
     layer = _find_name(reversed(token_parts), _LAYER_NAMES)
     role = _find_role(list(reversed(token_parts)))
     application = _find_application(path_parts)
-    return layer, role, application
+    return ModuleInfo(
+        path=Path(module_name),
+        layer=layer,
+        role=role,
+        application=application,
+    )
 
 
 def _relative_module_path(path: Path, root: Path | None) -> Path:

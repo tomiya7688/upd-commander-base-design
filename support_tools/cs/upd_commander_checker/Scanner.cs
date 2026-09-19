@@ -97,15 +97,17 @@ internal static class Scanner
         }
 
         var semanticProject = SemanticProject.Create(semanticSources);
+        var modelOccurrences = new List<ModelGroupOccurrence>();
         foreach (var source in sources)
         {
             var classificationRelative = Path.GetRelativePath(contextRoot, source.File)
                 .Replace('\\', '/');
+            var module = Classifier.ClassifyPath(classificationRelative);
             findings.AddRange(
                 CSharpAstAnalyzer.Analyze(
                     new AstAnalysisInput(
                         source.Root,
-                        Classifier.ClassifyPath(classificationRelative),
+                        module,
                         source.Relative,
                         source.Lines,
                         ignoreRules,
@@ -114,7 +116,20 @@ internal static class Scanner
                     )
                 )
             );
+            modelOccurrences.AddRange(
+                ModelAttentionAnalyzer.Collect(
+                    new ModelAttentionCollectInput(
+                        source,
+                        module,
+                        ignoreRules,
+                        input.ModelGroupMinItems
+                    )
+                )
+            );
         }
+        findings.AddRange(
+            ModelAttentionAnalyzer.BuildFindings(modelOccurrences, input.ModelGroupMinOccurrences)
+        );
         findings.AddRange(
             DataTypeLocationRules.Check(
                 new DataTypeLocationRuleContext(includedFiles, root, ignoreRules)
@@ -123,7 +138,7 @@ internal static class Scanner
         if (targetIsDirectory)
         {
             findings.AddRange(
-                CheckFlatLayers(
+                FlatLayerRules.Check(
                     (
                         includedFiles,
                         root,
@@ -140,110 +155,5 @@ internal static class Scanner
             .ThenBy(item => item.Line)
             .ThenBy(item => item.Code, StringComparer.Ordinal)
             .ToList();
-    }
-
-    private static readonly HashSet<string> FlatLayerExcludedDirectories =
-    [
-        "generated",
-        "third_party",
-        "vendor",
-        "external",
-        "build",
-    ];
-
-    private static readonly HashSet<string> ApplicationMarkers =
-    [
-        "app",
-        "apps",
-        "application",
-        "applications",
-        "feature",
-        "features",
-    ];
-
-    private static readonly HashSet<string> LayerNames = ["ui", "process", "data"];
-
-    private static IEnumerable<Finding> CheckFlatLayers(
-        (
-            IReadOnlyList<string> Files,
-            string Root,
-            IReadOnlyList<IgnoreRule> IgnoreRules,
-            int MinFiles,
-            int MinDirectPercent
-        ) input
-    )
-    {
-        var counts = new Dictionary<string, (int Total, int Direct)>(StringComparer.Ordinal);
-        foreach (var file in input.Files)
-        {
-            var relative = Path.GetRelativePath(input.Root, file).Replace('\\', '/');
-            var parts = relative.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (
-                parts
-                    .Take(Math.Max(0, parts.Length - 1))
-                    .Select(part => part.ToLowerInvariant())
-                    .Any(FlatLayerExcludedDirectories.Contains)
-            )
-            {
-                continue;
-            }
-
-            var layerIndex = FlatLayerRootIndex(parts);
-            if (layerIndex < 0)
-            {
-                continue;
-            }
-            var layerRoot = string.Join('/', parts.Take(layerIndex + 1));
-            counts.TryGetValue(layerRoot, out var count);
-            count.Total++;
-            if (parts.Length == layerIndex + 2)
-            {
-                count.Direct++;
-            }
-            counts[layerRoot] = count;
-        }
-
-        foreach (var (layerRoot, count) in counts)
-        {
-            if (
-                count.Total < input.MinFiles
-                || count.Direct * 100 < count.Total * input.MinDirectPercent
-                || IgnoreRules.IsIgnored(
-                    new IgnoreCheckInput(layerRoot, "UPD405", string.Empty, input.IgnoreRules)
-                )
-            )
-            {
-                continue;
-            }
-            yield return new Finding(
-                layerRoot,
-                1,
-                "UPD405",
-                "large flat layer reduces navigability; consider grouping related responsibilities",
-                "attention"
-            );
-        }
-    }
-
-    private static int FlatLayerRootIndex(IReadOnlyList<string> parts)
-    {
-        var scopeStart = 0;
-        for (var index = 0; index + 2 < parts.Count; index++)
-        {
-            if (ApplicationMarkers.Contains(parts[index].ToLowerInvariant()))
-            {
-                scopeStart = index + 2;
-            }
-        }
-
-        var layerIndex = -1;
-        for (var index = scopeStart; index + 1 < parts.Count; index++)
-        {
-            if (LayerNames.Contains(parts[index].ToLowerInvariant()))
-            {
-                layerIndex = index;
-            }
-        }
-        return layerIndex;
     }
 }

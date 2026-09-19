@@ -10,6 +10,7 @@
 #include "ast_analyzer.hpp"
 #include "data_type_location_rules.hpp"
 #include "ignore_rules.hpp"
+#include "model_attention_rules.hpp"
 #include "source_file_walker.hpp"
 
 namespace upd_checker {
@@ -174,7 +175,9 @@ std::vector<Finding> scan_path(
     const std::vector<std::string>& cli_ignore,
     int upd301_max_inputs,
     int flat_layer_min_files,
-    int flat_layer_min_direct_percent) {
+    int flat_layer_min_direct_percent,
+    int model_group_min_items,
+    int model_group_min_occurrences) {
     const std::filesystem::path target_path(target);
     std::error_code target_error;
     const bool target_is_directory = std::filesystem::is_directory(target_path, target_error);
@@ -207,6 +210,7 @@ std::vector<Finding> scan_path(
     std::vector<Finding> findings;
     const auto paths = collect_source_files(target_path, root, findings);
     std::vector<std::filesystem::path> included_paths;
+    std::vector<ModelGroupOccurrence> model_occurrences;
     for (const auto& path : paths) {
         const std::string relative = relative_text(path, root);
         if (ignored_by_cli(relative, cli_ignore) || is_path_ignored(relative, rules)) {
@@ -215,10 +219,24 @@ std::vector<Finding> scan_path(
         included_paths.push_back(path);
         auto current = analyze_cpp_ast(path, root, relative, rules, upd301_max_inputs);
         findings.insert(findings.end(), current.begin(), current.end());
+        auto occurrences = collect_cpp_model_group_occurrences(
+            path,
+            root,
+            relative,
+            rules,
+            model_group_min_items);
+        model_occurrences.insert(
+            model_occurrences.end(),
+            occurrences.begin(),
+            occurrences.end());
     }
 
     auto location_findings = check_data_type_locations(included_paths, root, rules);
     findings.insert(findings.end(), location_findings.begin(), location_findings.end());
+
+    auto model_findings =
+        model_attention_findings(model_occurrences, model_group_min_occurrences);
+    findings.insert(findings.end(), model_findings.begin(), model_findings.end());
 
     if (target_is_directory) {
         auto flat_findings = check_flat_layers(

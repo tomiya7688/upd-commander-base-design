@@ -11,14 +11,18 @@ import (
 )
 
 func ScanPath(target string, cliIgnore []string) []Finding {
-	return ScanPathWithThresholds(target, cliIgnore, 2, 12, 80)
+	return ScanPathWithAllThresholds(target, cliIgnore, 2, 12, 80, 3, 2)
 }
 
 func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInputs int) []Finding {
-	return ScanPathWithThresholds(target, cliIgnore, upd301MaxInputs, 12, 80)
+	return ScanPathWithAllThresholds(target, cliIgnore, upd301MaxInputs, 12, 80, 3, 2)
 }
 
 func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int) []Finding {
+	return ScanPathWithAllThresholds(target, cliIgnore, upd301MaxInputs, flatLayerMinFiles, flatLayerMinDirectPercent, 3, 2)
+}
+
+func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int, modelGroupMinItems int, modelGroupMinOccurrences int) []Finding {
 	root := target
 	info, err := os.Stat(target)
 	targetIsFile := err == nil && !info.IsDir()
@@ -68,6 +72,7 @@ func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs i
 		dependencyPaths = dependencyContextPaths(contextRoot)
 	}
 	internalPackages := internalPackagePaths(dependencyPaths, contextRoot)
+	modelOccurrences := []ModelGroupOccurrence{}
 	for _, path := range paths {
 		rel, relErr := filepath.Rel(root, path)
 		if relErr != nil {
@@ -77,12 +82,19 @@ func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs i
 		if classificationErr != nil {
 			classificationRel = path
 		}
+		relativeText := filepath.ToSlash(rel)
+		classificationText := filepath.ToSlash(classificationRel)
 		findings = append(
 			findings,
-			scanFile(path, filepath.ToSlash(rel), filepath.ToSlash(classificationRel), rules, internalPackages, upd301MaxInputs)...,
+			scanFile(path, relativeText, classificationText, rules, internalPackages, upd301MaxInputs)...,
+		)
+		modelOccurrences = append(
+			modelOccurrences,
+			collectModelGroupOccurrences(path, relativeText, classificationText, rules, modelGroupMinItems)...,
 		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
+	findings = append(findings, modelAttentionFindings(modelOccurrences, modelGroupMinOccurrences)...)
 	if !targetIsFile {
 		findings = append(findings, checkFlatLayers(paths, root, rules, flatLayerMinFiles, flatLayerMinDirectPercent)...)
 	}

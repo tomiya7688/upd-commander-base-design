@@ -8,8 +8,14 @@ from .commander_rules import check_commander
 from .container_rules import check_containers
 from .data_type_location_rules import check_data_type_locations
 from .dependency_rules import check_dependencies
+from .flat_layer_rules import check_flat_layers
 from .ignore_rules import IgnoreRule, filter_findings, is_path_ignored, load_ignore_rules
 from .models import Finding
+from .model_attention_rules import (
+    ModelGroupOccurrence,
+    collect_path_model_group_occurrences,
+    model_attention_findings,
+)
 from .responsibility_rules import check_responsibilities
 
 
@@ -19,6 +25,8 @@ def scan_path(
     upd301_max_inputs: int = 2,
     flat_layer_min_files: int = 12,
     flat_layer_min_direct_percent: int = 80,
+    model_group_min_items: int = 3,
+    model_group_min_occurrences: int = 2,
 ) -> list[Finding]:
     root = target if target.is_dir() else target.parent
     classification_root = root if target.is_dir() else None
@@ -30,6 +38,7 @@ def scan_path(
     findings: list[Finding] = []
     paths = _python_files(target, root, ignore_patterns, ignore_rules, findings)
     internal_modules = _internal_module_names(paths, root)
+    model_occurrences: list[ModelGroupOccurrence] = []
     for path in paths:
         findings.extend(
             _scan_file(
@@ -41,12 +50,22 @@ def scan_path(
                 upd301_max_inputs,
             )
         )
+        model_occurrences.extend(
+            collect_path_model_group_occurrences(
+                path,
+                root,
+                classification_root,
+                ignore_rules,
+                model_group_min_items,
+            )
+        )
     findings.extend(
         _filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules)
     )
+    findings.extend(model_attention_findings(model_occurrences, model_group_min_occurrences))
     if target.is_dir():
         findings.extend(
-            _check_flat_layers(
+            check_flat_layers(
                 paths,
                 root,
                 ignore_rules,
@@ -176,67 +195,3 @@ def _relative_text(path: Path, root: Path) -> str:
         return path.as_posix()
 
 
-_FLAT_LAYER_EXCLUDED_DIRS = {"generated", "third_party", "vendor", "external", "build"}
-_APPLICATION_MARKERS = {"app", "apps", "application", "applications", "feature", "features"}
-_LAYER_NAMES = {"ui", "process", "data"}
-
-
-def _check_flat_layers(
-    paths: list[Path],
-    root: Path,
-    ignore_rules: tuple[IgnoreRule, ...],
-    min_files: int,
-    min_direct_percent: int,
-) -> list[Finding]:
-    counts: dict[str, list[int]] = {}
-    for path in paths:
-        relative = Path(_relative_text(path, root))
-        parts = relative.parts
-        lowered = tuple(part.lower() for part in parts)
-        if any(part in _FLAT_LAYER_EXCLUDED_DIRS for part in lowered[:-1]):
-            continue
-
-        layer_index = _layer_root_index(lowered)
-        if layer_index is None:
-            continue
-        layer_root = Path(*parts[: layer_index + 1]).as_posix()
-        direct = len(parts) == layer_index + 2
-        bucket = counts.setdefault(layer_root, [0, 0])
-        bucket[0] += 1
-        if direct:
-            bucket[1] += 1
-
-    findings: list[Finding] = []
-    for layer_root, (total_files, direct_files) in counts.items():
-        if total_files < min_files:
-            continue
-        if direct_files * 100 < total_files * min_direct_percent:
-            continue
-        if any(
-            rule.code == "UPD405" and fnmatch(layer_root, rule.pattern)
-            for rule in ignore_rules
-        ):
-            continue
-        findings.append(
-            Finding(
-                Path(layer_root),
-                1,
-                "UPD405",
-                "large flat layer reduces navigability; consider grouping related responsibilities",
-                "attention",
-            )
-        )
-    return findings
-
-
-def _layer_root_index(parts: tuple[str, ...]) -> int | None:
-    scope_start = 0
-    for index in range(len(parts) - 2):
-        if parts[index] in _APPLICATION_MARKERS:
-            scope_start = index + 2
-
-    layer_index = None
-    for index in range(scope_start, len(parts) - 1):
-        if parts[index] in _LAYER_NAMES:
-            layer_index = index
-    return layer_index

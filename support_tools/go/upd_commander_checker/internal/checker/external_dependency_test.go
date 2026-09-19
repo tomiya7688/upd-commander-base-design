@@ -11,7 +11,7 @@ func TestExternalDataPackageDoesNotTriggerLayerRule(t *testing.T) {
 	writeTestFile(t, path, "package ui\nimport _ \"thirdparty/data/client\"\n")
 
 	findings := ScanPath(root, nil)
-	assertNoCode(t, findings, "UPD101")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD101"})
 }
 
 func TestExternalProcessingPackageDoesNotTriggerRoleRule(t *testing.T) {
@@ -20,7 +20,7 @@ func TestExternalProcessingPackageDoesNotTriggerRoleRule(t *testing.T) {
 	writeTestFile(t, path, "package process\nimport _ \"vendor/processing/engine\"\n")
 
 	findings := ScanPath(root, nil)
-	assertNoCode(t, findings, "UPD101")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD101"})
 }
 
 func TestMissingOtherApplicationPackageIsNotInternal(t *testing.T) {
@@ -29,5 +29,5 @@ func TestMissingOtherApplicationPackageIsNotInternal(t *testing.T) {
 	writeTestFile(t, path, "package process\nimport _ \"example/applications/external/data/client\"\n")
 
 	findings := ScanPath(root, nil)
-	assertNoCode(t, findings, "UPD102")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }

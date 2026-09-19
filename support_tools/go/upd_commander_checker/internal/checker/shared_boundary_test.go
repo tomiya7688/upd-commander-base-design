@@ -7,22 +7,22 @@ import (
 
 func TestSharedProcessingDoesNotBypassApplicationBoundary(t *testing.T) {
 	findings := scanSharedBoundaryTarget(t, "shared/process/settings_processing")
-	assertHasCode(t, findings, "UPD102")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }
 
 func TestSharedDataDoesNotBypassApplicationBoundary(t *testing.T) {
 	findings := scanSharedBoundaryTarget(t, "shared/data/storage")
-	assertHasCode(t, findings, "UPD102")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }
 
 func TestSharedContractsRemainBoundaryAPI(t *testing.T) {
 	findings := scanSharedBoundaryTarget(t, "shared/contracts/process/settings_processing")
-	assertNoCode(t, findings, "UPD102")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }
 
 func TestSharedMessagesRemainBoundaryAPI(t *testing.T) {
 	findings := scanSharedBoundaryTarget(t, "shared/messages/process/settings_processing")
-	assertNoCode(t, findings, "UPD102")
+	assertNoCode(codeAssertionInput{t: t, findings: findings, code: "UPD102"})
 }
 
 func scanSharedBoundaryTarget(t *testing.T, targetSuffix string) []Finding {

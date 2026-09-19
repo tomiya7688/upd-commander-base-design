@@ -237,6 +237,77 @@ void test_flat_layer_custom_thresholds() {
     std::filesystem::remove_all(root);
 }
 
+
+void test_model_attention_repeated_parameters() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_model_parameters";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "sample.cpp",
+        "void first(int id, int name, int email) {}\n"
+        "void second(int id, int name, int email) {}\n");
+    const auto findings = upd_checker::scan_path(root.string(), {});
+    assert(has_code_message(findings, "UPD406", "items=id,name,email"));
+    assert(has_code_message(findings, "UPD406", "occurrences=2"));
+    assert(has_code_message(findings, "UPD406", "kind=parameters"));
+    std::filesystem::remove_all(root);
+}
+
+void test_model_attention_two_items_order_and_cross_layer() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_model_negative";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "order.cpp",
+        "void pair_one(int id, int name) {}\n"
+        "void pair_two(int id, int name) {}\n"
+        "void order_one(int id, int name, int email) {}\n"
+        "void order_two(int email, int name, int id) {}\n");
+    write_file(
+        root / "ui" / "cross.cpp",
+        "void cross(int id, int name, int email) {}\n");
+    assert(!has_code(upd_checker::scan_path(root.string(), {}), "UPD406"));
+    std::filesystem::remove_all(root);
+}
+
+void test_model_attention_tuple_and_performance_ignore() {
+    const auto tuple_root =
+        std::filesystem::temp_directory_path() / "upd_cpp_model_tuple";
+    std::filesystem::remove_all(tuple_root);
+    write_file(
+        tuple_root / "process" / "tuple.cpp",
+        "#include <tuple>\n"
+        "auto first(int x, int y, int z) { return std::make_tuple(x, y, z); }\n"
+        "auto second(int a, int b, int c) { return std::make_tuple(x, y, z); }\n");
+    const auto tuple_findings = upd_checker::scan_path(tuple_root.string(), {});
+    assert(has_code_message(tuple_findings, "UPD406", "kind=tuple"));
+    std::filesystem::remove_all(tuple_root);
+
+    const auto ignored_root =
+        std::filesystem::temp_directory_path() / "upd_cpp_model_ignored";
+    std::filesystem::remove_all(ignored_root);
+    write_file(
+        ignored_root / "process" / "parallel.cpp",
+        "int one(int* xs, int* ys, int* zs, int i) { return xs[i] + ys[i] + zs[i]; }\n"
+        "int two(int* xs, int* ys, int* zs, int i) { return xs[i] + ys[i] + zs[i]; }\n");
+    write_file(
+        ignored_root / ".updcommanderignore",
+        "UPD406 process/parallel.cpp\n");
+    assert(!has_code(upd_checker::scan_path(ignored_root.string(), {}), "UPD406"));
+    std::filesystem::remove_all(ignored_root);
+}
+
+void test_model_attention_custom_thresholds() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_model_custom";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "sample.cpp",
+        "void first(int id, int name, int email) {}\n"
+        "void second(int id, int name, int email) {}\n");
+    assert(!has_code(
+        upd_checker::scan_path(root.string(), {}, 2, 12, 80, 4, 2),
+        "UPD406"));
+    std::filesystem::remove_all(root);
+}
+
 }  // namespace
 
 int main() {
@@ -254,5 +325,9 @@ int main() {
     test_flat_layer_default_boundary();
     test_flat_layer_small_and_generated_heavy();
     test_flat_layer_custom_thresholds();
+    test_model_attention_repeated_parameters();
+    test_model_attention_two_items_order_and_cross_layer();
+    test_model_attention_tuple_and_performance_ignore();
+    test_model_attention_custom_thresholds();
     return 0;
 }

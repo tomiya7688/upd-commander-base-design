@@ -14,6 +14,8 @@ internal static class ConfigFieldValidator
         RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
         RequirePositiveInteger(new ConfigFieldInput(root, "flat_layer_min_files"));
         RequirePercentInteger(new ConfigFieldInput(root, "flat_layer_min_direct_percent"));
+        RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_items"), 3);
+        RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_occurrences"), 2);
     }
 
     private static void RequireKind(ConfigKindFieldInput input)
@@ -83,6 +85,27 @@ internal static class ConfigFieldValidator
             )
             || parsed < 1
             || parsed > 100
+        )
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
+    }
+
+    private static void RequireMinimumInteger(ConfigFieldInput input, int minimum)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (
+            value.ValueKind != JsonValueKind.Number
+            || !int.TryParse(
+                value.GetRawText(),
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out var parsed
+            )
+            || parsed < minimum
         )
         {
             throw new ConfigException($"invalid config field: {input.Name}");

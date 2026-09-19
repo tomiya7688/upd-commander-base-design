@@ -43,10 +43,10 @@ func main() {
 	warningsAsErrors = warningsAsErrors || config.WarningsAsErrors
 
 	if _, err := os.Stat(target); err != nil {
-		finish([]string{fmt.Sprintf("E UPD000 %s missing", target)}, output, 2)
+		finish(finishInput{lines: []string{fmt.Sprintf("E UPD000 %s missing", target)}, output: output, code: 2})
 	}
 
-	findings := checker.FilterEnabledFindings(checker.ScanPathWithThresholds(target, ignores, config.Upd301MaxInputs, config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent), config.EnabledRules)
+	findings := checker.FilterEnabledFindings(checker.ScanPathWithAllThresholds(target, ignores, config.Upd301MaxInputs, config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent, config.ModelGroupMinItems, config.ModelGroupMinOccurrences), config.EnabledRules)
 	errors := 0
 	warnings := 0
 	attentions := 0
@@ -68,16 +68,16 @@ func main() {
 
 	if errors > 0 || warningsAsErrors && warnings > 0 || attentionsAsErrors && attentions > 0 {
 		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
-		finish(lines, output, 1)
+		finish(finishInput{lines: lines, output: output, code: 1})
 	}
 	if warnings > 0 || attentions > 0 {
 		lines = append(lines, fmt.Sprintf("OK w=%d a=%d", warnings, attentions))
 	} else {
 		lines = append(lines, "OK")
 	}
-	finish(lines, output, 0)
+	finish(finishInput{lines: lines, output: output, code: 0})
 }
 
-func finish(lines []string, output string, code int) {
-	os.Exit(finishReport(lines, output, code))
+func finish(input finishInput) {
+	os.Exit(finishReport(input.lines, input.output, input.code))
 }

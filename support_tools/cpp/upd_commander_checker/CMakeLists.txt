@@ -51,6 +51,7 @@ add_library(upd_checker_core
     src/dependency_rules.cpp
     src/executable_path.cpp
     src/ignore_rules.cpp
+    src/model_attention_rules.cpp
     src/report_output.cpp
     src/rule_selection.cpp
     src/scanner.cpp

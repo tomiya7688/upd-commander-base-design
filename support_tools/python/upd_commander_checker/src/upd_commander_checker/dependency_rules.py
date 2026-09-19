@@ -17,14 +17,8 @@ def check_dependencies(
                 imported_name, internal_modules
             ):
                 continue
-            target_layer, target_role, target_application = classify_import(imported_name)
-            result = _dependency_result(
-                module,
-                target_layer,
-                target_role,
-                target_application,
-                imported_name,
-            )
+            target = classify_import(imported_name)
+            result = _dependency_result(module, target)
             if result:
                 findings.append(
                     Finding(
@@ -81,18 +75,11 @@ def _join_import(base: str, name: str) -> str:
 
 def _dependency_result(
     source: ModuleInfo,
-    target_layer: str | None,
-    target_role: str | None,
-    target_application: str | None,
-    imported_name: str,
+    target: ModuleInfo,
 ) -> DependencyRuleResult | None:
-    if _cross_application_internal_dependency(
-        source,
-        target_layer,
-        target_role,
-        target_application,
-        imported_name,
-    ):
+    target_layer = target.layer
+    target_role = target.role
+    if _cross_application_internal_dependency(source, target):
         return DependencyRuleResult(
             "UPD102",
             "direct dependency on another Application internal module",
@@ -134,20 +121,17 @@ def _dependency_result(
 
 def _cross_application_internal_dependency(
     source: ModuleInfo,
-    target_layer: str | None,
-    target_role: str | None,
-    target_application: str | None,
-    imported_name: str,
+    target: ModuleInfo,
 ) -> bool:
-    if not source.application or not target_application:
+    if not source.application or not target.application:
         return False
-    if source.application == target_application:
+    if source.application == target.application:
         return False
-    if _is_boundary_contract(imported_name):
+    if _is_boundary_contract(str(target.path)):
         return False
-    if target_role == "messenger":
+    if target.role == "messenger":
         return False
-    return target_layer is not None or target_role is not None
+    return target.layer is not None or target.role is not None
 
 
 def _is_boundary_contract(imported_name: str) -> bool:

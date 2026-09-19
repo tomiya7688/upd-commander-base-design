@@ -27,4 +27,10 @@ internal sealed class CheckerConfig
 
     [JsonPropertyName("flat_layer_min_direct_percent")]
     public int FlatLayerMinDirectPercent { get; set; } = 80;
+
+    [JsonPropertyName("model_group_min_items")]
+    public int ModelGroupMinItems { get; set; } = 3;
+
+    [JsonPropertyName("model_group_min_occurrences")]
+    public int ModelGroupMinOccurrences { get; set; } = 2;
 }

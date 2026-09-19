@@ -25,6 +25,8 @@ class ConfigTest(unittest.TestCase):
                         "upd301_max_inputs": 3,
                         "flat_layer_min_files": 14,
                         "flat_layer_min_direct_percent": 90,
+                        "model_group_min_items": 4,
+                        "model_group_min_occurrences": 3,
                     }
                 ),
                 encoding="utf-8",
@@ -43,6 +45,8 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(3, config.upd301_max_inputs)
             self.assertEqual(14, config.flat_layer_min_files)
             self.assertEqual(90, config.flat_layer_min_direct_percent)
+            self.assertEqual(4, config.model_group_min_items)
+            self.assertEqual(3, config.model_group_min_occurrences)
 
     def test_missing_enabled_rules_means_all_rules(self) -> None:
         original = Path.cwd()
@@ -59,6 +63,8 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(2, config.upd301_max_inputs)
             self.assertEqual(12, config.flat_layer_min_files)
             self.assertEqual(80, config.flat_layer_min_direct_percent)
+            self.assertEqual(3, config.model_group_min_items)
+            self.assertEqual(2, config.model_group_min_occurrences)
 
     def test_empty_enabled_rules_means_no_rules(self) -> None:
         original = Path.cwd()

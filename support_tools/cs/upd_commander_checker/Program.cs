@@ -41,7 +41,9 @@ internal static class Program
                         options.Ignores,
                         config.Upd301MaxInputs,
                         config.FlatLayerMinFiles,
-                        config.FlatLayerMinDirectPercent
+                        config.FlatLayerMinDirectPercent,
+                        config.ModelGroupMinItems,
+                        config.ModelGroupMinOccurrences
                     )
                 ),
                 config.EnabledRules

@@ -16,7 +16,7 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"],"upd301_max_inputs":3,"flat_layer_min_files":14,"flat_layer_min_direct_percent":90}`
+	content := `{"input":"project","output":"reports/check.txt","ignore":["generated/**"],"warnings_as_errors":true,"enabled_rules":["UPD101","UPD202"],"upd301_max_inputs":3,"flat_layer_min_files":14,"flat_layer_min_direct_percent":90,"model_group_min_items":4,"model_group_min_occurrences":3}`
 	if err := os.WriteFile(filepath.Join(configDir, "path.json"), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -49,6 +49,9 @@ func TestLoadConfigFromCurrentDirectory(t *testing.T) {
 	}
 	if config.FlatLayerMinFiles != 14 || config.FlatLayerMinDirectPercent != 90 {
 		t.Fatalf("unexpected flat layer thresholds: %d/%d", config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent)
+	}
+	if config.ModelGroupMinItems != 4 || config.ModelGroupMinOccurrences != 3 {
+		t.Fatalf("unexpected model thresholds: %d/%d", config.ModelGroupMinItems, config.ModelGroupMinOccurrences)
 	}
 }
 
@@ -116,6 +119,9 @@ func TestMissingUpd301MaxInputsUsesDefault(t *testing.T) {
 	}
 	if config.FlatLayerMinFiles != 12 || config.FlatLayerMinDirectPercent != 80 {
 		t.Fatalf("unexpected flat layer defaults: %d/%d", config.FlatLayerMinFiles, config.FlatLayerMinDirectPercent)
+	}
+	if config.ModelGroupMinItems != 3 || config.ModelGroupMinOccurrences != 2 {
+		t.Fatalf("unexpected model defaults: %d/%d", config.ModelGroupMinItems, config.ModelGroupMinOccurrences)
 	}
 }
 

@@ -29,26 +29,26 @@ func writeFlatLayerFiles(t *testing.T, input flatLayerFixtureInput) {
 func TestFlatLayerDefaultBoundary(t *testing.T) {
 	below := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: below, direct: 9, nested: 3})
-	assertNoCode(t, ScanPath(below, nil), "UPD405")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(below, nil), code: "UPD405"})
 
 	over := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: over, direct: 10, nested: 2})
 	findings := ScanPath(over, nil)
-	assertHasCode(t, findings, "UPD405")
+	assertHasCode(codeAssertionInput{t: t, findings: findings, code: "UPD405"})
 }
 
 func TestFlatLayerSmallAndGeneratedHeavyDoNotTrigger(t *testing.T) {
 	small := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: small, direct: 8})
-	assertNoCode(t, ScanPath(small, nil), "UPD405")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(small, nil), code: "UPD405"})
 
 	generated := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: generated, direct: 5, excluded: 20})
-	assertNoCode(t, ScanPath(generated, nil), "UPD405")
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(generated, nil), code: "UPD405"})
 }
 
 func TestFlatLayerCustomThresholds(t *testing.T) {
 	root := t.TempDir()
 	writeFlatLayerFiles(t, flatLayerFixtureInput{root: root, direct: 6})
-	assertHasCode(t, ScanPathWithThresholds(root, nil, 2, 6, 80), "UPD405")
+	assertHasCode(codeAssertionInput{t: t, findings: ScanPathWithThresholds(root, nil, 2, 6, 80), code: "UPD405"})
 }

@@ -11,3 +11,5 @@ class CheckerConfig:
     upd301_max_inputs: int = 2
     flat_layer_min_files: int = 12
     flat_layer_min_direct_percent: int = 80
+    model_group_min_items: int = 3
+    model_group_min_occurrences: int = 2
