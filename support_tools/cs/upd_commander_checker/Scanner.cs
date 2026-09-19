@@ -128,10 +128,7 @@ internal static class Scanner
             );
         }
         findings.AddRange(
-            ModelAttentionAnalyzer.BuildFindings(
-                modelOccurrences,
-                input.ModelGroupMinOccurrences
-            )
+            ModelAttentionAnalyzer.BuildFindings(modelOccurrences, input.ModelGroupMinOccurrences)
         );
         findings.AddRange(
             DataTypeLocationRules.Check(
