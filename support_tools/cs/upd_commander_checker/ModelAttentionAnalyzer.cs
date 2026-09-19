@@ -175,7 +175,8 @@ internal static class ModelAttentionAnalyzer
         {
             IdentifierNameSyntax identifier => "name:" + Normalize(identifier.Identifier.ValueText),
             LiteralExpressionSyntax literal => "literal:" + literal.Token.ValueText,
-            MemberAccessExpressionSyntax member => "member:" + Normalize(member.Name.Identifier.ValueText),
+            MemberAccessExpressionSyntax member => "member:"
+                + Normalize(member.Name.Identifier.ValueText),
             _ => expression.NormalizeWhitespace().ToFullString(),
         };
     }
