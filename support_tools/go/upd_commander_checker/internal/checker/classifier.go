@@ -112,7 +112,6 @@ func applicationScope(parts []string) []string {
 	return parts
 }
 
-
 func findLayer(parts []string, commonRoots []string) string {
 	common := map[string]bool{}
 	for _, root := range commonRoots {
