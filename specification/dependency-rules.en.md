@@ -52,7 +52,7 @@ When a language has `import`, `include`, `using`, or equivalent references, depe
 
 For example, importing a Data-layer class from UI is prohibited even if the imported symbol is not ultimately called.
 
-Common DTOs, Message Contracts, and value objects may be placed in a shared contract area that does not belong to a specific layer. Do not use such a shared area to hide game/business processing, rendering, or data operations.
+Common DTOs, Message Contracts, and value objects may be placed in a Common / Shared area that does not belong to a specific layer. `UI/Process/Data -> Common/Shared` dependencies are allowed, while `Common/Shared -> UI/Process/Data` dependencies are prohibited. Common / Shared is not a fourth layer. Do not use such an area to hide game/business processing, rendering, or data operations. See [Common / Shared Specification](common-shared-spec.en.md) for the normative contract.
 
 ## 5. External library dependencies
 

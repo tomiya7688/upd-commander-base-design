@@ -10,6 +10,7 @@ While `docs/` explains the design and its concepts, `specification/` defines the
 
 - [Layer Specification](layer-spec.en.md) — responsibilities of UI / Process / Data
 - [Application Boundary](application-boundary.en.md) — Application/Sub Application boundaries and recursive three-layer structure
+- [Common / Shared Specification](common-shared-spec.en.md) — layer-neutral shared-area responsibilities, dependency direction, and configuration
 - [Commander Specification](commander-spec.en.md) — Commander responsibilities and prohibitions
 - [Messenger Specification](messenger-spec.en.md) — cross-layer communication responsibilities and formal routes
 - [Compresser Specification](compresser-spec.en.md) — grouping multiple arguments/returns into class-specific Containers

@@ -97,7 +97,13 @@ UI <-> Process <-> Data
 
 Direct `UI <-> Data` communication is prohibited. Even when UI wants to save something, UI requests it through Process, which determines the semantic meaning of the save before Data performs persistence.
 
-## 6. Response direction
+## 6. Common / Shared
+
+Layer-neutral DTOs, Contracts, value objects, and similar assets may be placed in a Common / Shared area when needed.
+
+Common / Shared is not a fourth layer and must not implement UI / Process / Data responsibilities. See [Common / Shared Specification](common-shared-spec.en.md) for the normative contract.
+
+## 7. Response direction
 
 Responses obey the same boundaries as requests:
 

@@ -14,6 +14,7 @@ UPD Commander は特定の実装形を強制するフレームワークではな
 - [Checker Severity Boundary](checker-severity.md) — 必須→Error / 推奨→Warning / 小技→Attention の対応と既存 rule マッピング
 - [Layer Specification](layer-spec.md) — UI / Process / Data 各層の責務
 - [Application Boundary](application-boundary.md) — Application / Sub Application の境界と3層構造の再帰適用
+- [Common / Shared Specification](common-shared-spec.md) — 第四層ではない層中立共有領域の責務・依存方向・設定契約
 - [Commander Specification](commander-spec.md) — Commander の責務と禁止事項
 - [Messenger Specification](messenger-spec.md) — 層間通信の責務と正式経路
 - [Compresser Specification](compresser-spec.md) — 複数の引数・返却値を Container としてまとめる責務
