@@ -5,6 +5,7 @@
 #include "strict_json.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <limits>
