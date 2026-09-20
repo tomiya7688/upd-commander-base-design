@@ -7,6 +7,7 @@ class CheckerConfig:
     output_path: str = ""
     ignore: tuple[str, ...] = ()
     warnings_as_errors: bool = False
+    common_roots: tuple[str, ...] = ("common", "shared")
     enabled_rules: tuple[str, ...] | None = None
     upd301_max_inputs: int = 2
     flat_layer_min_files: int = 12
