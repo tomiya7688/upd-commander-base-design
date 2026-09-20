@@ -27,6 +27,7 @@ def scan_path(
     flat_layer_min_direct_percent: int = 80,
     model_group_min_items: int = 3,
     model_group_min_occurrences: int = 2,
+    common_roots: tuple[str, ...] = ("common", "shared"),
 ) -> list[Finding]:
     root = target if target.is_dir() else target.parent
     classification_root = root if target.is_dir() else None
@@ -48,6 +49,7 @@ def scan_path(
                 ignore_rules,
                 internal_modules,
                 upd301_max_inputs,
+                common_roots,
             )
         )
         model_occurrences.extend(
@@ -57,6 +59,7 @@ def scan_path(
                 classification_root,
                 ignore_rules,
                 model_group_min_items,
+                common_roots,
             )
         )
     findings.extend(
@@ -153,6 +156,7 @@ def _scan_file(
     ignore_rules: tuple[IgnoreRule, ...],
     internal_modules: frozenset[str],
     upd301_max_inputs: int,
+    common_roots: tuple[str, ...],
 ) -> list[Finding]:
     try:
         source = path.read_text(encoding="utf-8")
@@ -162,8 +166,8 @@ def _scan_file(
     except SyntaxError as exc:
         return [Finding(path, exc.lineno or 1, "UPD002", f"syntax: {exc.msg}")]
 
-    module = classify_module(path, classification_root)
-    findings = check_dependencies(tree, module, internal_modules)
+    module = classify_module(path, classification_root, common_roots)
+    findings = check_dependencies(tree, module, internal_modules, common_roots)
     findings.extend(check_commander(tree, module))
     findings.extend(check_containers(tree, module, upd301_max_inputs))
     findings.extend(check_responsibilities(tree, module))

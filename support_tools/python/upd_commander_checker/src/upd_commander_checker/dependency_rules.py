@@ -9,6 +9,7 @@ def check_dependencies(
     tree: ast.AST,
     module: ModuleInfo,
     internal_modules: frozenset[str] | None = None,
+    common_roots: tuple[str, ...] = ("common", "shared"),
 ) -> list[Finding]:
     findings: list[Finding] = []
     for node in ast.walk(tree):
@@ -17,7 +18,7 @@ def check_dependencies(
                 imported_name, internal_modules
             ):
                 continue
-            target = classify_import(imported_name)
+            target = classify_import(imported_name, common_roots)
             result = _dependency_result(module, target)
             if result:
                 findings.append(
@@ -86,6 +87,12 @@ def _dependency_result(
             "error",
         )
 
+    if source.layer == "common" and target_layer in {"ui", "process", "data"}:
+        return DependencyRuleResult(
+            "UPD101",
+            "Common/Shared must not depend on layer-specific implementation",
+            "error",
+        )
     if source.layer == "ui" and target_layer == "data":
         return DependencyRuleResult("UPD101", "UI layer must not depend directly on Data layer", "error")
     if source.layer == "data" and target_layer == "ui":

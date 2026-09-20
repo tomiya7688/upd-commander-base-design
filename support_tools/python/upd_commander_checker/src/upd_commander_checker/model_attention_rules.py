@@ -18,13 +18,14 @@ def collect_path_model_group_occurrences(
     classification_root: Path | None,
     ignore_rules: tuple[IgnoreRule, ...],
     min_items: int,
+    common_roots: tuple[str, ...] = ("common", "shared"),
 ) -> list[ModelGroupOccurrence]:
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
     except (OSError, UnicodeError, SyntaxError):
         return []
-    module = classify_module(path, classification_root)
+    module = classify_module(path, classification_root, common_roots)
     relative = _relative_text(path, root)
     return collect_model_group_occurrences(
         tree, module, source, relative, ignore_rules, min_items
