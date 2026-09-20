@@ -44,6 +44,33 @@ func TestNestedApplicationClassifierUsesNearestScope(t *testing.T) {
 	}
 }
 
+func TestCommonClassifierUsesDefaultsAndCustomRoots(t *testing.T) {
+	common := ClassifyPath("applications/main/common/contracts/message.go")
+	if common.ApplicationID != "main" || common.Layer != "common" {
+		t.Fatalf("unexpected common classification: %+v", common)
+	}
+	shared := ClassifyImport("example/applications/main/shared/contracts/message")
+	if shared.ApplicationID != "main" || shared.Layer != "common" {
+		t.Fatalf("unexpected shared classification: %+v", shared)
+	}
+	custom := ClassifyPathWithCommonRoots("applications/main/contracts/message.go", []string{"contracts"})
+	if custom.Layer != "common" {
+		t.Fatalf("unexpected custom common classification: %+v", custom)
+	}
+	disabled := ClassifyPathWithCommonRoots("common/message.go", []string{})
+	if disabled.Layer != "" {
+		t.Fatalf("common recognition should be disabled: %+v", disabled)
+	}
+	innerLayer := ClassifyPath("common/ui/screen.go")
+	if innerLayer.Layer != "ui" {
+		t.Fatalf("innermost layer should win: %+v", innerLayer)
+	}
+	innerCommon := ClassifyPath("ui/common/message.go")
+	if innerCommon.Layer != "common" {
+		t.Fatalf("innermost common should win: %+v", innerCommon)
+	}
+}
+
 func TestCrossApplicationMessengerIsAllowed(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
