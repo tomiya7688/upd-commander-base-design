@@ -11,6 +11,7 @@ internal static class ConfigFieldValidator
         RequireKind(new ConfigKindFieldInput(root, "output", JsonValueKind.String));
         RequireStringArray(new ConfigFieldInput(root, "ignore"));
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
+        RequireCommonRoots(new ConfigFieldInput(root, "common_roots"));
         RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
         RequirePositiveInteger(new ConfigFieldInput(root, "flat_layer_min_files"));
         RequirePercentInteger(new ConfigFieldInput(root, "flat_layer_min_direct_percent"));
@@ -45,6 +46,41 @@ internal static class ConfigFieldValidator
             {
                 throw new ConfigException($"invalid config field: {input.Name}");
             }
+        }
+    }
+
+    private static void RequireCommonRoots(ConfigFieldInput input)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (value.ValueKind != JsonValueKind.Array)
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.String)
+            {
+                throw new ConfigException($"invalid config field: {input.Name}");
+            }
+            var root = item.GetString()?.Trim() ?? string.Empty;
+            if (
+                root.Length == 0
+                || root is "." or ".."
+                || root.Equals("ui", StringComparison.OrdinalIgnoreCase)
+                || root.Equals("process", StringComparison.OrdinalIgnoreCase)
+                || root.Equals("data", StringComparison.OrdinalIgnoreCase)
+                || root.Contains('/')
+                || root.Contains('\\')
+            )
+            {
+                throw new ConfigException($"invalid config field: {input.Name}");
+            }
+            seen.Add(root);
         }
     }
 
