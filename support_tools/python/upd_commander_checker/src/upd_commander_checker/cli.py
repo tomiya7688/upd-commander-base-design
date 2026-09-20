@@ -42,6 +42,7 @@ def main() -> int:
             config.flat_layer_min_direct_percent,
             config.model_group_min_items,
             config.model_group_min_occurrences,
+            config.common_roots,
         ),
         config.enabled_rules,
     )
