@@ -50,10 +50,7 @@ class CommonSharedPythonTests(unittest.TestCase):
     def test_application_local_common_is_internal_to_application(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write(
-                root,
-                "applications/settings/common/internal_value.py",
-            )
+            self._write(root, ("applications/settings/common/internal_value.py", ""))
             self._write(
                 root,
                 (
@@ -89,7 +86,7 @@ class CommonSharedPythonTests(unittest.TestCase):
     def test_empty_common_roots_disable_common_dependency_rule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            self._write(root, "process/implementation.py")
+            self._write(root, ("process/implementation.py", ""))
             self._write(
                 root,
                 ("common/message.py", "from process.implementation import value\n"),
