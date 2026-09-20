@@ -13,6 +13,16 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"enabled_rules\":null}", "enabled_rules")]
     [InlineData("{\"input\":1}", "input")]
     [InlineData("{\"warnings_as_errors\":\"true\"}", "warnings_as_errors")]
+    [InlineData("{\"common_roots\":null}", "common_roots")]
+    [InlineData("{\"common_roots\":\"common\"}", "common_roots")]
+    [InlineData("{\"common_roots\":[null]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\".\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"..\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"ui\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"process\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"data\"]}", "common_roots")]
+    [InlineData("{\"common_roots\":[\"nested/common\"]}", "common_roots")]
     [InlineData("{\"upd301_max_inputs\":null}", "upd301_max_inputs")]
     [InlineData("{\"upd301_max_inputs\":true}", "upd301_max_inputs")]
     [InlineData("{\"upd301_max_inputs\":\"2\"}", "upd301_max_inputs")]
@@ -39,6 +49,21 @@ public sealed class ConfigLoaderTests
         var exception = Assert.Throws<ConfigException>(() => ConfigLoader.LoadFromPath(path));
 
         Assert.Contains($"invalid config field: {field}", exception.Message);
+    }
+
+    [Fact]
+    public void CommonRootsDefaultAndLoad()
+    {
+        var defaults = ConfigLoader.LoadFromPath(WriteConfig("{}"));
+        Assert.Equal(["common", "shared"], defaults.CommonRoots);
+
+        var configured = ConfigLoader.LoadFromPath(
+            WriteConfig("{\"common_roots\":[\"contracts\",\"Shared\",\"contracts\"]}")
+        );
+        Assert.Equal(["contracts", "shared"], configured.CommonRoots);
+
+        var disabled = ConfigLoader.LoadFromPath(WriteConfig("{\"common_roots\":[]}"));
+        Assert.Empty(disabled.CommonRoots);
     }
 
     [Fact]
