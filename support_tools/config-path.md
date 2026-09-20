@@ -13,6 +13,7 @@
     "generated/**"
   ],
   "warnings_as_errors": false,
+  "common_roots": ["common", "shared"],
   "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
@@ -23,6 +24,7 @@
 - `output`: 検査結果を書き出すテキストファイル。空文字列の場合はファイル出力しない。
 - `ignore`: 除外するパスglobの配列。既存の `.updcommanderignore` および行単位Ignoreと併用できる。
 - `warnings_as_errors`: `true` の場合、warning が1件以上あれば終了コードを失敗にする。
+- `common_roots`: 層中立 Common / Shared として認識するディレクトリ名。既定は `["common", "shared"]`。空配列で自動認識を無効化する。各値は空でない単一ディレクトリ名で、path separator・`.`・`..`・UI/Process/Dataのlayer名は不可。
 - `enabled_rules`: 有効にするUPD番号の配列。省略時は全ルール、空配列は全ルール無効。未知の番号は設定エラー。
 
 ## 探索順
