@@ -111,6 +111,56 @@ void test_model_attention_config() {
     }
 }
 
+void test_common_roots_config() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_common_roots";
+    std::filesystem::remove_all(root);
+    write_config(
+        root,
+        "{\"common_roots\":[\"contracts\",\"Shared\",\"contracts\"]}");
+    const auto config = upd_checker::load_config((root / "checker").string());
+    assert(config.common_roots.size() == 2);
+    assert(config.common_roots[0] == "contracts");
+    assert(config.common_roots[1] == "shared");
+    std::filesystem::remove_all(root);
+
+    const auto empty_root =
+        std::filesystem::temp_directory_path() / "upd_cpp_config_common_roots_empty";
+    std::filesystem::remove_all(empty_root);
+    write_config(empty_root, "{\"common_roots\":[]}");
+    const auto empty_config =
+        upd_checker::load_config((empty_root / "checker").string());
+    assert(empty_config.common_roots.empty());
+    std::filesystem::remove_all(empty_root);
+
+    const std::vector<std::string> invalid_cases = {
+        "{\"common_roots\":null}",
+        "{\"common_roots\":\"common\"}",
+        "{\"common_roots\":[1]}",
+        "{\"common_roots\":[\"\"]}",
+        "{\"common_roots\":[\".\"]}",
+        "{\"common_roots\":[\"..\"]}",
+        "{\"common_roots\":[\"ui\"]}",
+        "{\"common_roots\":[\"process\"]}",
+        "{\"common_roots\":[\"data\"]}",
+        "{\"common_roots\":[\"nested/common\"]}",
+        "{\"common_roots\":[\"nested\\\\common\"]}",
+    };
+    for (const auto& content : invalid_cases) {
+        const auto invalid_root =
+            std::filesystem::temp_directory_path() / "upd_cpp_config_common_roots_invalid";
+        std::filesystem::remove_all(invalid_root);
+        write_config(invalid_root, content);
+        bool rejected = false;
+        try {
+            (void)upd_checker::load_config((invalid_root / "checker").string());
+        } catch (const upd_checker::ConfigError&) {
+            rejected = true;
+        }
+        assert(rejected);
+        std::filesystem::remove_all(invalid_root);
+    }
+}
+
 void test_unicode_and_unknown_fields_are_supported() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_config_json_unicode";
     std::filesystem::remove_all(root);
@@ -143,5 +193,6 @@ int main() {
     test_unicode_and_unknown_fields_are_supported();
     test_flat_layer_config();
     test_model_attention_config();
+    test_common_roots_config();
     return 0;
 }
