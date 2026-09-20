@@ -80,6 +80,30 @@ void test_nested_application_classifier_uses_nearest_scope() {
     assert(dependency.role == "processing");
 }
 
+void test_common_classifier_uses_defaults_and_custom_roots() {
+    const auto common =
+        upd_checker::classify_path("applications/main/common/contracts/message.cpp");
+    assert(common.application_id == "main");
+    assert(common.layer == "common");
+
+    const auto shared =
+        upd_checker::classify_include("applications/main/shared/contracts/message.hpp");
+    assert(shared.application_id == "main");
+    assert(shared.layer == "common");
+
+    const auto custom = upd_checker::classify_path(
+        "applications/main/contracts/message.cpp",
+        {"contracts"});
+    assert(custom.layer == "common");
+
+    const auto disabled =
+        upd_checker::classify_path("common/message.cpp", {});
+    assert(disabled.layer.empty());
+
+    assert(upd_checker::classify_path("common/ui/screen.cpp").layer == "ui");
+    assert(upd_checker::classify_path("ui/common/message.cpp").layer == "common");
+}
+
 void test_data_commander_warning() {
     const auto root = std::filesystem::temp_directory_path() / "upd_checker_cpp_data_commanders";
     std::filesystem::remove_all(root);
@@ -248,6 +272,7 @@ int main() {
     test_cross_application_dependency();
     test_nested_application_dependency();
     test_nested_application_classifier_uses_nearest_scope();
+    test_common_classifier_uses_defaults_and_custom_roots();
     test_data_commander_warning();
     test_boundary_like_directory_is_not_boundary_api();
     test_explicit_boundary_layer_violation_keeps_upd101();
