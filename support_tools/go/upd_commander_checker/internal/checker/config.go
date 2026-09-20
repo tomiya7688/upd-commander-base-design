@@ -119,7 +119,6 @@ func resolveConfigPath(base string, value string) string {
 	return absolute
 }
 
-
 func normalizeCommonRoots(values []string) ([]string, bool) {
 	normalized := make([]string, 0, len(values))
 	seen := map[string]bool{}
