@@ -50,9 +50,11 @@ Process <-> Data
 
 例えば UI Layer から Data Layer のクラスを import することは、実際に呼び出していなくても原則禁止する。
 
-共通 DTO、Message Contract、値オブジェクト等を共有する必要がある場合は、特定層の実装に属さない共通契約領域へ置くことを許可する。
+共通 DTO、Message Contract、値オブジェクト等を共有する必要がある場合は、特定層の実装に属さない Common / Shared 領域へ置くことを許可する。
 
-ただし共通領域へゲーム処理、描画処理、データ処理を置いて規則を回避してはならない。
+依存方向は `UI/Process/Data -> Common/Shared` を許可し、`Common/Shared -> UI/Process/Data` を禁止する。Common / Shared は第四層ではない。
+
+ただし共通領域へゲーム処理、描画処理、データ処理を置いて規則を回避してはならない。詳細は [Common / Shared Specification](common-shared-spec.md) を正本とする。
 
 ## 5. 外部ライブラリ依存
 
