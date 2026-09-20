@@ -112,7 +112,13 @@ UI <-> Process <-> Data
 
 UI がデータ保存を必要とする場合でも、UI は Process Layer に要求し、Process Layer が保存すべき意味を判断した上で Data Layer に要求する。
 
-## 6. 返却方向
+## 6. Common / Shared
+
+特定層へ所属しない DTO / Contract / value object 等は、必要に応じて層中立の Common / Shared 領域へ置いてよい。
+
+Common / Shared は第四層ではなく、UI / Process / Data の責務を実装してはならない。詳細は [Common / Shared Specification](common-shared-spec.md) を正本とする。
+
+## 7. 返却方向
 
 要求の返却も要求時と同じ境界を守る。
 
