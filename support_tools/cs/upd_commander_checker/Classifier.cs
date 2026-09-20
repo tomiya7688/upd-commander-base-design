@@ -20,26 +20,32 @@ internal static class Classifier
         "features",
     ];
 
-    internal static ModuleInfo ClassifyPath(string path)
+    internal static ModuleInfo ClassifyPath(
+        string path,
+        IReadOnlyCollection<string>? commonRoots = null
+    )
     {
         var directories = PathDirectories(path);
         var scope = ApplicationScope(directories);
         var stem = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
         return new ModuleInfo(
             path,
-            FindName(new FindNameInput(scope, Layers)),
+            FindLayer(scope, commonRoots ?? ["common", "shared"]),
             FindPathRole(new FindPathRoleInput(scope, stem)),
             FindApplication(directories)
         );
     }
 
-    internal static ModuleInfo ClassifyReference(string value)
+    internal static ModuleInfo ClassifyReference(
+        string value,
+        IReadOnlyCollection<string>? commonRoots = null
+    )
     {
         var parts = SplitParts(value);
         var scope = ApplicationScope(parts);
         return new ModuleInfo(
             value,
-            FindName(new FindNameInput(scope, Layers)),
+            FindLayer(scope, commonRoots ?? ["common", "shared"]),
             FindRole(scope),
             FindApplication(parts)
         );
@@ -74,6 +80,26 @@ internal static class Classifier
             if (input.Candidates.Contains(part))
             {
                 return part;
+            }
+        }
+        return string.Empty;
+    }
+
+    private static string FindLayer(
+        IReadOnlyList<string> parts,
+        IReadOnlyCollection<string> commonRoots
+    )
+    {
+        var common = new HashSet<string>(commonRoots, StringComparer.OrdinalIgnoreCase);
+        foreach (var part in parts.Reverse())
+        {
+            if (Layers.Contains(part))
+            {
+                return part;
+            }
+            if (common.Contains(part))
+            {
+                return "common";
             }
         }
         return string.Empty;

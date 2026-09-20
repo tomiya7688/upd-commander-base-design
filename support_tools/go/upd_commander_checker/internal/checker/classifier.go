@@ -10,16 +10,24 @@ var roleNames = map[string]bool{"commander": true, "messenger": true, "processin
 var appRoots = map[string]bool{"app": true, "apps": true, "application": true, "applications": true, "feature": true, "features": true}
 
 func ClassifyPath(path string) ModuleInfo {
+	return ClassifyPathWithCommonRoots(path, []string{"common", "shared"})
+}
+
+func ClassifyPathWithCommonRoots(path string, commonRoots []string) ModuleInfo {
 	directories := pathDirectories(path)
 	scope := applicationScope(directories)
 	stem := fileStem(path)
-	return ModuleInfo{Path: path, Layer: findName(scope, layerNames), Role: findPathRole(scope, stem), ApplicationID: findApplication(directories)}
+	return ModuleInfo{Path: path, Layer: findLayer(scope, commonRoots), Role: findPathRole(scope, stem), ApplicationID: findApplication(directories)}
 }
 
 func ClassifyImport(name string) ModuleInfo {
+	return ClassifyImportWithCommonRoots(name, []string{"common", "shared"})
+}
+
+func ClassifyImportWithCommonRoots(name string, commonRoots []string) ModuleInfo {
 	parts := splitParts(name)
 	scope := applicationScope(parts)
-	return ModuleInfo{Path: name, Layer: findName(scope, layerNames), Role: findRole(scope), ApplicationID: findApplication(parts)}
+	return ModuleInfo{Path: name, Layer: findLayer(scope, commonRoots), Role: findRole(scope), ApplicationID: findApplication(parts)}
 }
 
 func pathDirectories(value string) []string {
@@ -102,4 +110,21 @@ func applicationScope(parts []string) []string {
 		}
 	}
 	return parts
+}
+
+func findLayer(parts []string, commonRoots []string) string {
+	common := map[string]bool{}
+	for _, root := range commonRoots {
+		common[strings.ToLower(root)] = true
+	}
+	for index := len(parts) - 1; index >= 0; index-- {
+		part := parts[index]
+		if layerNames[part] {
+			return part
+		}
+		if common[part] {
+			return "common"
+		}
+	}
+	return ""
 }

@@ -121,12 +121,32 @@ std::vector<std::string> application_scope(const std::vector<std::string>& parts
     return parts;
 }
 
-ModuleInfo classify_reference(const std::string& value) {
+std::string find_layer(
+    const std::vector<std::string>& parts,
+    const std::vector<std::string>& common_roots) {
+    std::unordered_set<std::string> common;
+    for (const auto& root : common_roots) {
+        common.insert(lower(root));
+    }
+    for (auto part = parts.rbegin(); part != parts.rend(); ++part) {
+        if (kLayers.count(*part) != 0U) {
+            return *part;
+        }
+        if (common.count(*part) != 0U) {
+            return "common";
+        }
+    }
+    return {};
+}
+
+ModuleInfo classify_reference(
+    const std::string& value,
+    const std::vector<std::string>& common_roots) {
     const auto parts = split_parts(value);
     const auto scope = application_scope(parts);
     return ModuleInfo{
         value,
-        find_name(scope, kLayers),
+        find_layer(scope, common_roots),
         find_role(scope),
         find_application(parts),
     };
@@ -135,19 +155,31 @@ ModuleInfo classify_reference(const std::string& value) {
 }  // namespace
 
 ModuleInfo classify_path(const std::string& path) {
+    return classify_path(path, {"common", "shared"});
+}
+
+ModuleInfo classify_path(
+    const std::string& path,
+    const std::vector<std::string>& common_roots) {
     const auto directories = path_directories(path);
     const auto scope = application_scope(directories);
     const std::string stem = lower(std::filesystem::path(path).stem().string());
     return ModuleInfo{
         path,
-        find_name(scope, kLayers),
+        find_layer(scope, common_roots),
         find_path_role(scope, stem),
         find_application(directories),
     };
 }
 
 ModuleInfo classify_include(const std::string& include_name) {
-    return classify_reference(include_name);
+    return classify_include(include_name, {"common", "shared"});
+}
+
+ModuleInfo classify_include(
+    const std::string& include_name,
+    const std::vector<std::string>& common_roots) {
+    return classify_reference(include_name, common_roots);
 }
 
 }  // namespace upd_checker

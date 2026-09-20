@@ -221,7 +221,11 @@ Commonから層固有実装への依存を、単に便利だからという理�
 
 「実質1層専用のCommon資産」判定は #83 系列で別途定義する。
 
-## 12. 実装判定表
+## 12. 共通fixture
+
+4言語の分類・設定解決は [common-shared-fixtures.json](common-shared-fixtures.json) の期待値を共有する。
+
+## 13. 実装判定表
 
 | Scenario | Expected |
 |---|---|

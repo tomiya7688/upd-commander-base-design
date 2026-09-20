@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "feature": "common-shared-foundation",
+  "defaults": {
+    "common_roots": [
+      "common",
+      "shared"
+    ]
+  },
+  "classification_cases": [
+    {
+      "name": "product-common",
+      "path": "common/contracts/message.ext",
+      "expected_layer": "common",
+      "expected_application": null
+    },
+    {
+      "name": "product-shared",
+      "path": "shared/contracts/message.ext",
+      "expected_layer": "common",
+      "expected_application": null
+    },
+    {
+      "name": "application-common",
+      "path": "applications/main/common/contracts/message.ext",
+      "expected_layer": "common",
+      "expected_application": "main"
+    },
+    {
+      "name": "application-shared",
+      "path": "applications/main/shared/contracts/message.ext",
+      "expected_layer": "common",
+      "expected_application": "main"
+    },
+    {
+      "name": "innermost-layer-wins",
+      "path": "common/ui/screen.ext",
+      "expected_layer": "ui",
+      "expected_application": null
+    },
+    {
+      "name": "innermost-common-wins",
+      "path": "ui/common/message.ext",
+      "expected_layer": "common",
+      "expected_application": null
+    },
+    {
+      "name": "custom-root",
+      "path": "applications/main/contracts/message.ext",
+      "common_roots": [
+        "contracts"
+      ],
+      "expected_layer": "common",
+      "expected_application": "main"
+    },
+    {
+      "name": "disabled",
+      "path": "common/message.ext",
+      "common_roots": [],
+      "expected_layer": null,
+      "expected_application": null
+    }
+  ],
+  "invalid_common_roots": [
+    null,
+    "common",
+    [
+      1
+    ],
+    [
+      ""
+    ],
+    [
+      "."
+    ],
+    [
+      ".."
+    ],
+    [
+      "ui"
+    ],
+    [
+      "process"
+    ],
+    [
+      "data"
+    ],
+    [
+      "nested/common"
+    ],
+    [
+      "nested\\common"
+    ]
+  ]
+}

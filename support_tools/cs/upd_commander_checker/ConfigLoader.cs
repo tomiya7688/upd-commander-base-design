@@ -27,6 +27,10 @@ internal static class ConfigLoader
                 JsonSerializer.Deserialize<CheckerConfig>(text)
                 ?? throw new ConfigException($"invalid config: {path}");
             config.EnabledRules = enabledRules;
+            config.CommonRoots = config
+                .CommonRoots.Select(item => item.Trim().ToLowerInvariant())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(

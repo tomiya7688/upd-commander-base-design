@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -12,6 +13,7 @@ type Config struct {
 	Output                    string    `json:"output"`
 	Ignore                    []string  `json:"ignore"`
 	WarningsAsErrors          bool      `json:"warnings_as_errors"`
+	CommonRoots               []string  `json:"common_roots"`
 	Upd301MaxInputs           int       `json:"upd301_max_inputs"`
 	FlatLayerMinFiles         int       `json:"flat_layer_min_files"`
 	FlatLayerMinDirectPercent int       `json:"flat_layer_min_direct_percent"`
@@ -21,7 +23,7 @@ type Config struct {
 }
 
 func LoadConfig() (Config, error) {
-	config := Config{Input: ".", Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80, ModelGroupMinItems: 3, ModelGroupMinOccurrences: 2}
+	config := Config{Input: ".", CommonRoots: []string{"common", "shared"}, Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80, ModelGroupMinItems: 3, ModelGroupMinOccurrences: 2}
 	path := findConfigPath()
 	if path == "" {
 		return config, nil
@@ -45,6 +47,17 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["warnings_as_errors"]; ok && !decodeConfigBool(value, &config.WarningsAsErrors) {
 		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
+	}
+	if value, ok := raw["common_roots"]; ok {
+		var roots []string
+		if !decodeConfigStrings(value, &roots) {
+			return Config{}, fmt.Errorf("invalid config field: common_roots")
+		}
+		normalized, valid := normalizeCommonRoots(roots)
+		if !valid {
+			return Config{}, fmt.Errorf("invalid config field: common_roots")
+		}
+		config.CommonRoots = normalized
 	}
 	if value, ok := raw["upd301_max_inputs"]; ok && !decodeConfigPositiveInt(value, &config.Upd301MaxInputs) {
 		return Config{}, fmt.Errorf("invalid config field: upd301_max_inputs")
@@ -104,4 +117,20 @@ func resolveConfigPath(base string, value string) string {
 		return filepath.Join(base, value)
 	}
 	return absolute
+}
+
+func normalizeCommonRoots(values []string) ([]string, bool) {
+	normalized := make([]string, 0, len(values))
+	seen := map[string]bool{}
+	for _, value := range values {
+		root := strings.ToLower(strings.TrimSpace(value))
+		if root == "" || root == "." || root == ".." || layerNames[root] || strings.ContainsAny(root, "/\\") {
+			return nil, false
+		}
+		if !seen[root] {
+			seen[root] = true
+			normalized = append(normalized, root)
+		}
+	}
+	return normalized, true
 }

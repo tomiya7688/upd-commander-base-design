@@ -7,28 +7,36 @@ from .models import ModuleInfo
 _LAYER_NAMES = {"ui", "process", "data"}
 _ROLE_NAMES = {"commander", "messenger", "processing", "compresser"}
 _APPLICATION_MARKERS = {"app", "apps", "application", "applications", "feature", "features"}
+_DEFAULT_COMMON_ROOTS = ("common", "shared")
 
 
-def classify_module(path: Path, root: Path | None = None) -> ModuleInfo:
+def classify_module(
+    path: Path,
+    root: Path | None = None,
+    common_roots: tuple[str, ...] = _DEFAULT_COMMON_ROOTS,
+) -> ModuleInfo:
     module_path = _relative_module_path(path, root)
     directory_parts = [part.lower() for part in module_path.parent.parts]
     stem = module_path.stem.lower().replace("-", "_")
     scoped_parts = _application_scope(directory_parts)
 
-    layer = _find_name(reversed(scoped_parts), _LAYER_NAMES)
+    layer = _find_layer(scoped_parts, common_roots)
     role = _find_path_role(scoped_parts, stem)
     application = _find_application(directory_parts)
     return ModuleInfo(path=path, layer=layer, role=role, application=application)
 
 
-def classify_import(module_name: str) -> ModuleInfo:
+def classify_import(
+    module_name: str,
+    common_roots: tuple[str, ...] = _DEFAULT_COMMON_ROOTS,
+) -> ModuleInfo:
     path_parts = module_name.lower().replace("-", "_").split(".")
     scoped_parts = _application_scope(path_parts)
     token_parts: list[str] = []
     for part in scoped_parts:
         token_parts.extend(part.split("_"))
 
-    layer = _find_name(reversed(token_parts), _LAYER_NAMES)
+    layer = _find_layer(token_parts, common_roots)
     role = _find_role(list(reversed(token_parts)))
     application = _find_application(path_parts)
     return ModuleInfo(
@@ -92,3 +100,13 @@ def _application_scope(parts: list[str]) -> list[str]:
         if parts[index] in _APPLICATION_MARKERS:
             return parts[index + 2 :]
     return parts
+
+
+def _find_layer(parts: list[str], common_roots: tuple[str, ...]) -> str | None:
+    common = set(common_roots)
+    for part in reversed(parts):
+        if part in _LAYER_NAMES:
+            return part
+        if part in common:
+            return "common"
+    return None

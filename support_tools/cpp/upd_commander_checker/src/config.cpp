@@ -5,10 +5,12 @@
 #include "strict_json.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <sstream>
+#include <unordered_set>
 #include <stdexcept>
 
 namespace upd_checker {
@@ -107,6 +109,31 @@ std::vector<std::string> read_string_array_field(
     return values;
 }
 
+std::vector<std::string> normalize_common_roots(std::vector<std::string> values) {
+    std::vector<std::string> normalized;
+    std::unordered_set<std::string> seen;
+    for (auto value : values) {
+        while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front())) != 0) {
+            value.erase(value.begin());
+        }
+        while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back())) != 0) {
+            value.pop_back();
+        }
+        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+            return static_cast<char>(std::tolower(ch));
+        });
+        if (value.empty() || value == "." || value == ".." || value == "ui" ||
+            value == "process" || value == "data" || value.find('/') != std::string::npos ||
+            value.find('\\') != std::string::npos) {
+            throw ConfigError("invalid config field: common_roots");
+        }
+        if (seen.insert(value).second) {
+            normalized.push_back(value);
+        }
+    }
+    return normalized;
+}
+
 std::filesystem::path find_config(const std::string& executable_path) {
     const auto executable = resolve_executable_path(executable_path).parent_path();
     const auto executable_config = executable / "config" / "path.json";
@@ -154,6 +181,10 @@ Config load_config(const std::string& executable_path) {
     const std::string output = read_string_field(root, "output");
     const std::vector<std::string> ignore = read_string_array_field(root, "ignore");
     const bool warnings_as_errors = read_bool_field(root, "warnings_as_errors");
+    std::vector<std::string> common_roots = {"common", "shared"};
+    if (find_field(root, "common_roots") != nullptr) {
+        common_roots = normalize_common_roots(read_string_array_field(root, "common_roots"));
+    }
     const int upd301_max_inputs = read_positive_int_field(root, "upd301_max_inputs", 2);
     const int flat_layer_min_files = read_positive_int_field(root, "flat_layer_min_files", 12);
     const int flat_layer_min_direct_percent =
@@ -183,6 +214,7 @@ Config load_config(const std::string& executable_path) {
     config.output = output.empty() ? "" : resolve_path(base, output);
     config.ignore = ignore;
     config.warnings_as_errors = warnings_as_errors;
+    config.common_roots = std::move(common_roots);
     config.upd301_max_inputs = upd301_max_inputs;
     config.flat_layer_min_files = flat_layer_min_files;
     config.flat_layer_min_direct_percent = flat_layer_min_direct_percent;

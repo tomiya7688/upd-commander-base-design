@@ -30,6 +30,7 @@ def load_config() -> CheckerConfig:
         raise ConfigError("invalid config field: ignore")
     if "warnings_as_errors" in data and not isinstance(data["warnings_as_errors"], bool):
         raise ConfigError("invalid config field: warnings_as_errors")
+    common_roots = _normalize_common_roots(data.get("common_roots", ["common", "shared"]))
     if "upd301_max_inputs" in data and (
         type(data["upd301_max_inputs"]) is not int or data["upd301_max_inputs"] < 1
     ):
@@ -81,6 +82,7 @@ def load_config() -> CheckerConfig:
         output_path=output_path,
         ignore=ignore,
         warnings_as_errors=warnings_as_errors,
+        common_roots=common_roots,
         enabled_rules=enabled_rules,
         upd301_max_inputs=upd301_max_inputs,
         flat_layer_min_files=flat_layer_min_files,
@@ -112,3 +114,23 @@ def _resolve_path(base: Path, value: str) -> str:
     if path.is_absolute():
         return str(path)
     return str((base / path).resolve())
+
+
+def _normalize_common_roots(value: object) -> tuple[str, ...]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ConfigError("invalid config field: common_roots")
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        root = item.strip().lower()
+        if (
+            not root
+            or root in {".", "..", "ui", "process", "data"}
+            or "/" in root
+            or "\\" in root
+        ):
+            raise ConfigError("invalid config field: common_roots")
+        if root not in seen:
+            seen.add(root)
+            normalized.append(root)
+    return tuple(normalized)

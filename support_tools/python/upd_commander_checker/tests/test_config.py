@@ -21,6 +21,7 @@ class ConfigTest(unittest.TestCase):
                         "output": "reports/check.txt",
                         "ignore": ["generated/**"],
                         "warnings_as_errors": True,
+                        "common_roots": ["contracts", "Shared", "contracts"],
                         "enabled_rules": ["UPD101", "UPD202"],
                         "upd301_max_inputs": 3,
                         "flat_layer_min_files": 14,
@@ -41,6 +42,7 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(str((root / "reports" / "check.txt").resolve()), config.output_path)
             self.assertEqual(("generated/**",), config.ignore)
             self.assertTrue(config.warnings_as_errors)
+            self.assertEqual(("contracts", "shared"), config.common_roots)
             self.assertEqual(("UPD101", "UPD202"), config.enabled_rules)
             self.assertEqual(3, config.upd301_max_inputs)
             self.assertEqual(14, config.flat_layer_min_files)
@@ -60,6 +62,7 @@ class ConfigTest(unittest.TestCase):
             finally:
                 os.chdir(original)
             self.assertIsNone(config.enabled_rules)
+            self.assertEqual(("common", "shared"), config.common_roots)
             self.assertEqual(2, config.upd301_max_inputs)
             self.assertEqual(12, config.flat_layer_min_files)
             self.assertEqual(80, config.flat_layer_min_direct_percent)
@@ -144,6 +147,48 @@ class ConfigTest(unittest.TestCase):
                         load_config()
                 finally:
                     os.chdir(original)
+
+    def test_invalid_common_roots_raise_config_error(self) -> None:
+        invalid_values = (
+            '{"common_roots": null}',
+            '{"common_roots": "common"}',
+            '{"common_roots": [1]}',
+            '{"common_roots": [""]}',
+            '{"common_roots": ["."]}',
+            '{"common_roots": [".."]}',
+            '{"common_roots": ["ui"]}',
+            '{"common_roots": ["process"]}',
+            '{"common_roots": ["data"]}',
+            '{"common_roots": ["nested/common"]}',
+            '{"common_roots": ["nested\\\\common"]}',
+        )
+        original = Path.cwd()
+        for content in invalid_values:
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / "config").mkdir()
+                (root / "config" / "path.json").write_text(content, encoding="utf-8")
+                try:
+                    os.chdir(root)
+                    with self.assertRaises(ConfigError):
+                        load_config()
+                finally:
+                    os.chdir(original)
+
+    def test_empty_common_roots_disables_recognition(self) -> None:
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "config").mkdir()
+            (root / "config" / "path.json").write_text(
+                '{"common_roots": []}', encoding="utf-8"
+            )
+            try:
+                os.chdir(root)
+                config = load_config()
+            finally:
+                os.chdir(original)
+            self.assertEqual((), config.common_roots)
 
 
 if __name__ == "__main__":
