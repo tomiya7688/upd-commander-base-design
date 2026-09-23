@@ -70,6 +70,7 @@ UPD としては成立しているが、保守性・探索性・可読性・責�
 | UPD402 | 1ファイルに複数の主要責務型 |
 | UPD404 | 同居するデータ専用型が外部参照されている |
 | UPD303 | Compresser/Container 導入で Commander/Messenger を大幅圧縮できる |
+| UPD407 | Common / Shared に置かれた資産が UI / Process / Data のうち1層からのみ参照される |
 
 ## 3. Attention = 小技 / 軽微な改善候補
 

@@ -39,6 +39,13 @@ UPD Commander Checker の4言語実装は、同じルールを同じ意味で回
 | model-performance-suppressed | UPD406 | no finding |
 | model-different-order | UPD406 | no finding |
 | model-cross-layer-only | UPD406 | no finding |
+| common-shared-one-referring-layer | UPD407 | warning |
+| common-shared-two-referring-layers | UPD407 | no finding |
+| common-shared-three-referring-layers | UPD407 | no finding |
+| common-shared-unused | UPD407 | no finding |
+| common-shared-test-reference-only | UPD407 | no finding |
+| common-shared-generated-reference-only | UPD407 | no finding |
+| common-shared-public-api-only | UPD407 | no finding |
 
 ## Ignore共通ケース
 
