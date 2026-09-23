@@ -252,6 +252,18 @@ void test_model_attention_repeated_parameters() {
     std::filesystem::remove_all(root);
 }
 
+void test_model_attention_existing_aggregate_fields_do_not_trigger() {
+    const auto root = std::filesystem::temp_directory_path() / "upd_cpp_model_existing_aggregate";
+    std::filesystem::remove_all(root);
+    write_file(
+        root / "process" / "models.cpp",
+        "struct FirstModel { int id; const char* name; const char* email; int age; };\n"
+        "struct SecondDTO { int id; const char* name; const char* email; int age; };\n"
+        "struct ThirdRecord { int id; const char* name; const char* email; int age; };\n");
+    assert(!has_code(upd_checker::scan_path(root.string(), {}), "UPD406"));
+    std::filesystem::remove_all(root);
+}
+
 void test_model_attention_two_items_order_and_cross_layer() {
     const auto root = std::filesystem::temp_directory_path() / "upd_cpp_model_negative";
     std::filesystem::remove_all(root);
@@ -326,6 +338,7 @@ int main() {
     test_flat_layer_small_and_generated_heavy();
     test_flat_layer_custom_thresholds();
     test_model_attention_repeated_parameters();
+    test_model_attention_existing_aggregate_fields_do_not_trigger();
     test_model_attention_two_items_order_and_cross_layer();
     test_model_attention_tuple_and_performance_ignore();
     test_model_attention_custom_thresholds();

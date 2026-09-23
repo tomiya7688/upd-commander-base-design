@@ -5,6 +5,20 @@ namespace UpdCommanderChecker.Tests;
 public sealed class ModelAttentionTests
 {
     [Fact]
+    public void ExistingModelFieldsDoNotTrigger()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "process/Models.cs",
+            "namespace Sample; internal sealed record FirstModel(int id, string name, string email, int age); " +
+                "internal sealed record SecondDto(int id, string name, string email, int age); " +
+                "internal struct ThirdRecord { public int id; public string name; public string email; public int age; }"
+        );
+
+        Assert.DoesNotContain(project.Scan(), item => item.Code == "UPD406");
+    }
+
+    [Fact]
     public void RepeatedParameterGroupTriggers()
     {
         using var project = new TempProject();

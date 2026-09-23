@@ -30,6 +30,18 @@ func TestModelAttentionRepeatedParameters(t *testing.T) {
 	}
 }
 
+func TestModelAttentionExistingStructFieldsDoNotTrigger(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(
+		t,
+		filepath.Join(root, "process", "models.go"),
+		"package process\ntype FirstModel struct { id int; name string; email string; age int }\n"+
+			"type SecondDTO struct { id int; name string; email string; age int }\n"+
+			"type ThirdRecord struct { id int; name string; email string; age int }\n",
+	)
+	assertNoCode(codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD406"})
+}
+
 func TestModelAttentionTwoItemsOrderAndCrossLayerDoNotTrigger(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(

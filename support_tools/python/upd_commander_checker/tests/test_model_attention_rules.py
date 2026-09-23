@@ -6,6 +6,19 @@ from upd_commander_checker.scanner import scan_path
 
 
 class ModelAttentionRuleTests(unittest.TestCase):
+    def test_existing_model_fields_do_not_trigger(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "process" / "models.py"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                "class FirstModel:\n    id: int\n    name: str\n    email: str\n    age: int\n\n"
+                "class SecondDto:\n    id: int\n    name: str\n    email: str\n    age: int\n\n"
+                "class ThirdRecord:\n    id: int\n    name: str\n    email: str\n    age: int\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(any(item.code == "UPD406" for item in scan_path(root)))
+
     def test_repeated_parameter_group_triggers(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
