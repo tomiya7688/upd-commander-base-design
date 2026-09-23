@@ -23,6 +23,7 @@ internal static class RuleSelection
         "UPD404",
         "UPD405",
         "UPD406",
+        "UPD407",
     ];
 
     private static readonly HashSet<string> SupportedRuleSet = new(

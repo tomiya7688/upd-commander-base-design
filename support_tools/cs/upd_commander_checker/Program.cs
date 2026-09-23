@@ -43,7 +43,8 @@ internal static class Program
                         config.FlatLayerMinFiles,
                         config.FlatLayerMinDirectPercent,
                         config.ModelGroupMinItems,
-                        config.ModelGroupMinOccurrences
+                        config.ModelGroupMinOccurrences,
+                        config.CommonRoots
                     )
                 ),
                 config.EnabledRules

@@ -14,6 +14,8 @@ std::vector<Finding> analyze_cpp_ast(
     const std::filesystem::path& root,
     const std::string& relative,
     const std::vector<IgnoreRule>& rules,
-    int upd301_max_inputs);
+    int upd301_max_inputs,
+    const std::vector<std::string>& common_roots,
+    std::vector<std::string>* included_paths = nullptr);
 
 }  // namespace upd_checker

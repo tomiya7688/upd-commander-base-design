@@ -14,6 +14,7 @@ std::vector<Finding> scan_path(
     int flat_layer_min_files = 12,
     int flat_layer_min_direct_percent = 80,
     int model_group_min_items = 3,
-    int model_group_min_occurrences = 2);
+    int model_group_min_occurrences = 2,
+    const std::vector<std::string>& common_roots = std::vector<std::string>{"common", "shared"});
 
 }  // namespace upd_checker

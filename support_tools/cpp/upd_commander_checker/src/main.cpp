@@ -39,7 +39,8 @@ int main(int argc, char* argv[]) {
             config.flat_layer_min_files,
             config.flat_layer_min_direct_percent,
             config.model_group_min_items,
-            config.model_group_min_occurrences);
+            config.model_group_min_occurrences,
+            config.common_roots);
     const auto findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,

@@ -97,6 +97,14 @@ internal static class Scanner
         }
 
         var semanticProject = SemanticProject.Create(semanticSources);
+        findings.AddRange(
+            CommonUsageRules.Check(
+                semanticSources,
+                semanticProject,
+                input.CommonRoots ?? ["common", "shared"],
+                ignoreRules
+            )
+        );
         var modelOccurrences = new List<ModelGroupOccurrence>();
         foreach (var source in sources)
         {

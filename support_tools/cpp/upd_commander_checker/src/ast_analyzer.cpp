@@ -27,6 +27,8 @@ struct AnalysisState {
     std::vector<std::string> lines;
     const std::vector<IgnoreRule>* rules;
     int upd301_max_inputs = 2;
+    std::vector<std::string> common_roots;
+    std::vector<std::string>* included_paths = nullptr;
     std::vector<Finding> findings;
     int effective_lines = 0;
     int reducible_lines = 0;
@@ -294,7 +296,10 @@ void analyze_dependency(AnalysisState& state, CXCursor cursor) {
     if (target_path.empty()) {
         return;
     }
-    const auto result = dependency_result(state.source, classify_path(target_path));
+    if (state.included_paths != nullptr) {
+        state.included_paths->push_back(target_path);
+    }
+    const auto result = dependency_result(state.source, classify_path(target_path, state.common_roots));
     if (result.has_value()) {
         add_finding(state, cursor_line(cursor), result->code, result->message, result->severity);
     }
@@ -404,9 +409,13 @@ std::vector<Finding> analyze_cpp_ast(
     const std::filesystem::path& root,
     const std::string& relative,
     const std::vector<IgnoreRule>& rules,
-    int upd301_max_inputs) {
-    AnalysisState state{classify_path(relative), relative, {}, &rules};
+    int upd301_max_inputs,
+    const std::vector<std::string>& common_roots,
+    std::vector<std::string>* included_paths) {
+    AnalysisState state{classify_path(relative, common_roots), relative, {}, &rules};
     state.upd301_max_inputs = upd301_max_inputs;
+    state.common_roots = common_roots;
+    state.included_paths = included_paths;
     std::ifstream source(path);
     if (!source) {
         return {Finding{relative, 1, "UPD001", "read failed", "error"}};

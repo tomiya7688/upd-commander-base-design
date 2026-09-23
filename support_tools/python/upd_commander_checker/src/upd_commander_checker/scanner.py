@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .classifier import classify_module
 from .commander_rules import check_commander
+from .common_usage_rules import check_common_usage
 from .container_rules import check_containers
 from .data_type_location_rules import check_data_type_locations
 from .dependency_rules import check_dependencies
@@ -62,6 +63,9 @@ def scan_path(
                 common_roots,
             )
         )
+    findings.extend(
+        check_common_usage(paths, root, classification_root, common_roots, ignore_rules)
+    )
     findings.extend(
         _filter_location_findings(check_data_type_locations(paths, root), root, ignore_rules)
     )

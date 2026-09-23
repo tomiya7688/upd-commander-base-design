@@ -7,7 +7,7 @@ var SupportedRules = []string{
 	"UPD101", "UPD102", "UPD103",
 	"UPD201", "UPD202", "UPD203",
 	"UPD301", "UPD302", "UPD303",
-	"UPD401", "UPD402", "UPD403", "UPD404", "UPD405", "UPD406",
+	"UPD401", "UPD402", "UPD403", "UPD404", "UPD405", "UPD406", "UPD407",
 }
 
 var supportedRuleSet = func() map[string]struct{} {

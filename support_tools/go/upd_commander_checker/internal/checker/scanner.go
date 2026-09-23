@@ -23,6 +23,10 @@ func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs i
 }
 
 func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int, modelGroupMinItems int, modelGroupMinOccurrences int) []Finding {
+	return ScanPathWithCommonRoots(target, cliIgnore, upd301MaxInputs, flatLayerMinFiles, flatLayerMinDirectPercent, modelGroupMinItems, modelGroupMinOccurrences, []string{"common", "shared"})
+}
+
+func ScanPathWithCommonRoots(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int, modelGroupMinItems int, modelGroupMinOccurrences int, commonRoots []string) []Finding {
 	root := target
 	info, err := os.Stat(target)
 	targetIsFile := err == nil && !info.IsDir()
@@ -94,6 +98,7 @@ func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInput
 		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
+	findings = append(findings, checkCommonUsage(paths, root, commonRoots, rules)...)
 	findings = append(findings, modelAttentionFindings(modelOccurrences, modelGroupMinOccurrences)...)
 	if !targetIsFile {
 		findings = append(findings, checkFlatLayers(paths, root, rules, flatLayerMinFiles, flatLayerMinDirectPercent)...)
