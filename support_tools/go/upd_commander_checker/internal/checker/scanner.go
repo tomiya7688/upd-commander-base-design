@@ -14,27 +14,27 @@ func ScanPath(target string, cliIgnore []string) []Finding {
 	return ScanPathWithOptions(target, cliIgnore, DefaultScanOptions())
 }
 
-func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, options.Upd301MaxInputs int) []Finding {
+func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInputs int) []Finding {
 	options := DefaultScanOptions()
-	options.Upd301MaxInputs = options.Upd301MaxInputs
+	options.Upd301MaxInputs = upd301MaxInputs
 	return ScanPathWithOptions(target, cliIgnore, options)
 }
 
-func ScanPathWithThresholds(target string, cliIgnore []string, options.Upd301MaxInputs int, options.FlatLayerMinFiles int, options.FlatLayerMinDirectPercent int) []Finding {
+func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int) []Finding {
 	options := DefaultScanOptions()
-	options.Upd301MaxInputs = options.Upd301MaxInputs
-	options.FlatLayerMinFiles = options.FlatLayerMinFiles
-	options.FlatLayerMinDirectPercent = options.FlatLayerMinDirectPercent
+	options.Upd301MaxInputs = upd301MaxInputs
+	options.FlatLayerMinFiles = flatLayerMinFiles
+	options.FlatLayerMinDirectPercent = flatLayerMinDirectPercent
 	return ScanPathWithOptions(target, cliIgnore, options)
 }
 
-func ScanPathWithAllThresholds(target string, cliIgnore []string, options.Upd301MaxInputs int, options.FlatLayerMinFiles int, options.FlatLayerMinDirectPercent int, options.ModelGroupMinItems int, options.ModelGroupMinOccurrences int) []Finding {
+func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int, modelGroupMinItems int, modelGroupMinOccurrences int) []Finding {
 	options := DefaultScanOptions()
-	options.Upd301MaxInputs = options.Upd301MaxInputs
-	options.FlatLayerMinFiles = options.FlatLayerMinFiles
-	options.FlatLayerMinDirectPercent = options.FlatLayerMinDirectPercent
-	options.ModelGroupMinItems = options.ModelGroupMinItems
-	options.ModelGroupMinOccurrences = options.ModelGroupMinOccurrences
+	options.Upd301MaxInputs = upd301MaxInputs
+	options.FlatLayerMinFiles = flatLayerMinFiles
+	options.FlatLayerMinDirectPercent = flatLayerMinDirectPercent
+	options.ModelGroupMinItems = modelGroupMinItems
+	options.ModelGroupMinOccurrences = modelGroupMinOccurrences
 	return ScanPathWithOptions(target, cliIgnore, options)
 }
 
