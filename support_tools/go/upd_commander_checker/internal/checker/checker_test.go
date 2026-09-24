@@ -71,6 +71,82 @@ func TestCommonClassifierUsesDefaultsAndCustomRoots(t *testing.T) {
 	}
 }
 
+
+func TestCommonDependenciesFollowNeutralityRules(t *testing.T) {
+	t.Run("layer to common is allowed", func(t *testing.T) {
+		root := t.TempDir()
+		writeTestFile(
+			t,
+			filepath.Join(root, "ui", "screen.go"),
+			"package ui\nimport _ \"example/common/contracts\"\n",
+		)
+		writeTestFile(
+			t,
+			filepath.Join(root, "common", "contracts", "contracts.go"),
+			"package contracts\n",
+		)
+		assertNoCode(
+			codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD101"},
+		)
+	})
+
+	t.Run("common to layer is rejected", func(t *testing.T) {
+		root := t.TempDir()
+		writeTestFile(
+			t,
+			filepath.Join(root, "common", "helper.go"),
+			"package common\nimport _ \"example/process/work\"\n",
+		)
+		writeTestFile(
+			t,
+			filepath.Join(root, "process", "work", "work.go"),
+			"package work\n",
+		)
+		assertHasCode(
+			codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD101"},
+		)
+	})
+
+	t.Run("application local common keeps application boundary", func(t *testing.T) {
+		root := t.TempDir()
+		writeTestFile(
+			t,
+			filepath.Join(root, "applications", "main", "process", "run.go"),
+			"package process\nimport _ \"example/applications/settings/common/contracts\"\n",
+		)
+		writeTestFile(
+			t,
+			filepath.Join(root, "applications", "settings", "common", "contracts", "contracts.go"),
+			"package contracts\n",
+		)
+		assertHasCode(
+			codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD102"},
+		)
+	})
+}
+
+func TestConfiguredCommonRootsAreUsedDuringScan(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(
+		t,
+		filepath.Join(root, "contracts", "helper.go"),
+		"package contracts\nimport _ \"example/process/work\"\n",
+	)
+	writeTestFile(
+		t,
+		filepath.Join(root, "process", "work", "work.go"),
+		"package work\n",
+	)
+
+	defaultFindings := ScanPath(root, nil)
+	assertNoCode(codeAssertionInput{t: t, findings: defaultFindings, code: "UPD101"})
+
+	options := DefaultScanOptions()
+	options.CommonRoots = []string{"contracts"}
+	configuredFindings := ScanPathWithOptions(root, nil, options)
+	assertHasCode(codeAssertionInput{t: t, findings: configuredFindings, code: "UPD101"})
+}
+
 func TestCrossApplicationMessengerIsAllowed(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "applications", "main", "process", "main_commander.go")
