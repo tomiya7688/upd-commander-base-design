@@ -102,7 +102,7 @@ internal static class Scanner
         {
             var classificationRelative = Path.GetRelativePath(contextRoot, source.File)
                 .Replace('\\', '/');
-            var module = Classifier.ClassifyPath(classificationRelative);
+            var module = Classifier.ClassifyPath(classificationRelative, input.CommonRoots);
             findings.AddRange(
                 CSharpAstAnalyzer.Analyze(
                     new AstAnalysisInput(
@@ -112,7 +112,8 @@ internal static class Scanner
                         source.Lines,
                         ignoreRules,
                         semanticProject,
-                        input.Upd301MaxInputs
+                        input.Upd301MaxInputs,
+                        input.CommonRoots
                     )
                 )
             );

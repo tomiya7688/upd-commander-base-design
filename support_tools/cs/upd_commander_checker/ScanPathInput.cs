@@ -7,5 +7,6 @@ internal sealed record ScanPathInput(
     int FlatLayerMinFiles = 12,
     int FlatLayerMinDirectPercent = 80,
     int ModelGroupMinItems = 3,
-    int ModelGroupMinOccurrences = 2
+    int ModelGroupMinOccurrences = 2,
+    IReadOnlyCollection<string>? CommonRoots = null
 );

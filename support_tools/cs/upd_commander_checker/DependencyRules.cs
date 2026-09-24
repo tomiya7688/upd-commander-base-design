@@ -30,6 +30,17 @@ internal static class DependencyRules
                 "error"
             );
         }
+        if (
+            source.Layer == "common"
+            && target.Layer is "ui" or "process" or "data"
+        )
+        {
+            return new DependencyRuleResult(
+                "UPD101",
+                "Common/Shared must not depend on layer-specific implementation",
+                "error"
+            );
+        }
         if (source.Layer == "ui" && target.Layer == "data")
         {
             return new DependencyRuleResult("UPD101", "UI must not depend on Data", "error");
@@ -38,7 +49,12 @@ internal static class DependencyRules
         {
             return new DependencyRuleResult("UPD101", "Data must not depend on UI", "error");
         }
-        if (source.Role == "messenger" && target.Role == "processing")
+        if (
+            source.Layer != "common"
+            && target.Layer != "common"
+            && source.Role == "messenger"
+            && target.Role == "processing"
+        )
         {
             return new DependencyRuleResult(
                 "UPD101",
@@ -46,7 +62,12 @@ internal static class DependencyRules
                 "error"
             );
         }
-        if (source.Role == "processing" && target.Role == "processing")
+        if (
+            source.Layer != "common"
+            && target.Layer != "common"
+            && source.Role == "processing"
+            && target.Role == "processing"
+        )
         {
             return new DependencyRuleResult(
                 "UPD101",
@@ -56,6 +77,8 @@ internal static class DependencyRules
         }
         if (
             source.Role == "commander"
+            && source.Layer != "common"
+            && target.Layer != "common"
             && target.Role == "processing"
             && !string.IsNullOrEmpty(source.Layer)
             && !string.IsNullOrEmpty(target.Layer)
