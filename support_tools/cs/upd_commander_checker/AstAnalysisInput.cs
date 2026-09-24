@@ -9,5 +9,6 @@ internal sealed record AstAnalysisInput(
     IReadOnlyList<string> Lines,
     IReadOnlyList<IgnoreRule> IgnoreRules,
     SemanticProject SemanticProject,
-    int Upd301MaxInputs
+    int Upd301MaxInputs,
+    IReadOnlyCollection<string>? CommonRoots = null
 );

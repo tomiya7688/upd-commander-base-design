@@ -43,6 +43,11 @@ internal sealed class TempProject : IDisposable
         return Scanner.ScanPath(new ScanPathInput(root, ignore ?? [], upd301MaxInputs));
     }
 
+    internal List<Finding> ScanWithCommonRoots(IReadOnlyCollection<string> commonRoots)
+    {
+        return Scanner.ScanPath(new ScanPathInput(root, [], CommonRoots: commonRoots));
+    }
+
     internal List<Finding> Scan(
         (int FlatLayerMinFiles, int FlatLayerMinDirectPercent) flatLayerThresholds
     )
