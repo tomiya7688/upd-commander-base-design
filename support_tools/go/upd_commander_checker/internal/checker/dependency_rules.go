@@ -15,6 +15,9 @@ func DependencyResult(source ModuleInfo, target ModuleInfo) *DependencyRuleResul
 			return &DependencyRuleResult{Code: "UPD102", Message: "cross-application internal dependency", Severity: "error"}
 		}
 	}
+	if source.Layer == "common" && (target.Layer == "ui" || target.Layer == "process" || target.Layer == "data") {
+		return &DependencyRuleResult{Code: "UPD101", Message: "Common/Shared must not depend on layer-specific implementation", Severity: "error"}
+	}
 	if source.Layer == "ui" && target.Layer == "data" {
 		return &DependencyRuleResult{Code: "UPD101", Message: "UI must not depend on Data", Severity: "error"}
 	}
