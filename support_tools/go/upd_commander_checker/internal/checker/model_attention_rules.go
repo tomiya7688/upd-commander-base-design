@@ -30,13 +30,14 @@ func collectModelGroupOccurrences(
 	classificationPath string,
 	rules []IgnoreRule,
 	minItems int,
+	commonRoots []string,
 ) []ModelGroupOccurrence {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		return nil
 	}
-	source := ClassifyPath(classificationPath)
+	source := ClassifyPathWithCommonRoots(classificationPath, commonRoots)
 	lines := readLines(path)
 	occurrences := []ModelGroupOccurrence{}
 
