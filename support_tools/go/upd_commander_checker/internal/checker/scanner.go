@@ -11,18 +11,34 @@ import (
 )
 
 func ScanPath(target string, cliIgnore []string) []Finding {
-	return ScanPathWithAllThresholds(target, cliIgnore, 2, 12, 80, 3, 2)
+	return ScanPathWithOptions(target, cliIgnore, DefaultScanOptions())
 }
 
-func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, upd301MaxInputs int) []Finding {
-	return ScanPathWithAllThresholds(target, cliIgnore, upd301MaxInputs, 12, 80, 3, 2)
+func ScanPathWithUpd301MaxInputs(target string, cliIgnore []string, options.Upd301MaxInputs int) []Finding {
+	options := DefaultScanOptions()
+	options.Upd301MaxInputs = options.Upd301MaxInputs
+	return ScanPathWithOptions(target, cliIgnore, options)
 }
 
-func ScanPathWithThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int) []Finding {
-	return ScanPathWithAllThresholds(target, cliIgnore, upd301MaxInputs, flatLayerMinFiles, flatLayerMinDirectPercent, 3, 2)
+func ScanPathWithThresholds(target string, cliIgnore []string, options.Upd301MaxInputs int, options.FlatLayerMinFiles int, options.FlatLayerMinDirectPercent int) []Finding {
+	options := DefaultScanOptions()
+	options.Upd301MaxInputs = options.Upd301MaxInputs
+	options.FlatLayerMinFiles = options.FlatLayerMinFiles
+	options.FlatLayerMinDirectPercent = options.FlatLayerMinDirectPercent
+	return ScanPathWithOptions(target, cliIgnore, options)
 }
 
-func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInputs int, flatLayerMinFiles int, flatLayerMinDirectPercent int, modelGroupMinItems int, modelGroupMinOccurrences int) []Finding {
+func ScanPathWithAllThresholds(target string, cliIgnore []string, options.Upd301MaxInputs int, options.FlatLayerMinFiles int, options.FlatLayerMinDirectPercent int, options.ModelGroupMinItems int, options.ModelGroupMinOccurrences int) []Finding {
+	options := DefaultScanOptions()
+	options.Upd301MaxInputs = options.Upd301MaxInputs
+	options.FlatLayerMinFiles = options.FlatLayerMinFiles
+	options.FlatLayerMinDirectPercent = options.FlatLayerMinDirectPercent
+	options.ModelGroupMinItems = options.ModelGroupMinItems
+	options.ModelGroupMinOccurrences = options.ModelGroupMinOccurrences
+	return ScanPathWithOptions(target, cliIgnore, options)
+}
+
+func ScanPathWithOptions(target string, cliIgnore []string, options ScanOptions) []Finding {
 	root := target
 	info, err := os.Stat(target)
 	targetIsFile := err == nil && !info.IsDir()
@@ -86,17 +102,17 @@ func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInput
 		classificationText := filepath.ToSlash(classificationRel)
 		findings = append(
 			findings,
-			scanFile(path, relativeText, classificationText, rules, internalPackages, upd301MaxInputs)...,
+			scanFile(path, relativeText, classificationText, rules, internalPackages, options)...,
 		)
 		modelOccurrences = append(
 			modelOccurrences,
-			collectModelGroupOccurrences(path, relativeText, classificationText, rules, modelGroupMinItems)...,
+			collectModelGroupOccurrences(path, relativeText, classificationText, rules, options.ModelGroupMinItems, options.CommonRoots)...,
 		)
 	}
 	findings = append(findings, checkDataTypeLocations(paths, root, rules)...)
-	findings = append(findings, modelAttentionFindings(modelOccurrences, modelGroupMinOccurrences)...)
+	findings = append(findings, modelAttentionFindings(modelOccurrences, options.ModelGroupMinOccurrences)...)
 	if !targetIsFile {
-		findings = append(findings, checkFlatLayers(paths, root, rules, flatLayerMinFiles, flatLayerMinDirectPercent)...)
+		findings = append(findings, checkFlatLayers(paths, root, rules, options.FlatLayerMinFiles, options.FlatLayerMinDirectPercent)...)
 	}
 	sort.Slice(findings, func(i, j int) bool {
 		if findings[i].Path != findings[j].Path {
@@ -110,18 +126,18 @@ func ScanPathWithAllThresholds(target string, cliIgnore []string, upd301MaxInput
 	return findings
 }
 
-func scanFile(path string, rel string, classificationPath string, rules []IgnoreRule, internalPackages []string, upd301MaxInputs int) []Finding {
+func scanFile(path string, rel string, classificationPath string, rules []IgnoreRule, internalPackages []string, options ScanOptions) []Finding {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		return []Finding{{Path: rel, Line: 1, Code: "UPD002", Message: "syntax error", Severity: "error"}}
 	}
 	lines := readLines(path)
-	source := ClassifyPath(classificationPath)
+	source := ClassifyPathWithCommonRoots(classificationPath, options.CommonRoots)
 	var findings []Finding
-	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules, internalPackages)...)
+	findings = append(findings, checkDependencies(file, fset, source, rel, lines, rules, internalPackages, options.CommonRoots)...)
 	findings = append(findings, checkCommander(file, fset, source, rel, lines, rules)...)
-	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules, upd301MaxInputs)...)
+	findings = append(findings, checkContainerBoundaries(file, fset, source, rel, lines, rules, options.Upd301MaxInputs)...)
 	findings = append(findings, checkResponsibilities(file, fset, rel, lines, rules)...)
 	return findings
 }
