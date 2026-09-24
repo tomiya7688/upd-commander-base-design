@@ -71,7 +71,6 @@ func TestCommonClassifierUsesDefaultsAndCustomRoots(t *testing.T) {
 	}
 }
 
-
 func TestCommonDependenciesFollowNeutralityRules(t *testing.T) {
 	t.Run("layer to common is allowed", func(t *testing.T) {
 		root := t.TempDir()
@@ -112,12 +111,12 @@ func TestCommonDependenciesFollowNeutralityRules(t *testing.T) {
 		writeTestFile(
 			t,
 			filepath.Join(root, "applications", "main", "process", "run.go"),
-			"package process\nimport _ \"example/applications/settings/common/contracts\"\n",
+			"package process\nimport _ \"example/applications/settings/common/internal\"\n",
 		)
 		writeTestFile(
 			t,
-			filepath.Join(root, "applications", "settings", "common", "contracts", "contracts.go"),
-			"package contracts\n",
+			filepath.Join(root, "applications", "settings", "common", "internal", "internal.go"),
+			"package internal\n",
 		)
 		assertHasCode(
 			codeAssertionInput{t: t, findings: ScanPath(root, nil), code: "UPD102"},
