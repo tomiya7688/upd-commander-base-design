@@ -14,6 +14,7 @@ func checkDependencies(
 	lines []string,
 	rules []IgnoreRule,
 	internalPackages []string,
+	commonRoots []string,
 ) []Finding {
 	var findings []Finding
 	for _, spec := range file.Imports {
@@ -21,7 +22,7 @@ func checkDependencies(
 		if !isInternalImport(name, internalPackages) {
 			continue
 		}
-		target := ClassifyImport(name)
+		target := ClassifyImportWithCommonRoots(name, commonRoots)
 		line := fset.Position(spec.Pos()).Line
 		if result := DependencyResult(source, target); result != nil {
 			addFinding(&findings, rel, line, result.Code, result.Message, result.Severity, lines, rules)
