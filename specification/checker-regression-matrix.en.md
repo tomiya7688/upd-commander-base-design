@@ -59,6 +59,14 @@ Languages using AST or equivalent syntax analysis should commonly verify that:
 - multiline declarations are parsed correctly
 - nested types/blocks are not incorrectly counted as part of the outer responsibility unit
 
+## Baseline identity fixtures
+
+Share `baseline-fingerprint-fixtures.json` across all four languages and verify:
+
+- Line insertion, severity changes, and canonical rule/path spellings preserve the fingerprint
+- Changes to rule, repository-relative path, symbol, or rule-specific context produce a different fingerprint
+- Display message and line do not change identity
+
 ## Language-specific test entry points
 
 - Python: `python -m unittest discover -s tests`

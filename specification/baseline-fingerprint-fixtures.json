@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "fingerprint_version": 1,
+  "domain_separator": "upd-finding-fingerprint-v1",
+  "encoding": "UTF-8 fields separated by one U+0000 byte",
+  "vectors": [
+    {
+      "name": "base",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:ea890f274ed082af81eded22f8f1f869348dc62665221bff76200c3543e86cd1"
+    },
+    {
+      "name": "line-insertion",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 53,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:ea890f274ed082af81eded22f8f1f869348dc62665221bff76200c3543e86cd1"
+    },
+    {
+      "name": "severity-change",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "warning"
+      },
+      "expected_fingerprint": "sha256:ea890f274ed082af81eded22f8f1f869348dc62665221bff76200c3543e86cd1"
+    },
+    {
+      "name": "normalized-rule-and-path",
+      "finding": {
+        "rule": "upd101",
+        "path": "src\\ui\\screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:ea890f274ed082af81eded22f8f1f869348dc62665221bff76200c3543e86cd1"
+    },
+    {
+      "name": "unicode-composed",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/café/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:467a3d78fc930c5fd23a168378526543322a1ad98fc1e66150d1a504eea8783a"
+    },
+    {
+      "name": "unicode-decomposed",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/café/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:467a3d78fc930c5fd23a168378526543322a1ad98fc1e66150d1a504eea8783a"
+    },
+    {
+      "name": "different-rule",
+      "finding": {
+        "rule": "UPD102",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:e010cad279c775c71f2fef13ad539f666e2bf682e0282ac27771ee515c64cc7b"
+    },
+    {
+      "name": "different-path",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/other.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:76c4a1b8b73967bec22cbb3ad69ba2e5b75180ef2c54cc662895fc3b962467ef"
+    },
+    {
+      "name": "different-symbol",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Other.Run",
+        "context": "target=data.storage",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:b7ffcc79a5f8012ac33a11c1cdb9e3eadaa80bd5c25387610c5649e78c157118"
+    },
+    {
+      "name": "different-context",
+      "finding": {
+        "rule": "UPD101",
+        "path": "src/ui/screen.cs",
+        "symbol": "Ui.Screen.Run",
+        "context": "target=data.backup",
+        "line": 12,
+        "severity": "error"
+      },
+      "expected_fingerprint": "sha256:039f28eae6280b6be5942713da747743b9507bd0319f5aef8c902e5be16ce836"
+    }
+  ],
+  "comparisons": [
+    { "left": "base", "right": "line-insertion", "expected_equal": true },
+    { "left": "base", "right": "severity-change", "expected_equal": true },
+    { "left": "base", "right": "normalized-rule-and-path", "expected_equal": true },
+    { "left": "unicode-composed", "right": "unicode-decomposed", "expected_equal": true },
+    { "left": "base", "right": "different-rule", "expected_equal": false },
+    { "left": "base", "right": "different-path", "expected_equal": false },
+    { "left": "base", "right": "different-symbol", "expected_equal": false },
+    { "left": "base", "right": "different-context", "expected_equal": false }
+  ]
+}

@@ -57,6 +57,14 @@ ASTまたは同等の構文解析を使う言語は、次を共通で確認し�
 - 複数行宣言を正しく解析する
 - nested type / nested block を外側の責務単位へ誤加算しない
 
+## Baseline identity fixtures
+
+`baseline-fingerprint-fixtures.json` を4言語で共有し、次を検証します。
+
+- 行挿入、severity変更、rule/pathの正規化では同じfingerprint
+- rule、repository相対path、symbol、rule-specific contextの差では別fingerprint
+- Finding messageや表示lineはidentityを変更しない
+
 ## 言語別テスト入口
 
 - Python: `python -m unittest discover -s tests`
