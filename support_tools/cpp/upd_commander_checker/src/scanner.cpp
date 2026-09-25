@@ -177,7 +177,8 @@ std::vector<Finding> scan_path(
     int flat_layer_min_files,
     int flat_layer_min_direct_percent,
     int model_group_min_items,
-    int model_group_min_occurrences) {
+    int model_group_min_occurrences,
+    const std::vector<std::string>& common_roots) {
     const std::filesystem::path target_path(target);
     std::error_code target_error;
     const bool target_is_directory = std::filesystem::is_directory(target_path, target_error);
@@ -217,7 +218,13 @@ std::vector<Finding> scan_path(
             continue;
         }
         included_paths.push_back(path);
-        auto current = analyze_cpp_ast(path, root, relative, rules, upd301_max_inputs);
+        auto current = analyze_cpp_ast(
+            path,
+            root,
+            relative,
+            rules,
+            upd301_max_inputs,
+            common_roots);
         findings.insert(findings.end(), current.begin(), current.end());
         auto occurrences = collect_cpp_model_group_occurrences(
             path,

@@ -51,19 +51,29 @@ std::optional<DependencyRuleResult> dependency_result(
         source.application_id != target.application_id && !is_boundary_api(target)) {
         return result("UPD102", "cross-application internal dependency", "error");
     }
+    if (source.layer == "common" &&
+        (target.layer == "ui" || target.layer == "process" || target.layer == "data")) {
+        return result(
+            "UPD101",
+            "Common/Shared must not depend on layer-specific implementation",
+            "error");
+    }
     if (source.layer == "ui" && target.layer == "data") {
         return result("UPD101", "UI must not depend on Data", "error");
     }
     if (source.layer == "data" && target.layer == "ui") {
         return result("UPD101", "Data must not depend on UI", "error");
     }
-    if (source.role == "messenger" && target.role == "processing") {
+    if (source.layer != "common" && target.layer != "common" &&
+        source.role == "messenger" && target.role == "processing") {
         return result("UPD101", "Messenger must not depend on Processing", "error");
     }
-    if (source.role == "processing" && target.role == "processing") {
+    if (source.layer != "common" && target.layer != "common" &&
+        source.role == "processing" && target.role == "processing") {
         return result("UPD101", "Processing must not depend on Processing", "error");
     }
-    if (source.role == "commander" && target.role == "processing" &&
+    if (source.layer != "common" && target.layer != "common" &&
+        source.role == "commander" && target.role == "processing" &&
         !source.layer.empty() && !target.layer.empty() && source.layer != target.layer) {
         return result(
             "UPD101",
