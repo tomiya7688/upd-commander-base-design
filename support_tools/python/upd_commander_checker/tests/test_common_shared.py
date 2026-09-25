@@ -24,6 +24,23 @@ class CommonSharedPythonTests(unittest.TestCase):
                 findings = scan_path(root)
                 self.assertFalse(any(item.code == "UPD101" for item in findings))
 
+    def test_fixture_layer_to_common_processing_named_contract_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write(
+                root,
+                ("common/contracts/settings_processing.py", "class SettingsProcessing: pass\n"),
+            )
+            self._write(
+                root,
+                (
+                    "ui/messenger/ui_messenger.py",
+                    "from common.contracts.settings_processing import SettingsProcessing\n"
+                    "value: SettingsProcessing\n",
+                ),
+            )
+            self.assertFalse(any(item.code == "UPD101" for item in scan_path(root)))
+
     def test_common_must_not_depend_on_layer_specific_implementation(self) -> None:
         for layer in ("ui", "process", "data"):
             with self.subTest(layer=layer), tempfile.TemporaryDirectory() as directory:
@@ -34,7 +51,29 @@ class CommonSharedPythonTests(unittest.TestCase):
                     ("common/contracts/message.py", f"from {layer}.implementation import value\n"),
                 )
                 findings = scan_path(root)
-                self.assertTrue(any(item.code == "UPD101" for item in findings))
+                finding = next(item for item in findings if item.code == "UPD101")
+                self.assertEqual("error", finding.severity)
+
+    def test_fixture_common_to_ui_process_and_data_is_error(self) -> None:
+        for layer, target in (
+            ("ui", "screen"),
+            ("process", "engine"),
+            ("data", "storage"),
+        ):
+            with self.subTest(layer=layer), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self._write(root, (f"{layer}/{target}.py", "class Target: pass\n"))
+                self._write(
+                    root,
+                    (
+                        "common/contracts/bridge.py",
+                        f"from {layer}.{target} import Target\nvalue: Target\n",
+                    ),
+                )
+                finding = next(
+                    item for item in scan_path(root) if item.code == "UPD101"
+                )
+                self.assertEqual("error", finding.severity)
 
     def test_common_to_common_is_allowed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -46,6 +85,23 @@ class CommonSharedPythonTests(unittest.TestCase):
             )
             findings = scan_path(root)
             self.assertFalse(any(item.code == "UPD101" for item in findings))
+
+    def test_fixture_common_messenger_to_common_processing_contract_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write(
+                root,
+                ("shared/contracts/settings_processing.py", "class SettingsProcessing: pass\n"),
+            )
+            self._write(
+                root,
+                (
+                    "common/messenger/common_messenger.py",
+                    "from shared.contracts.settings_processing import SettingsProcessing\n"
+                    "value: SettingsProcessing\n",
+                ),
+            )
+            self.assertFalse(any(item.code == "UPD101" for item in scan_path(root)))
 
     def test_application_local_common_is_internal_to_application(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

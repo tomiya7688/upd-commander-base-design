@@ -54,18 +54,31 @@ void write_file(const std::filesystem::path& path, const std::string& content) {
 
 void test_common_dependency_rules_and_role_suppression() {
     const auto source = upd_checker::classify_path("common/contracts/bridge.hpp");
-    const auto process = upd_checker::classify_path("process/engine.hpp");
-    const auto forbidden = upd_checker::dependency_result(source, process);
-    assert(forbidden.has_value());
-    assert(forbidden->code == "UPD101");
-    assert(forbidden->severity == "error");
+    for (const auto& target_path : {"ui/screen.hpp", "process/engine.hpp", "data/storage.hpp"}) {
+        const auto target = upd_checker::classify_path(target_path);
+        const auto forbidden = upd_checker::dependency_result(source, target);
+        assert(forbidden.has_value());
+        assert(forbidden->code == "UPD101");
+        assert(forbidden->severity == "error");
+    }
 
-    const auto messenger = upd_checker::classify_path("ui/messenger/ui_messenger.cpp");
     const auto common_processing_name =
         upd_checker::classify_path("common/contracts/settings_processing.hpp");
     assert(common_processing_name.layer == "common");
     assert(common_processing_name.role == "processing");
-    assert(!upd_checker::dependency_result(messenger, common_processing_name).has_value());
+    for (const auto& source_path : {
+             "ui/messenger/ui_messenger.cpp",
+             "process/consumer.cpp",
+             "data/consumer.cpp"}) {
+        const auto layer_source = upd_checker::classify_path(source_path);
+        assert(!upd_checker::dependency_result(layer_source, common_processing_name).has_value());
+    }
+
+    const auto common_messenger =
+        upd_checker::classify_path("common/messenger/common_messenger.cpp");
+    const auto shared_processing_name =
+        upd_checker::classify_path("shared/contracts/settings_processing.hpp");
+    assert(!upd_checker::dependency_result(common_messenger, shared_processing_name).has_value());
 }
 
 void test_resolved_common_include_and_custom_root() {

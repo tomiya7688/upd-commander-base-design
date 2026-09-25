@@ -24,13 +24,13 @@ func DependencyResult(source ModuleInfo, target ModuleInfo) *DependencyRuleResul
 	if source.Layer == "data" && target.Layer == "ui" {
 		return &DependencyRuleResult{Code: "UPD101", Message: "Data must not depend on UI", Severity: "error"}
 	}
-	if source.Role == "messenger" && target.Role == "processing" {
+	if source.Layer != "common" && target.Layer != "common" && source.Role == "messenger" && target.Role == "processing" {
 		return &DependencyRuleResult{Code: "UPD101", Message: "Messenger must not depend on Processing", Severity: "error"}
 	}
-	if source.Role == "processing" && target.Role == "processing" {
+	if source.Layer != "common" && target.Layer != "common" && source.Role == "processing" && target.Role == "processing" {
 		return &DependencyRuleResult{Code: "UPD101", Message: "Processing must not depend on Processing", Severity: "error"}
 	}
-	if source.Role == "commander" && target.Role == "processing" && source.Layer != "" && target.Layer != "" && source.Layer != target.Layer {
+	if source.Layer != "common" && target.Layer != "common" && source.Role == "commander" && target.Role == "processing" && source.Layer != "" && target.Layer != "" && source.Layer != target.Layer {
 		return &DependencyRuleResult{Code: "UPD101", Message: "Commander must not depend on Processing in another layer", Severity: "error"}
 	}
 	if source.Layer == "data" && source.Role == "commander" && target.Layer == "data" && target.Role == "commander" {

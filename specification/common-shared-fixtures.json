@@ -61,6 +61,57 @@
       "expected_application": null
     }
   ],
+  "dependency_cases": [
+    {
+      "name": "ui-to-common-processing-named-contract",
+      "source": "ui/messenger/ui_messenger.ext",
+      "target": "common/contracts/settings_processing.ext",
+      "expected_code": null,
+      "expected_severity": null
+    },
+    {
+      "name": "process-to-common",
+      "source": "process/consumer.ext",
+      "target": "common/contracts/message.ext",
+      "expected_code": null,
+      "expected_severity": null
+    },
+    {
+      "name": "data-to-common",
+      "source": "data/consumer.ext",
+      "target": "shared/contracts/message.ext",
+      "expected_code": null,
+      "expected_severity": null
+    },
+    {
+      "name": "common-to-ui",
+      "source": "common/contracts/bridge.ext",
+      "target": "ui/screen.ext",
+      "expected_code": "UPD101",
+      "expected_severity": "error"
+    },
+    {
+      "name": "common-to-process",
+      "source": "common/contracts/bridge.ext",
+      "target": "process/engine.ext",
+      "expected_code": "UPD101",
+      "expected_severity": "error"
+    },
+    {
+      "name": "common-to-data",
+      "source": "common/contracts/bridge.ext",
+      "target": "data/storage.ext",
+      "expected_code": "UPD101",
+      "expected_severity": "error"
+    },
+    {
+      "name": "common-to-common-processing-named-contract",
+      "source": "common/messenger/common_messenger.ext",
+      "target": "shared/contracts/settings_processing.ext",
+      "expected_code": null,
+      "expected_severity": null
+    }
+  ],
   "invalid_common_roots": [
     null,
     "common",

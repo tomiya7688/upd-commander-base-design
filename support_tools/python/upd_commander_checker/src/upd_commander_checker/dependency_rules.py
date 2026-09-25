@@ -97,15 +97,30 @@ def _dependency_result(
         return DependencyRuleResult("UPD101", "UI layer must not depend directly on Data layer", "error")
     if source.layer == "data" and target_layer == "ui":
         return DependencyRuleResult("UPD101", "Data layer must not depend directly on UI layer", "error")
-    if source.role == "messenger" and target_role == "processing":
+    if (
+        source.layer != "common"
+        and target_layer != "common"
+        and source.role == "messenger"
+        and target_role == "processing"
+    ):
         return DependencyRuleResult("UPD101", "Messenger must not depend directly on Processing", "error")
-    if source.role == "processing" and target_role == "processing":
+    if (
+        source.layer != "common"
+        and target_layer != "common"
+        and source.role == "processing"
+        and target_role == "processing"
+    ):
         return DependencyRuleResult(
             "UPD101",
             "Processing modules must not depend directly on other Processing modules",
             "error",
         )
-    if source.role == "commander" and target_role == "processing":
+    if (
+        source.layer != "common"
+        and target_layer != "common"
+        and source.role == "commander"
+        and target_role == "processing"
+    ):
         if source.layer and target_layer and source.layer != target_layer:
             return DependencyRuleResult(
                 "UPD101",
