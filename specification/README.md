@@ -22,6 +22,7 @@ UPD Commander は特定の実装形を強制するフレームワークではな
 - [Responsibility Check Rules](responsibility-check-rules.md) — UPD401 の共通責務単位・250行 / 12メソッド境界
 - [Flat Layer Checker Rules](flat-layer-check-rules.md) — 大規模かつ平坦な UI / Process / Data を UPD405 Attention とする判定契約
 - [Model Attention Checker Rules](model-attention-check-rules.md) — 反復する3項目以上の値グループを UPD406 Model/DTO候補 Attention とする判定契約
+- [Finding Baseline Contract](baseline-contract.md) — 行番号に依存しないFinding fingerprintとbaseline JSON schema
 - [Processing Specification](processing-spec.md) — 各層の実処理の責務
 - [Dependency Rules](dependency-rules.md) — 許可・禁止される依存関係
 - [Data Commander Communication](data-commander-communication.md) — Data Commander 同士の直接通信に対する警告規定
