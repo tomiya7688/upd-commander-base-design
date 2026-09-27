@@ -55,6 +55,9 @@ class BaselineTests(unittest.TestCase):
         one, two = finding(path="src/ui/one.cs"), finding(path="src/ui/two.cs")
         self.assertEqual(build_baseline([one, two]), build_baseline([two, one]))
 
+    def test_empty_baseline_is_valid(self) -> None:
+        self.assertEqual([], validate_baseline(build_baseline([]))["findings"])
+
     def test_classifies_new_existing_and_resolved(self) -> None:
         existing = finding()
         resolved = finding(path="src/data/old.cs", context="target=legacy")
