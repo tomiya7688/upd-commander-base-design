@@ -62,7 +62,10 @@ public sealed class DependencyTests
 
         var findings = project.Scan();
         Assert.Contains(findings, item => item.Code == "UPD101" && item.Path == "common/helper.cs");
-        Assert.DoesNotContain(findings, item => item.Code == "UPD101" && item.Path == "ui/screen.cs");
+        Assert.DoesNotContain(
+            findings,
+            item => item.Code == "UPD101" && item.Path == "ui/screen.cs"
+        );
     }
 
     [Fact]
