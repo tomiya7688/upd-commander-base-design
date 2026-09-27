@@ -60,9 +60,7 @@ internal sealed class TempProject : IDisposable
 
     internal List<Finding> ScanWithCommonRoots(IReadOnlyList<string> commonRoots)
     {
-        return Scanner.ScanPath(
-            new ScanPathInput(root, [], CommonRoots: commonRoots)
-        );
+        return Scanner.ScanPath(new ScanPathInput(root, [], CommonRoots: commonRoots));
     }
 
     internal List<Finding> ScanModel((int MinItems, int MinOccurrences) modelThresholds)
