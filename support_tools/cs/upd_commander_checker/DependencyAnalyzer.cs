@@ -42,7 +42,7 @@ internal static class DependencyAnalyzer
                     continue;
                 }
 
-                var target = Classifier.ClassifyPath(targetPath);
+                var target = Classifier.ClassifyPath(targetPath, context.Analysis.CommonRoots);
                 var result = DependencyRules.Evaluate(
                     new DependencyCheckInput(context.Analysis.Source, target)
                 );
