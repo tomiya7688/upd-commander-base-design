@@ -30,6 +30,14 @@ internal static class DependencyRules
                 "error"
             );
         }
+        if (source.Layer == "common" && target.Layer is "ui" or "process" or "data")
+        {
+            return new DependencyRuleResult(
+                "UPD101",
+                "Common/Shared must not depend on layer-specific implementation",
+                "error"
+            );
+        }
         if (source.Layer == "ui" && target.Layer == "data")
         {
             return new DependencyRuleResult("UPD101", "UI must not depend on Data", "error");
