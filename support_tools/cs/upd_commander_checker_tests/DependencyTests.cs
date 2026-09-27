@@ -40,6 +40,71 @@ public sealed class DependencyTests
     }
 
     [Fact]
+    public void CommonDependenciesFollowNeutralityRules()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "common/contracts.cs",
+            "namespace Common; public static class Contracts { public static int Value => 1; }\n"
+        );
+        project.Write(
+            "ui/screen.cs",
+            "namespace Ui; public sealed class Screen { public int Read() => Common.Contracts.Value; }\n"
+        );
+        project.Write(
+            "process/work.cs",
+            "namespace Process; public static class Work { public static int Value => 1; }\n"
+        );
+        project.Write(
+            "common/helper.cs",
+            "namespace Common; public static class Helper { public static int Read() => Process.Work.Value; }\n"
+        );
+
+        var findings = project.Scan();
+        Assert.Contains(findings, item => item.Code == "UPD101" && item.Path == "common/helper.cs");
+        Assert.DoesNotContain(
+            findings,
+            item => item.Code == "UPD101" && item.Path == "ui/screen.cs"
+        );
+    }
+
+    [Fact]
+    public void ApplicationLocalCommonKeepsApplicationBoundary()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "applications/settings/common/internal/value.cs",
+            "namespace Applications.Settings.Common.Internal; public static class Value { public static int Number => 1; }\n"
+        );
+        project.Write(
+            "applications/main/process/run.cs",
+            "namespace Applications.Main.Process; public sealed class Run { public int Read() => Applications.Settings.Common.Internal.Value.Number; }\n"
+        );
+
+        TestAssert.Has(project.Scan(), "UPD102", "error");
+    }
+
+    [Fact]
+    public void ConfiguredCommonRootsAreUsedDuringScan()
+    {
+        using var project = new TempProject();
+        project.Write(
+            "contracts/helper.cs",
+            "namespace Contracts; public static class Helper { public static int Read() => Process.Work.Value; }\n"
+        );
+        project.Write(
+            "process/work.cs",
+            "namespace Process; public static class Work { public static int Value => 1; }\n"
+        );
+
+        Assert.DoesNotContain(project.Scan(), item => item.Code == "UPD101");
+        Assert.Contains(
+            project.ScanWithCommonRoots(["contracts"]),
+            item => item.Code == "UPD101" && item.Path == "contracts/helper.cs"
+        );
+    }
+
+    [Fact]
     public void NestedApplicationDependencyUsesNearestBoundary()
     {
         using var project = new TempProject();
