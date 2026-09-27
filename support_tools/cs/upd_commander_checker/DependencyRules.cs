@@ -30,10 +30,7 @@ internal static class DependencyRules
                 "error"
             );
         }
-        if (
-            source.Layer == "common"
-            && target.Layer is "ui" or "process" or "data"
-        )
+        if (source.Layer == "common" && target.Layer is "ui" or "process" or "data")
         {
             return new DependencyRuleResult(
                 "UPD101",
