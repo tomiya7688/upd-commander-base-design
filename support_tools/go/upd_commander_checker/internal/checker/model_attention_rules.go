@@ -243,6 +243,7 @@ func modelAttentionFindings(occurrences []ModelGroupOccurrence, minOccurrences i
 			Code:     "UPD406",
 			Message:  "repeated value group may benefit from a Model/DTO; items=" + strings.Join(first.Items, ",") + " occurrences=" + strconv.Itoa(len(group)) + " kind=" + first.Kind,
 			Severity: "attention",
+			Context:  "model-group:" + first.Signature(),
 		})
 	}
 	return findings

@@ -28,6 +28,23 @@ FAIL e=1 w=1
 OK
 ```
 
+## Finding baseline
+
+初回スキャン結果を対象ルートの `.upd-baseline.json` に保存します。保存後も通常のFinding出力と終了コードは変わりません。
+
+```bash
+go run ./cmd/upd-commander-check --write-baseline path/to/project
+```
+
+保存先を指定する場合は `--write-baseline=PATH` を使います。既存baselineと比較すると、通常のFindingに `NEW` / `EXISTING` が付き、解消済みFindingも `RESOLVED` として表示されます。
+
+```bash
+go run ./cmd/upd-commander-check --write-baseline=.upd-baseline.json path/to/project
+go run ./cmd/upd-commander-check --baseline=.upd-baseline.json path/to/project
+```
+
+破損したbaselineや未対応schema/fingerprint versionは `BASELINE ERROR` として終了コード2で報告します。`--write-baseline` と `--baseline` は同時に指定できません。
+
 ## config/path.json
 
 `build_exe.bat` 実行時に `dist/config/path.json` を自動生成します。既存ファイルは上書きしません。
