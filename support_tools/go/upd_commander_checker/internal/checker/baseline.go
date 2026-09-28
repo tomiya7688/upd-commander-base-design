@@ -96,13 +96,6 @@ func (baseline *Baseline) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ClassifiedBaseline contains sorted status groups for a comparison.
-type ClassifiedBaseline struct {
-	New      []BaselineEntry `json:"new"`
-	Existing []BaselineEntry `json:"existing"`
-	Resolved []BaselineEntry `json:"resolved"`
-}
-
 const findingFingerprintDomainV1 = "upd-finding-fingerprint-v1"
 
 var baselineRulePattern = regexp.MustCompile(`^UPD[0-9]{3,}$`)
