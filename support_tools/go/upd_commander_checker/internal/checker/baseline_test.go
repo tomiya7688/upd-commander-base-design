@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -84,6 +85,87 @@ func TestFindingFingerprintRejectsInvalidIdentity(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			if _, err := FindingFingerprint(test.rule, test.path, test.symbol, test.context); err == nil {
 				t.Fatal("expected invalid identity error")
+			}
+		})
+	}
+}
+
+func TestBuildAndCompareBaseline(t *testing.T) {
+	old := BaselineEntry{Rule: "UPD101", Path: "src/a.cs", Symbol: "A", Context: "call=x", Severity: "warning", Line: 2, Message: "old"}
+	current := old
+	current.Line = 9
+	current.Message = "updated display text"
+	newFinding := BaselineEntry{Rule: "UPD102", Path: "src/b.cs", Symbol: "B", Context: "call=y", Severity: "error"}
+	baseline, err := BuildBaseline([]BaselineEntry{old})
+	if err != nil {
+		t.Fatal(err)
+	}
+	classified, err := CompareBaseline([]BaselineEntry{current, newFinding}, baseline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(classified.Existing) != 1 || len(classified.New) != 1 || len(classified.Resolved) != 0 {
+		t.Fatalf("unexpected classification: %+v", classified)
+	}
+	classified, err = CompareBaseline(nil, baseline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(classified.Resolved) != 1 {
+		t.Fatalf("expected one resolved finding: %+v", classified)
+	}
+}
+
+func TestBaselineWriteLoadAndValidation(t *testing.T) {
+	dir := t.TempDir()
+	filename := filepath.Join(dir, "nested", "baseline.json")
+	findings := []BaselineEntry{{Rule: "UPD101", Path: "src/a.cs", Context: "member=A", Severity: "warning"}}
+	if err := WriteBaseline(filename, findings); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadBaseline(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Findings) != 1 || loaded.SchemaVersion != BaselineSchemaVersion {
+		t.Fatalf("unexpected loaded baseline: %+v", loaded)
+	}
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document map[string]any
+	if err := json.Unmarshal(data, &document); err != nil {
+		t.Fatal(err)
+	}
+	document["schema_version"] = float64(99)
+	bad, err := json.Marshal(document)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filename, bad, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadBaseline(filename); err == nil || !strings.Contains(err.Error(), "unsupported schema_version") {
+		t.Fatalf("expected version error, got %v", err)
+	}
+}
+
+func TestLoadBaselineRejectsMalformedDocuments(t *testing.T) {
+	for _, input := range []string{
+		`{`,
+		`{"schema_version":1,"fingerprint_version":1,"findings":null}`,
+		`{"schema_version":1,"fingerprint_version":1,"findings":[{}]}`,
+		`{"schema_version":1,"fingerprint_version":1,"findings":[]} {}`,
+	} {
+		t.Run(input, func(t *testing.T) {
+			filename := filepath.Join(t.TempDir(), "baseline.json")
+			if err := os.WriteFile(filename, []byte(input), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := LoadBaseline(filename); err == nil {
+				t.Fatal("expected invalid baseline error")
 			}
 		})
 	}
