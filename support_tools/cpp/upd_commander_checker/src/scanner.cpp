@@ -135,6 +135,8 @@ std::vector<Finding> check_flat_layers(
             "UPD405",
             "large flat layer reduces navigability; consider grouping related responsibilities",
             "attention",
+            layer_root,
+            "flat-layer",
         });
     }
     return findings;
@@ -188,6 +190,8 @@ std::vector<Finding> scan_path(
             "UPD001",
             "read failed: " + target_error.message(),
             "error",
+            "",
+            "target-read-error",
         }};
     }
     const std::filesystem::path root = target_is_directory
@@ -204,6 +208,8 @@ std::vector<Finding> scan_path(
             "UPD001",
             error.what(),
             "error",
+            "",
+            "ignore-file-read-error",
         }};
     }
 

@@ -13,7 +13,7 @@ C++17でチェッカー本体を実装し、ソース解析には Clang/libclang
 Ubuntu例:
 
 ```bash
-sudo apt-get install libclang-dev llvm-dev
+sudo apt-get install libclang-dev llvm-dev libicu-dev
 ```
 
 WindowsではLLVMをインストールし、CMakeから `clang-c/Index.h` とlibclangライブラリを参照できる状態にしてください。一般的な `C:\Program Files\LLVM` 配置を推奨します。
@@ -49,6 +49,16 @@ Windows向け成果物には `THIRD_PARTY_NOTICES.md` と `licenses/LLVM-LICENSE
 - I/O/API呼び出し -> `CXCursor_CallExpr` / `CXCursor_VarDecl`
 
 コメントや文字列内の疑似C++コードはASTノードにならないため、規則判定対象になりません。パス分類、glob、IgnoreのようにC++構文ではない処理にはASTを使用しません。
+
+## Finding baseline
+
+```bash
+./build/upd-commander-check --write-baseline path/to/project
+./build/upd-commander-check --write-baseline=baseline.json path/to/project
+./build/upd-commander-check --baseline baseline.json path/to/project
+```
+
+引数なしの`--write-baseline`は対象ルートの`.upd-baseline.json`へ保存します。比較時はFindingに`NEW` / `EXISTING`を付け、解消済みFindingを`RESOLVED`として表示します。破損baselineや未対応versionは`BASELINE ERROR`と終了コード2で報告します。通常のFinding出力と終了コードは維持されます。
 
 ## compile_commands.json
 

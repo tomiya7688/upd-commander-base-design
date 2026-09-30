@@ -241,7 +241,9 @@ std::vector<Finding> check_data_type_locations(
                 ? "data-only type " + candidate.name +
                       " shares a file with another type and is referenced from another file"
                 : "data-only type " + candidate.name + " shares a file with another type",
-            external ? "warning" : "attention"});
+            external ? "warning" : "attention",
+            candidate.name,
+            external ? "data-only-type:referenced" : "data-only-type:not-referenced"});
     }
     return findings;
 }

@@ -62,6 +62,8 @@ int cursor_end_line(CXCursor cursor) {
     return static_cast<int>(line);
 }
 
+std::string qualified_name(CXCursor cursor);
+
 bool is_main_file_cursor(CXCursor cursor) {
     return clang_Location_isFromMainFile(clang_getCursorLocation(cursor)) != 0;
 }
@@ -78,10 +80,12 @@ void add_finding(
     int line,
     const std::string& code,
     const std::string& message,
-    const std::string& severity) {
+    const std::string& severity,
+    const std::string& symbol,
+    const std::string& context) {
     const std::string text = line_text(state, line);
     if (!is_ignored(state.relative, code, text, *state.rules)) {
-        state.findings.push_back(Finding{state.relative, line, code, message, severity});
+        state.findings.push_back(Finding{state.relative, line, code, message, severity, symbol, context});
     }
 }
 
@@ -115,6 +119,20 @@ bool is_arithmetic(CXCursor cursor) {
         clang_disposeTokens(unit, tokens, token_count);
     }
     return arithmetic;
+}
+
+std::string cursor_token_context(CXCursor cursor) {
+    CXTranslationUnit unit = clang_Cursor_getTranslationUnit(cursor);
+    CXToken* tokens = nullptr;
+    unsigned token_count = 0;
+    clang_tokenize(unit, clang_getCursorExtent(cursor), &tokens, &token_count);
+    std::string context = "syntax:";
+    for (unsigned index = 0; index < token_count; ++index) {
+        if (index > 0) context.push_back(' ');
+        context += cx_text(clang_getTokenSpelling(unit, tokens[index]));
+    }
+    if (tokens != nullptr) clang_disposeTokens(unit, tokens, token_count);
+    return context;
 }
 
 std::string qualified_name(CXCursor cursor) {
@@ -296,7 +314,8 @@ void analyze_dependency(AnalysisState& state, CXCursor cursor) {
     }
     const auto result = dependency_result(state.source, classify_path(target_path));
     if (result.has_value()) {
-        add_finding(state, cursor_line(cursor), result->code, result->message, result->severity);
+        add_finding(state, cursor_line(cursor), result->code, result->message, result->severity,
+            "include", "target=" + target_path);
     }
 }
 
@@ -320,7 +339,9 @@ void analyze_function(AnalysisState& state, CXCursor cursor) {
             line,
             "UPD301",
             "multiple inputs reduce readability; consider one Input Container",
-            "attention");
+            "attention",
+            qualified_name(cursor),
+            "method-parameters");
     }
     if (output_violation) {
         if (state.reducible_lines == 0) {
@@ -331,7 +352,9 @@ void analyze_function(AnalysisState& state, CXCursor cursor) {
             line,
             "UPD302",
             "multiple return values reduce readability; consider one Output Container",
-            "attention");
+            "attention",
+            qualified_name(cursor),
+            "method-return-values");
     }
     if (input_packable || output_violation) {
         const int excess = std::max(0, input_count - 1) + std::max(0, output_count - 1);
@@ -361,7 +384,9 @@ void analyze_class(AnalysisState& state, CXCursor cursor) {
             "UPD401",
             "type " + name + " is too large for one responsibility (lines=" +
                 std::to_string(lines) + ", methods=" + std::to_string(methods) + ")",
-            "warning");
+            "warning",
+            qualified_name(cursor),
+            "class-size-or-method-count");
     }
 }
 
@@ -386,11 +411,14 @@ CXChildVisitResult visit_cursor(CXCursor cursor, CXCursor, CXClientData client_d
     if (state.source.role == "commander") {
         if (kind == CXCursor_ForStmt || kind == CXCursor_CXXForRangeStmt ||
             kind == CXCursor_WhileStmt || kind == CXCursor_DoStmt) {
-            add_finding(state, cursor_line(cursor), "UPD201", "Commander loop", "warning");
+            add_finding(state, cursor_line(cursor), "UPD201", "Commander loop", "warning",
+                qualified_name(clang_getCursorSemanticParent(cursor)), cursor_token_context(cursor));
         } else if (kind == CXCursor_BinaryOperator && is_arithmetic(cursor)) {
-            add_finding(state, cursor_line(cursor), "UPD202", "Commander calculation", "warning");
+            add_finding(state, cursor_line(cursor), "UPD202", "Commander calculation", "warning",
+                qualified_name(clang_getCursorSemanticParent(cursor)), cursor_token_context(cursor));
         } else if (is_direct_work(cursor)) {
-            add_finding(state, cursor_line(cursor), "UPD203", "Commander direct I/O/API call", "error");
+            add_finding(state, cursor_line(cursor), "UPD203", "Commander direct I/O/API call", "error",
+                qualified_name(clang_getCursorSemanticParent(cursor)), cursor_token_context(cursor));
         }
     }
 
@@ -409,7 +437,7 @@ std::vector<Finding> analyze_cpp_ast(
     state.upd301_max_inputs = upd301_max_inputs;
     std::ifstream source(path);
     if (!source) {
-        return {Finding{relative, 1, "UPD001", "read failed", "error"}};
+        return {Finding{relative, 1, "UPD001", "read failed", "error", "", "source-read-error"}};
     }
     std::string line;
     while (std::getline(source, line)) {
@@ -438,14 +466,14 @@ std::vector<Finding> analyze_cpp_ast(
         CXTranslationUnit_DetailedPreprocessingRecord | CXTranslationUnit_KeepGoing);
     if (unit == nullptr) {
         clang_disposeIndex(index);
-        return {Finding{relative, 1, "UPD002", "AST parse failed", "error"}};
+        return {Finding{relative, 1, "UPD002", "AST parse failed", "error", "", "ast-parse-error"}};
     }
 
     const int syntax_error_line = first_main_file_error_line(unit);
     if (syntax_error_line > 0) {
         clang_disposeTranslationUnit(unit);
         clang_disposeIndex(index);
-        return {Finding{relative, syntax_error_line, "UPD002", "syntax error", "error"}};
+        return {Finding{relative, syntax_error_line, "UPD002", "syntax error", "error", "", "syntax-error"}};
     }
 
     clang_visitChildren(clang_getTranslationUnitCursor(unit), visit_cursor, &state);
@@ -456,7 +484,9 @@ std::vector<Finding> analyze_cpp_ast(
             state.second_class_line,
             "UPD402",
             "file contains multiple responsibility-bearing types",
-            "warning");
+            "warning",
+            "",
+            "multiple-responsibility-types");
     }
     const bool substantial_compression =
         state.reducible_lines >= kMinReducibleLines &&
@@ -470,7 +500,9 @@ std::vector<Finding> analyze_cpp_ast(
             state.first_offending_line,
             "UPD303",
             "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
-            "warning");
+            "warning",
+            "",
+            "containerization-opportunity");
     }
 
     clang_disposeTranslationUnit(unit);
