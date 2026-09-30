@@ -3,11 +3,17 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <charconv>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
+#include <map>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #ifdef _WIN32
@@ -195,6 +201,83 @@ std::string sha256(const std::string& input) {
     return result.str();
 }
 
+const JsonValue& required_field(const JsonValue& object, const std::string& name) {
+    if (object.type != JsonValue::Type::object) throw std::invalid_argument("baseline entry must be an object");
+    const auto found = object.object_value.find(name);
+    if (found == object.object_value.end()) throw std::invalid_argument("missing required field " + name);
+    return found->second;
+}
+
+std::string json_string(const JsonValue& value, const std::string& field) {
+    if (value.type != JsonValue::Type::string) throw std::invalid_argument(field + " must be a string");
+    return value.string_value;
+}
+
+int json_integer(const JsonValue& value, const std::string& field) {
+    if (value.type != JsonValue::Type::number || value.number_value.empty()) throw std::invalid_argument(field + " must be an integer");
+    int result = 0;
+    const auto parsed = std::from_chars(value.number_value.data(), value.number_value.data() + value.number_value.size(), result);
+    if (parsed.ec != std::errc{} || parsed.ptr != value.number_value.data() + value.number_value.size()) throw std::invalid_argument(field + " must be an integer");
+    return result;
+}
+
+BaselineEntry canonical_entry(BaselineEntry entry, bool verify_fingerprint) {
+    const std::string fingerprint = finding_fingerprint(entry.rule, entry.path, entry.symbol, entry.context);
+    entry.rule = canonical_rule(entry.rule);
+    entry.path = canonical_path(entry.path);
+    entry.symbol = normalize_nfc(entry.symbol);
+    entry.context = normalize_nfc(entry.context);
+    if (entry.severity != "error" && entry.severity != "warning" && entry.severity != "attention") throw std::invalid_argument("severity is invalid");
+    if (entry.line < 0) throw std::invalid_argument("line must be a positive integer");
+    if (verify_fingerprint && entry.fingerprint != fingerprint) throw std::invalid_argument("fingerprint does not match identity");
+    entry.fingerprint = fingerprint;
+    return entry;
+}
+
+std::string quote_json(const std::string& value) {
+    std::ostringstream output;
+    output << '"';
+    for (const unsigned char ch : value) {
+        switch (ch) {
+            case '"': output << "\\\""; break;
+            case '\\': output << "\\\\"; break;
+            case '\b': output << "\\b"; break;
+            case '\f': output << "\\f"; break;
+            case '\n': output << "\\n"; break;
+            case '\r': output << "\\r"; break;
+            case '\t': output << "\\t"; break;
+            default:
+                if (ch < 0x20) output << "\\u00" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(ch) << std::dec;
+                else output << static_cast<char>(ch);
+        }
+    }
+    output << '"';
+    return output.str();
+}
+
+std::string serialize_baseline(const Baseline& baseline) {
+    std::ostringstream output;
+    output << "{\n  \"schema_version\": " << baseline.schema_version
+           << ",\n  \"fingerprint_version\": " << baseline.fingerprint_version
+           << ",\n  \"findings\": [";
+    for (std::size_t index = 0; index < baseline.findings.size(); ++index) {
+        const auto& entry = baseline.findings[index];
+        output << (index == 0 ? "\n" : ",\n") << "    {\n"
+               << "      \"fingerprint\": " << quote_json(entry.fingerprint) << ",\n"
+               << "      \"rule\": " << quote_json(entry.rule) << ",\n"
+               << "      \"path\": " << quote_json(entry.path) << ",\n"
+               << "      \"symbol\": " << quote_json(entry.symbol) << ",\n"
+               << "      \"context\": " << quote_json(entry.context) << ",\n"
+               << "      \"severity\": " << quote_json(entry.severity);
+        if (entry.line > 0) output << ",\n      \"line\": " << entry.line;
+        if (!entry.message.empty()) output << ",\n      \"message\": " << quote_json(entry.message);
+        output << "\n    }";
+    }
+    if (!baseline.findings.empty()) output << '\n';
+    output << "  ]\n}\n";
+    return output.str();
+}
+
 }  // namespace
 
 std::string finding_fingerprint(
@@ -217,6 +300,99 @@ std::string finding_fingerprint(
         payload += field;
     }
     return "sha256:" + sha256(payload);
+}
+
+Baseline build_baseline(const std::vector<BaselineEntry>& findings) {
+    Baseline baseline;
+    std::set<std::string> seen;
+    for (auto entry : findings) {
+        entry = canonical_entry(std::move(entry), false);
+        if (!seen.insert(entry.fingerprint).second) throw std::invalid_argument("duplicate Finding identity in scan: " + entry.fingerprint);
+        baseline.findings.push_back(std::move(entry));
+    }
+    std::sort(baseline.findings.begin(), baseline.findings.end(), [](const auto& left, const auto& right) { return left.fingerprint < right.fingerprint; });
+    return baseline;
+}
+
+Baseline validate_baseline(const JsonValue& document) {
+    if (document.type != JsonValue::Type::object) throw std::invalid_argument("baseline root must be an object");
+    Baseline baseline;
+    baseline.schema_version = json_integer(required_field(document, "schema_version"), "schema_version");
+    baseline.fingerprint_version = json_integer(required_field(document, "fingerprint_version"), "fingerprint_version");
+    if (baseline.schema_version != 1) throw std::invalid_argument("unsupported schema_version " + std::to_string(baseline.schema_version) + "; supported version is 1");
+    if (baseline.fingerprint_version != 1) throw std::invalid_argument("unsupported fingerprint_version " + std::to_string(baseline.fingerprint_version) + "; supported version is 1");
+    const auto& findings = required_field(document, "findings");
+    if (findings.type != JsonValue::Type::array) throw std::invalid_argument("findings must be an array");
+    std::set<std::string> seen;
+    for (const auto& value : findings.array_value) {
+        BaselineEntry entry;
+        entry.fingerprint = json_string(required_field(value, "fingerprint"), "fingerprint");
+        entry.rule = json_string(required_field(value, "rule"), "rule");
+        entry.path = json_string(required_field(value, "path"), "path");
+        entry.symbol = json_string(required_field(value, "symbol"), "symbol");
+        entry.context = json_string(required_field(value, "context"), "context");
+        entry.severity = json_string(required_field(value, "severity"), "severity");
+        const auto line = value.object_value.find("line");
+        if (line != value.object_value.end()) {
+            entry.line = json_integer(line->second, "line");
+            if (entry.line < 1) throw std::invalid_argument("line must be a positive integer");
+        }
+        const auto message = value.object_value.find("message");
+        if (message != value.object_value.end()) entry.message = json_string(message->second, "message");
+        entry = canonical_entry(std::move(entry), true);
+        if (!seen.insert(entry.fingerprint).second) throw std::invalid_argument("duplicate fingerprint: " + entry.fingerprint);
+        baseline.findings.push_back(std::move(entry));
+    }
+    return baseline;
+}
+
+Baseline load_baseline(const std::string& filename) {
+    std::ifstream input(filename, std::ios::binary);
+    if (!input) throw std::runtime_error("cannot read baseline: " + filename);
+    const std::string text((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    try {
+        return validate_baseline(parse_json(text));
+    } catch (const std::exception& error) {
+        throw std::runtime_error("invalid baseline: " + std::string(error.what()));
+    }
+}
+
+void write_baseline(const std::string& filename, const std::vector<BaselineEntry>& findings) {
+    const auto baseline = build_baseline(findings);
+    try {
+        const std::filesystem::path path(filename);
+        if (!path.parent_path().empty()) std::filesystem::create_directories(path.parent_path());
+        std::ofstream output(path, std::ios::binary);
+        if (!output) throw std::runtime_error("open failed");
+        output << serialize_baseline(baseline);
+        if (!output) throw std::runtime_error("write failed");
+    } catch (const std::exception& error) {
+        throw std::runtime_error("cannot write baseline " + filename + ": " + error.what());
+    }
+}
+
+ClassifiedBaseline compare_baseline(const std::vector<BaselineEntry>& current, const Baseline& baseline) {
+    if (baseline.schema_version != 1) throw std::invalid_argument("unsupported schema_version " + std::to_string(baseline.schema_version) + "; supported version is 1");
+    if (baseline.fingerprint_version != 1) throw std::invalid_argument("unsupported fingerprint_version " + std::to_string(baseline.fingerprint_version) + "; supported version is 1");
+    std::map<std::string, BaselineEntry> old_by_id;
+    for (const auto& raw_entry : baseline.findings) {
+        const auto entry = canonical_entry(raw_entry, true);
+        if (!old_by_id.emplace(entry.fingerprint, entry).second) throw std::invalid_argument("duplicate fingerprint: " + entry.fingerprint);
+    }
+    std::map<std::string, BaselineEntry> current_by_id;
+    for (auto raw_entry : current) {
+        auto entry = canonical_entry(std::move(raw_entry), false);
+        if (!current_by_id.emplace(entry.fingerprint, entry).second) throw std::invalid_argument("duplicate Finding identity in scan: " + entry.fingerprint);
+    }
+    ClassifiedBaseline result;
+    for (const auto& item : current_by_id) {
+        if (old_by_id.count(item.first)) result.existing.push_back(item.second);
+        else result.new_findings.push_back(item.second);
+    }
+    for (const auto& item : old_by_id) {
+        if (!current_by_id.count(item.first)) result.resolved.push_back(item.second);
+    }
+    return result;
 }
 
 }  // namespace upd_checker
