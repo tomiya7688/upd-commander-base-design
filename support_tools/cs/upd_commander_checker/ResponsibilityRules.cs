@@ -45,7 +45,9 @@ internal static class ResponsibilityRules
                     "UPD401",
                     $"type {type.Identifier.ValueText} is too large for one responsibility "
                         + $"(lines={lineCount}, methods={methodCount})",
-                    "warning"
+                    "warning",
+                    type.Identifier.ValueText,
+                    "oversized-type"
                 )
             );
         }
@@ -65,7 +67,9 @@ internal static class ResponsibilityRules
                     1,
                     "UPD401",
                     "file/module approximation is too large for one responsibility",
-                    "warning"
+                    "warning",
+                    "",
+                    "oversized-file"
                 )
             );
         }
@@ -88,7 +92,9 @@ internal static class ResponsibilityRules
                         line,
                         "UPD402",
                         "file contains multiple responsibility-bearing types",
-                        "warning"
+                        "warning",
+                        second.Identifier.ValueText,
+                        "multiple-major-types"
                     )
                 );
             }

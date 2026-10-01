@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace UpdCommanderChecker;
 
 internal static class Program
@@ -50,6 +52,46 @@ internal static class Program
                 config.EnabledRules
             )
         );
+        Dictionary<string, string> statuses = new(StringComparer.Ordinal);
+        IReadOnlyList<BaselineEntry> resolved = [];
+        try
+        {
+            if (options.WriteBaseline)
+            {
+                var target = Path.GetFullPath(options.Target);
+                var root = Directory.Exists(target) ? target : Path.GetDirectoryName(target)!;
+                var output =
+                    options.WriteBaselinePath.Length > 0
+                        ? options.WriteBaselinePath
+                        : Path.Combine(root, ".upd-baseline.json");
+                BaselineService.Write(output, findings);
+            }
+            else if (options.BaselinePath.Length > 0)
+            {
+                var comparison = BaselineService.Compare(
+                    findings,
+                    BaselineService.Load(options.BaselinePath)
+                );
+                foreach (var finding in comparison.New)
+                    statuses.Add(finding.Fingerprint, "NEW");
+                foreach (var finding in comparison.Existing)
+                    statuses.Add(finding.Fingerprint, "EXISTING");
+                resolved = comparison.Resolved;
+            }
+        }
+        catch (Exception exception)
+            when (exception
+                    is IOException
+                        or UnauthorizedAccessException
+                        or InvalidDataException
+                        or ArgumentException
+                        or JsonException
+            )
+        {
+            return ReportOutput.Finish(
+                new FinishInput([$"BASELINE ERROR: {exception.Message}"], options.Output, 2)
+            );
+        }
         var errors = 0;
         var warnings = 0;
         var attentions = 0;
@@ -71,7 +113,36 @@ internal static class Program
             {
                 attentions++;
             }
-            lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
+            var line = $"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}";
+            if (options.BaselinePath.Length > 0)
+            {
+                try
+                {
+                    line = $"{statuses[BaselineService.FromFinding(finding).Fingerprint]} {line}";
+                }
+                catch (Exception exception)
+                    when (exception
+                            is KeyNotFoundException
+                                or InvalidDataException
+                                or ArgumentException
+                    )
+                {
+                    return ReportOutput.Finish(
+                        new FinishInput([$"BASELINE ERROR: {exception.Message}"], options.Output, 2)
+                    );
+                }
+            }
+            lines.Add(line);
+        }
+        foreach (var finding in resolved)
+        {
+            var level =
+                finding.Severity == "error" ? "E"
+                : finding.Severity == "warning" ? "W"
+                : "A";
+            lines.Add(
+                $"RESOLVED {level} {finding.Rule} {finding.Path}:{(finding.Line > 0 ? finding.Line.ToString() : "?")} {finding.Message}"
+            );
         }
 
         var failed =

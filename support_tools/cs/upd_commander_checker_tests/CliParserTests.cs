@@ -8,12 +8,35 @@ public sealed class CliParserTests
     [InlineData("--warning-as-errors", "unknown option")]
     [InlineData("--ignore", "missing value")]
     [InlineData("--output", "missing value")]
+    [InlineData("--baseline", "missing value")]
     public void InvalidOptionUsageFails(string argument, string message)
     {
         var error = Assert.Throws<CliUsageException>(() =>
             CliParser.Parse(new CliParseInput([argument], new CheckerConfig()))
         );
         Assert.Contains(message, error.Message);
+    }
+
+    [Fact]
+    public void BaselineOptionsAreParsedAndMutuallyExclusive()
+    {
+        var options = CliParser.Parse(
+            new CliParseInput(["--write-baseline=baseline.json", "target"], new CheckerConfig())
+        );
+        Assert.True(options.WriteBaseline);
+        Assert.Equal("baseline.json", options.WriteBaselinePath);
+        var compare = CliParser.Parse(
+            new CliParseInput(["--baseline", "baseline.json", "target"], new CheckerConfig())
+        );
+        Assert.Equal("baseline.json", compare.BaselinePath);
+        Assert.Throws<CliUsageException>(() =>
+            CliParser.Parse(
+                new CliParseInput(
+                    ["--write-baseline", "--baseline", "base.json"],
+                    new CheckerConfig()
+                )
+            )
+        );
     }
 
     [Fact]

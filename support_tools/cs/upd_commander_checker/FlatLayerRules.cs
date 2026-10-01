@@ -80,7 +80,9 @@ internal static class FlatLayerRules
                 1,
                 "UPD405",
                 "large flat layer reduces navigability; consider grouping related responsibilities",
-                "attention"
+                "attention",
+                layerRoot,
+                "flat-layer"
             );
         }
     }

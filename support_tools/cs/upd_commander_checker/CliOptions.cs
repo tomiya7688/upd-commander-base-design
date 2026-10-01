@@ -5,5 +5,8 @@ internal sealed record CliOptions(
     string Output,
     IReadOnlyList<string> Ignores,
     bool WarningsAsErrors,
-    bool AttentionsAsErrors
+    bool AttentionsAsErrors,
+    bool WriteBaseline = false,
+    string WriteBaselinePath = "",
+    string BaselinePath = ""
 );
