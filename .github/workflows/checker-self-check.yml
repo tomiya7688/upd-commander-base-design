@@ -33,35 +33,6 @@ jobs:
           echo "$output"
           test "$status" -eq 2
           grep -q "CONFIG ERROR:" <<< "$output"
-      - name: Baseline CLI workflow
-        working-directory: support_tools/cpp/upd_commander_checker
-        shell: bash
-        run: |
-          target="$(mktemp -d)"
-          trap 'rm -rf "$target"' EXIT
-          mkdir -p "$target/commander"
-          printf '#include <fstream>\nint run() { std::ifstream input("first.txt"); return 0; }\n' > "$target/commander/first.cpp"
-          ./build/upd-commander-check --write-baseline="$target/baseline.json" "$target"
-          existing="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
-          echo "$existing"
-          grep -q "EXISTING E UPD203" <<< "$existing"
-          printf '#include <fstream>\nint run() { std::ifstream input("second.txt"); return 0; }\n' > "$target/commander/second.cpp"
-          changed="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
-          echo "$changed"
-          grep -q "EXISTING E UPD203" <<< "$changed"
-          grep -q "NEW E UPD203" <<< "$changed"
-          rm "$target/commander/first.cpp"
-          resolved="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
-          echo "$resolved"
-          grep -q "RESOLVED E UPD203" <<< "$resolved"
-          printf '{ broken' > "$target/baseline.json"
-          set +e
-          invalid="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target" 2>&1)"
-          status=$?
-          set -e
-          echo "$invalid"
-          test "$status" -eq 2
-          grep -q "BASELINE ERROR:" <<< "$invalid"
       - name: Self check
         working-directory: support_tools/python/upd_commander_checker
         run: python -m upd_commander_checker . --warnings-as-errors --attentions-as-errors
@@ -123,6 +94,35 @@ jobs:
           echo "$output"
           test "$status" -eq 2
           grep -q "CONFIG ERROR:" <<< "$output"
+      - name: Baseline CLI workflow
+        working-directory: support_tools/cpp/upd_commander_checker
+        shell: bash
+        run: |
+          target="$(mktemp -d)"
+          trap 'rm -rf "$target"' EXIT
+          mkdir -p "$target/commander"
+          printf '#include <fstream>\nint run() { std::ifstream input("first.txt"); return 0; }\n' > "$target/commander/first.cpp"
+          ./build/upd-commander-check --write-baseline="$target/baseline.json" "$target"
+          existing="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          echo "$existing"
+          grep -q "EXISTING E UPD203" <<< "$existing"
+          printf '#include <fstream>\nint run() { std::ifstream input("second.txt"); return 0; }\n' > "$target/commander/second.cpp"
+          changed="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          echo "$changed"
+          grep -q "EXISTING E UPD203" <<< "$changed"
+          grep -q "NEW E UPD203" <<< "$changed"
+          rm "$target/commander/first.cpp"
+          resolved="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          echo "$resolved"
+          grep -q "RESOLVED E UPD203" <<< "$resolved"
+          printf '{ broken' > "$target/baseline.json"
+          set +e
+          invalid="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target" 2>&1)"
+          status=$?
+          set -e
+          echo "$invalid"
+          test "$status" -eq 2
+          grep -q "BASELINE ERROR:" <<< "$invalid"
       - name: Self check
         working-directory: support_tools/cpp/upd_commander_checker
         run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors --ignore "build/**" .
