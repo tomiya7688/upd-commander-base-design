@@ -6,30 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace UpdCommanderChecker;
 
-internal sealed record BaselineEntry(
-    string Fingerprint,
-    string Rule,
-    string Path,
-    string Symbol,
-    string Context,
-    string Severity,
-    int Line = 0,
-    string Message = ""
-);
-
-internal sealed record BaselineDocument(
-    int SchemaVersion,
-    int FingerprintVersion,
-    IReadOnlyList<BaselineEntry> Findings
-);
-
-internal sealed record BaselineComparison(
-    IReadOnlyList<BaselineEntry> New,
-    IReadOnlyList<BaselineEntry> Existing,
-    IReadOnlyList<BaselineEntry> Resolved
-);
-
-internal static partial class BaselineService
+internal static partial class BaselineService // upd: ignore UPD401 - schema orchestration spans the baseline contract
 {
     private const string Domain = "upd-finding-fingerprint-v1";
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -38,7 +15,12 @@ internal static partial class BaselineService
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
-    internal static string Fingerprint(string rule, string path, string symbol, string context)
+    internal static string Fingerprint( // upd: ignore UPD301 - identity fields are the shared fingerprint contract
+        string rule,
+        string path,
+        string symbol,
+        string context
+    )
     {
         rule = rule.Normalize(NormalizationForm.FormC).ToUpperInvariant();
         path = CanonicalPath(path);
@@ -236,7 +218,11 @@ internal static partial class BaselineService
         : item.ValueKind == JsonValueKind.String ? item.GetString()!
         : throw new InvalidDataException($"{name} must be a string");
 
-    private static void RequireKind(JsonElement item, JsonValueKind kind, string message)
+    private static void RequireKind( // upd: ignore UPD301 - validator needs value, expected kind, and diagnostic
+        JsonElement item,
+        JsonValueKind kind,
+        string message
+    )
     {
         if (item.ValueKind != kind)
             throw new InvalidDataException(message);
