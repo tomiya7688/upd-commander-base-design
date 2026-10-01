@@ -16,7 +16,15 @@ internal static class SourceParser
         {
             return new SourceParseResult(
                 null,
-                new Finding(input.Relative, 1, "UPD001", "read failed")
+                new Finding(
+                    input.Relative,
+                    1,
+                    "UPD001",
+                    "read failed",
+                    "error",
+                    "",
+                    "source-read-error"
+                )
             );
         }
 
@@ -29,7 +37,15 @@ internal static class SourceParser
             var line = syntaxError.Location.GetLineSpan().StartLinePosition.Line + 1;
             return new SourceParseResult(
                 null,
-                new Finding(input.Relative, line, "UPD002", "syntax error")
+                new Finding(
+                    input.Relative,
+                    line,
+                    "UPD002",
+                    "syntax error",
+                    "error",
+                    "",
+                    "syntax-error"
+                )
             );
         }
 

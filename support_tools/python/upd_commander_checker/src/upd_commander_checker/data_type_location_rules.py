@@ -42,6 +42,8 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     "UPD404",
                     f"data-only type {name} shares a file with another type and is referenced from another file",
                     "warning",
+                    symbol=name,
+                    context="data-only-type:referenced",
                 )
             )
         else:
@@ -52,6 +54,8 @@ def check_data_type_locations(paths: list[Path], root: Path) -> list[Finding]:
                     "UPD403",
                     f"data-only type {name} shares a file with another type",
                     "attention",
+                    symbol=name,
+                    context="data-only-type:not-referenced",
                 )
             )
     return findings

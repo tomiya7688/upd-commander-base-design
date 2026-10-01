@@ -69,6 +69,17 @@ dotnet run --project UpdCommanderChecker.csproj -- --ignore "tests/**" --ignore 
 
 `config/path.json` の `ignore` と `.updcommanderignore` を併用できます。
 
+## Finding baseline
+
+初回スキャンをbaselineとして保存し、以降の差分を `NEW` / `EXISTING` / `RESOLVED` で表示します。既定の保存先は対象ルートの `.upd-baseline.json` です。
+
+```bash
+dotnet run --project UpdCommanderChecker.csproj -- --write-baseline .
+dotnet run --project UpdCommanderChecker.csproj -- --baseline .upd-baseline.json .
+```
+
+保存先は `--write-baseline=PATH` で指定できます。baselineの破損や未対応versionは `BASELINE ERROR` と終了コード2で報告します。`--write-baseline` と `--baseline` は同時指定できません。
+
 ```text
 generated/**
 UPD202 process/FastCommander.cs # performance hot path

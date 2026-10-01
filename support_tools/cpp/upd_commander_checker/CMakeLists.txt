@@ -37,12 +37,17 @@ find_library(LIBCLANG_LIBRARY
         /usr/lib/llvm-17/lib
         /usr/lib/llvm-16/lib)
 
+if(NOT WIN32)
+    find_package(ICU REQUIRED COMPONENTS uc)
+endif()
+
 if(NOT LIBCLANG_INCLUDE_DIR OR NOT LIBCLANG_LIBRARY)
     message(FATAL_ERROR "libclang development files are required for AST analysis")
 endif()
 
 add_library(upd_checker_core
     src/ast_analyzer.cpp
+    src/baseline.cpp
     src/classifier.cpp
     src/cli_options.cpp
     src/compile_arguments.cpp
@@ -63,6 +68,11 @@ target_include_directories(upd_checker_core
     PUBLIC include
     PRIVATE ${LIBCLANG_INCLUDE_DIR})
 target_link_libraries(upd_checker_core PUBLIC ${LIBCLANG_LIBRARY})
+if(WIN32)
+    target_link_libraries(upd_checker_core PUBLIC Normaliz)
+else()
+    target_link_libraries(upd_checker_core PUBLIC ICU::uc)
+endif()
 
 add_executable(upd-commander-check src/main.cpp)
 target_link_libraries(upd-commander-check PRIVATE upd_checker_core)
@@ -128,4 +138,10 @@ if(BUILD_TESTING)
     add_executable(upd_checker_report_output_tests tests/report_output_tests.cpp)
     target_link_libraries(upd_checker_report_output_tests PRIVATE upd_checker_core)
     add_test(NAME upd_checker_report_output_tests COMMAND upd_checker_report_output_tests)
+
+    add_executable(upd_checker_baseline_tests tests/baseline_tests.cpp)
+    target_link_libraries(upd_checker_baseline_tests PRIVATE upd_checker_core)
+    target_compile_definitions(upd_checker_baseline_tests PRIVATE
+        BASELINE_FIXTURE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../../specification/baseline-fingerprint-fixtures.json")
+    add_test(NAME upd_checker_baseline_tests COMMAND upd_checker_baseline_tests)
 endif()

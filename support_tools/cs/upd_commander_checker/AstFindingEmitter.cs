@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace UpdCommanderChecker;
 
 internal static class AstFindingEmitter
@@ -29,8 +32,37 @@ internal static class AstFindingEmitter
                 line,
                 input.Code,
                 input.Message,
-                input.Severity
+                input.Severity,
+                SemanticSymbol(input.Node),
+                "syntax:"
+                    + string.Join(
+                        " ",
+                        input
+                            .Node.DescendantTokens()
+                            .Select(token =>
+                                token.Text.Replace("\0", "\\u0000", StringComparison.Ordinal)
+                            )
+                    )
             )
         );
+    }
+
+    private static string SemanticSymbol(SyntaxNode node)
+    {
+        var parts = new List<string>();
+        var scope = node.AncestorsAndSelf()
+            .OfType<BaseNamespaceDeclarationSyntax>()
+            .FirstOrDefault();
+        var type = node.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        var method = node.AncestorsAndSelf().OfType<BaseMethodDeclarationSyntax>().FirstOrDefault();
+        if (scope is not null)
+            parts.Add(scope.Name.ToString());
+        if (type is not null)
+            parts.Add(type.Identifier.ValueText);
+        if (method is MethodDeclarationSyntax declaration)
+            parts.Add(declaration.Identifier.ValueText);
+        else if (method is ConstructorDeclarationSyntax constructor)
+            parts.Add(constructor.Identifier.ValueText);
+        return string.Join(".", parts);
     }
 }

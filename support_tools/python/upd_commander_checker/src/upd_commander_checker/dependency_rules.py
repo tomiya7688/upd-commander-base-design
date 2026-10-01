@@ -28,6 +28,7 @@ def check_dependencies(
                         result.code,
                         result.message,
                         result.severity,
+                        context=f"target={imported_name}",
                     )
                 )
     return findings

@@ -12,6 +12,9 @@ internal static class CliParser
         var warningsAsErrors = config.WarningsAsErrors;
         var attentionsAsErrors = false;
         var targetSpecified = false;
+        var writeBaseline = false;
+        var writeBaselinePath = "";
+        var baselinePath = "";
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -38,6 +41,30 @@ internal static class CliParser
                 }
                 output = args[++index];
             }
+            else if (argument == "--write-baseline")
+            {
+                writeBaseline = true;
+            }
+            else if (argument.StartsWith("--write-baseline=", StringComparison.Ordinal))
+            {
+                writeBaseline = true;
+                writeBaselinePath = argument["--write-baseline=".Length..];
+            }
+            else if (argument == "--baseline")
+            {
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                    throw new CliUsageException("missing value for --baseline");
+                baselinePath = args[++index];
+            }
+            else if (argument.StartsWith("--baseline=", StringComparison.Ordinal))
+            {
+                baselinePath = argument["--baseline=".Length..];
+                if (baselinePath.Length == 0)
+                    throw new CliUsageException("missing value for --baseline");
+            }
             else if (argument == "--warnings-as-errors")
             {
                 warningsAsErrors = true;
@@ -61,6 +88,17 @@ internal static class CliParser
             }
         }
 
-        return new CliOptions(target, output, ignores, warningsAsErrors, attentionsAsErrors);
+        if (writeBaseline && baselinePath.Length > 0)
+            throw new CliUsageException("--write-baseline and --baseline are mutually exclusive");
+        return new CliOptions(
+            target,
+            output,
+            ignores,
+            warningsAsErrors,
+            attentionsAsErrors,
+            writeBaseline,
+            writeBaselinePath,
+            baselinePath
+        );
     }
 }

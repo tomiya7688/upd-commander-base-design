@@ -27,7 +27,10 @@ internal static class SourceFileWalker
                     Path.GetRelativePath(input.Root, fullTarget).Replace('\\', '/'),
                     1,
                     "UPD001",
-                    "read failed: target does not exist"
+                    "read failed: target does not exist",
+                    "error",
+                    "",
+                    "target-not-found"
                 )
             );
             return files;
@@ -55,7 +58,10 @@ internal static class SourceFileWalker
                         Path.GetRelativePath(input.Root, directory).Replace('\\', '/'),
                         1,
                         "UPD001",
-                        $"read failed: {exception.Message}"
+                        $"read failed: {exception.Message}",
+                        "error",
+                        "",
+                        "directory-read-error"
                     )
                 );
                 continue;
@@ -97,7 +103,10 @@ internal static class SourceFileWalker
                             Path.GetRelativePath(input.Root, entry).Replace('\\', '/'),
                             1,
                             "UPD001",
-                            $"read failed: {exception.Message}"
+                            $"read failed: {exception.Message}",
+                            "error",
+                            "",
+                            "entry-read-error"
                         )
                     );
                 }

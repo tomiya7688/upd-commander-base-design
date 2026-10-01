@@ -4,14 +4,15 @@
 
 namespace upd_checker {
 
-struct Finding {
+struct BaselineEntry {
+    std::string fingerprint;
+    std::string rule;
     std::string path;
-    int line = 1;
-    std::string code;
-    std::string message;
-    std::string severity = "error";
     std::string symbol;
     std::string context;
+    std::string severity;
+    int line = 0;
+    std::string message;
 };
 
 }  // namespace upd_checker

@@ -19,6 +19,8 @@ def check_responsibilities(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                 "UPD402",
                 "file contains multiple responsibility-bearing classes",
                 "warning",
+                symbol=major_classes[1].name,
+                context="multiple-responsibility-classes",
             )
         )
 
@@ -39,6 +41,8 @@ def check_responsibilities(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     f"class {class_node.name} is too large for one responsibility "
                     f"(lines={line_count}, methods={method_count})",
                     "warning",
+                    symbol=class_node.name,
+                    context="class-size-or-method-count",
                 )
             )
 
@@ -55,6 +59,7 @@ def check_responsibilities(tree: ast.AST, module: ModuleInfo) -> list[Finding]:
                     "UPD401",
                     "file/module approximation is too large for one responsibility",
                     "warning",
+                    context="module-size",
                 )
             )
 

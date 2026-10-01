@@ -104,7 +104,9 @@ internal static class DataTypeLocationRules
                     external
                         ? $"data-only type {candidate.Name} shares a file with another type and is referenced from another file"
                         : $"data-only type {candidate.Name} shares a file with another type",
-                    external ? "warning" : "attention"
+                    external ? "warning" : "attention",
+                    candidate.Name,
+                    external ? "externally-referenced-data-type" : "unreferenced-data-type"
                 )
             );
         }

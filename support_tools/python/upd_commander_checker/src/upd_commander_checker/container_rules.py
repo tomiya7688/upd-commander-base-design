@@ -49,6 +49,8 @@ def check_containers(
                         "UPD301",
                         "multiple inputs reduce readability; consider one Input Container",
                         "attention",
+                        symbol=f"{class_node.name}.{node.name}",
+                        context="inputs:" + ",".join(parameter.arg for parameter in parameters),
                     )
                 )
 
@@ -62,6 +64,8 @@ def check_containers(
                         "UPD302",
                         "multiple return values reduce readability; consider one Output Container",
                         "attention",
+                        symbol=f"{class_node.name}.{node.name}",
+                        context=f"return-values:{returned_values}",
                     )
                 )
 
@@ -80,6 +84,8 @@ def check_containers(
                     "UPD303",
                     "Compresser/Container introduction is expected to substantially reduce this Commander/Messenger",
                     "warning",
+                    symbol=class_node.name,
+                    context="containerization-opportunity",
                 )
             )
     return findings

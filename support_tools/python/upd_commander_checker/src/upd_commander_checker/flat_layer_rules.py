@@ -53,6 +53,8 @@ def check_flat_layers(
                 "UPD405",
                 "large flat layer reduces navigability; consider grouping related responsibilities",
                 "attention",
+                symbol=layer_root,
+                context="flat-layer",
             )
         )
     return findings
