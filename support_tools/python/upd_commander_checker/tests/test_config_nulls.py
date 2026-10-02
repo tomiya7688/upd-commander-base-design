@@ -18,6 +18,8 @@ class ConfigNullTest(unittest.TestCase):
             ({"enabled_rules": None}, "enabled_rules"),
             ({"input": 1}, "input"),
             ({"warnings_as_errors": "true"}, "warnings_as_errors"),
+            ({"fail_on": None}, "fail_on"),
+            ({"severity_overrides": None}, "severity_overrides"),
             ({"upd301_max_inputs": None}, "upd301_max_inputs"),
             ({"upd301_max_inputs": True}, "upd301_max_inputs"),
             ({"upd301_max_inputs": "2"}, "upd301_max_inputs"),

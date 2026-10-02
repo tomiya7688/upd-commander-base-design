@@ -7,6 +7,8 @@ class CheckerConfig:
     output_path: str = ""
     ignore: tuple[str, ...] = ()
     warnings_as_errors: bool = False
+    fail_on: tuple[str, ...] | None = None
+    severity_overrides: tuple[tuple[str, str], ...] = ()
     common_roots: tuple[str, ...] = ("common", "shared")
     enabled_rules: tuple[str, ...] | None = None
     upd301_max_inputs: int = 2

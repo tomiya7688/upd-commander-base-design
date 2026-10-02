@@ -53,9 +53,13 @@ EXEビルド時に `dist/upd-commander-check/config/path.json` を自動生成�
   "output": "",
   "ignore": ["tests/**", "generated/**"],
   "warnings_as_errors": false,
+  "fail_on": ["error"],
+  "severity_overrides": {"UPD203": "warning"},
   "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
+
+`fail_on` は `error` / `warning` / `attention` のうちCI失敗にするseverityを指定します。空配列はfinding severityによる失敗を無効にします。`severity_overrides` はruleごとの報告severityとgate severityを変更します。CLIでは `--fail-on error,warning` と `--severity-override UPD203=warning` を指定できます。`fail_on` を省略した場合は従来どおりErrorで失敗し、既存の `warnings_as_errors` / `--attentions-as-errors` が追加昇格として働きます。
 
 `input` と `output` の相対パスは `config` の親ディレクトリ基準です。`output` を設定すると、短い標準出力と同じ内容をファイルにも保存します。CLIの位置引数、`--output`、`--ignore`、`--warnings-as-errors` で設定を上書きできます。
 

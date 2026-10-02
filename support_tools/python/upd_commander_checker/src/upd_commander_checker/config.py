@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .config_error import ConfigError
 from .config_model import CheckerConfig
+from .gate_policy import normalize_fail_on, normalize_severity_overrides
 from .rule_selection import normalize_enabled_rules
 
 
@@ -30,6 +31,14 @@ def load_config() -> CheckerConfig:
         raise ConfigError("invalid config field: ignore")
     if "warnings_as_errors" in data and not isinstance(data["warnings_as_errors"], bool):
         raise ConfigError("invalid config field: warnings_as_errors")
+    try:
+        fail_on = normalize_fail_on(data["fail_on"]) if "fail_on" in data else None
+    except ValueError as exc:
+        raise ConfigError("invalid config field: fail_on") from exc
+    try:
+        severity_overrides = normalize_severity_overrides(data.get("severity_overrides", {}))
+    except ValueError as exc:
+        raise ConfigError("invalid config field: severity_overrides") from exc
     common_roots = _normalize_common_roots(data.get("common_roots", ["common", "shared"]))
     if "upd301_max_inputs" in data and (
         type(data["upd301_max_inputs"]) is not int or data["upd301_max_inputs"] < 1
@@ -82,6 +91,8 @@ def load_config() -> CheckerConfig:
         output_path=output_path,
         ignore=ignore,
         warnings_as_errors=warnings_as_errors,
+        fail_on=fail_on,
+        severity_overrides=severity_overrides,
         common_roots=common_roots,
         enabled_rules=enabled_rules,
         upd301_max_inputs=upd301_max_inputs,
