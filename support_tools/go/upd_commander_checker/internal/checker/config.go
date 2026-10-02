@@ -9,17 +9,19 @@ import (
 )
 
 type Config struct {
-	Input                     string    `json:"input"`
-	Output                    string    `json:"output"`
-	Ignore                    []string  `json:"ignore"`
-	WarningsAsErrors          bool      `json:"warnings_as_errors"`
-	CommonRoots               []string  `json:"common_roots"`
-	Upd301MaxInputs           int       `json:"upd301_max_inputs"`
-	FlatLayerMinFiles         int       `json:"flat_layer_min_files"`
-	FlatLayerMinDirectPercent int       `json:"flat_layer_min_direct_percent"`
-	ModelGroupMinItems        int       `json:"model_group_min_items"`
-	ModelGroupMinOccurrences  int       `json:"model_group_min_occurrences"`
-	EnabledRules              *[]string `json:"enabled_rules"`
+	Input                     string            `json:"input"`
+	Output                    string            `json:"output"`
+	Ignore                    []string          `json:"ignore"`
+	WarningsAsErrors          bool              `json:"warnings_as_errors"`
+	FailOn                    *[]string         `json:"fail_on"`
+	SeverityOverrides         map[string]string `json:"severity_overrides"`
+	CommonRoots               []string          `json:"common_roots"`
+	Upd301MaxInputs           int               `json:"upd301_max_inputs"`
+	FlatLayerMinFiles         int               `json:"flat_layer_min_files"`
+	FlatLayerMinDirectPercent int               `json:"flat_layer_min_direct_percent"`
+	ModelGroupMinItems        int               `json:"model_group_min_items"`
+	ModelGroupMinOccurrences  int               `json:"model_group_min_occurrences"`
+	EnabledRules              *[]string         `json:"enabled_rules"`
 }
 
 func LoadConfig() (Config, error) {
@@ -47,6 +49,28 @@ func LoadConfig() (Config, error) {
 	}
 	if value, ok := raw["warnings_as_errors"]; ok && !decodeConfigBool(value, &config.WarningsAsErrors) {
 		return Config{}, fmt.Errorf("invalid config field: warnings_as_errors")
+	}
+	if value, ok := raw["fail_on"]; ok {
+		var severities []string
+		if !decodeConfigStrings(value, &severities) {
+			return Config{}, fmt.Errorf("invalid config field: fail_on")
+		}
+		normalized, valid := NormalizeFailOn(severities)
+		if !valid {
+			return Config{}, fmt.Errorf("invalid config field: fail_on")
+		}
+		config.FailOn = &normalized
+	}
+	if value, ok := raw["severity_overrides"]; ok {
+		var overrides map[string]string
+		if isJSONNull(value) || json.Unmarshal(value, &overrides) != nil || overrides == nil {
+			return Config{}, fmt.Errorf("invalid config field: severity_overrides")
+		}
+		normalized, valid := NormalizeSeverityOverrides(overrides)
+		if !valid {
+			return Config{}, fmt.Errorf("invalid config field: severity_overrides")
+		}
+		config.SeverityOverrides = normalized
 	}
 	if value, ok := raw["common_roots"]; ok {
 		var roots []string
