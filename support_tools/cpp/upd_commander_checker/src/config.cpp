@@ -1,6 +1,7 @@
 #include "config.hpp"
 
 #include "executable_path.hpp"
+#include "gate_policy.hpp"
 #include "rule_selection.hpp"
 #include "strict_json.hpp"
 
@@ -181,6 +182,32 @@ Config load_config(const std::string& executable_path) {
     const std::string output = read_string_field(root, "output");
     const std::vector<std::string> ignore = read_string_array_field(root, "ignore");
     const bool warnings_as_errors = read_bool_field(root, "warnings_as_errors");
+    bool fail_on_configured = false;
+    std::vector<std::string> fail_on =
+        read_string_array_field(root, "fail_on", &fail_on_configured);
+    if (fail_on_configured) {
+        std::vector<std::string> normalized;
+        if (!normalize_fail_on(fail_on, &normalized)) {
+            throw ConfigError("invalid config field: fail_on");
+        }
+        fail_on = std::move(normalized);
+    }
+    std::map<std::string, std::string> severity_overrides;
+    if (const JsonValue* value = find_field(root, "severity_overrides")) {
+        if (value->type != JsonValue::Type::object) {
+            throw ConfigError("invalid config field: severity_overrides");
+        }
+        std::map<std::string, std::string> raw_overrides;
+        for (const auto& item : value->object_value) {
+            if (item.second.type != JsonValue::Type::string) {
+                throw ConfigError("invalid config field: severity_overrides");
+            }
+            raw_overrides[item.first] = item.second.string_value;
+        }
+        if (!normalize_severity_overrides(raw_overrides, &severity_overrides)) {
+            throw ConfigError("invalid config field: severity_overrides");
+        }
+    }
     std::vector<std::string> common_roots = {"common", "shared"};
     if (find_field(root, "common_roots") != nullptr) {
         common_roots = normalize_common_roots(read_string_array_field(root, "common_roots"));
@@ -214,6 +241,9 @@ Config load_config(const std::string& executable_path) {
     config.output = output.empty() ? "" : resolve_path(base, output);
     config.ignore = ignore;
     config.warnings_as_errors = warnings_as_errors;
+    config.fail_on = std::move(fail_on);
+    config.fail_on_configured = fail_on_configured;
+    config.severity_overrides = std::move(severity_overrides);
     config.common_roots = std::move(common_roots);
     config.upd301_max_inputs = upd301_max_inputs;
     config.flat_layer_min_files = flat_layer_min_files;

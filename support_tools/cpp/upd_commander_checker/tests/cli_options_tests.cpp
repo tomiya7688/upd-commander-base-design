@@ -41,6 +41,13 @@ void test_multiple_targets_fail() {
     assert(fails_with({"checker", "first", "second"}, "multiple targets"));
 }
 
+void test_invalid_gate_arguments_fail() {
+    assert(fails_with({"checker", "--fail-on", "fatal", "."}, "--fail-on"));
+    assert(fails_with(
+        {"checker", "--severity-override", "UPD101=fatal", "."},
+        "--severity-override"));
+}
+
 void test_valid_arguments_override_config() {
     upd_checker::Config config;
     config.input = "configured";
@@ -70,12 +77,43 @@ void test_valid_arguments_override_config() {
     assert(options.warnings_as_errors);
 }
 
+void test_gate_policy_arguments_override_config() {
+    upd_checker::Config config;
+    config.fail_on = {"error"};
+    config.fail_on_configured = true;
+    config.severity_overrides = {{"UPD203", "error"}};
+    std::vector<std::string> arguments = {
+        "checker", "--fail-on", "warning,attention",
+        "--severity-override", "upd203=warning", "."};
+    std::vector<char*> argv;
+    for (auto& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    const auto options = upd_checker::parse_cli(
+        static_cast<int>(argv.size()), argv.data(), config);
+    assert(options.fail_on_configured);
+    assert((options.fail_on == std::vector<std::string>{"warning", "attention"}));
+    assert(options.severity_overrides.at("UPD203") == "warning");
+
+    arguments = {"checker", "--fail-on", "", "."};
+    argv.clear();
+    for (auto& argument : arguments) {
+        argv.push_back(argument.data());
+    }
+    const auto empty_gate = upd_checker::parse_cli(
+        static_cast<int>(argv.size()), argv.data(), config);
+    assert(empty_gate.fail_on_configured);
+    assert(empty_gate.fail_on.empty());
+}
+
 }  // namespace
 
 int main() {
     test_unknown_option_fails();
     test_missing_values_fail();
     test_multiple_targets_fail();
+    test_invalid_gate_arguments_fail();
     test_valid_arguments_override_config();
+    test_gate_policy_arguments_override_config();
     return 0;
 }
