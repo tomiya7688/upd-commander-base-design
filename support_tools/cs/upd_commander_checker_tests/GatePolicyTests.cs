@@ -7,7 +7,10 @@ public sealed class GatePolicyTests
     [Fact]
     public void NormalizesGateAndOverrideInputs()
     {
-        Assert.Equal(["error", "warning"], GatePolicy.NormalizeFailOn([" ERROR ", "warning", "error"]));
+        Assert.Equal(
+            ["error", "warning"],
+            GatePolicy.NormalizeFailOn([" ERROR ", "warning", "error"])
+        );
         Assert.Empty(GatePolicy.ParseFailOnArgument(""));
 
         var parsed = GatePolicy.ParseSeverityOverrideArgument("upd203=WARNING");
@@ -20,9 +23,9 @@ public sealed class GatePolicyTests
     {
         Assert.Throws<FormatException>(() => GatePolicy.NormalizeFailOn(["fatal"]));
         Assert.Throws<FormatException>(() =>
-            GatePolicy.NormalizeSeverityOverrides(
-                [new KeyValuePair<string, string>("bad", "error")]
-            )
+            GatePolicy.NormalizeSeverityOverrides([
+                new KeyValuePair<string, string>("bad", "error"),
+            ])
         );
         Assert.Throws<FormatException>(() =>
             GatePolicy.ParseSeverityOverrideArgument("UPD101 warning")

@@ -14,6 +14,7 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"fail_on\":[\"fatal\"]}", "fail_on")]
     [InlineData("{\"severity_overrides\":null}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":[]}", "severity_overrides")]
+    [InlineData("{\"severity_overrides\":{\"UPD101\":null}}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":{\"UPD101\":\"fatal\"}}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":{\"bad\":\"error\"}}", "severity_overrides")]
     [InlineData("{\"enabled_rules\":null}", "enabled_rules")]

@@ -34,11 +34,13 @@ internal static class ConfigFieldValidator
         try
         {
             GatePolicy.NormalizeFailOn(
-                value.EnumerateArray().Select(item =>
-                    item.ValueKind == JsonValueKind.String
-                        ? item.GetString()!
-                        : throw new ConfigException($"invalid config field: {input.Name}")
-                )
+                value
+                    .EnumerateArray()
+                    .Select(item =>
+                        item.ValueKind == JsonValueKind.String
+                            ? item.GetString()!
+                            : throw new ConfigException($"invalid config field: {input.Name}")
+                    )
             );
         }
         catch (FormatException)
@@ -60,14 +62,14 @@ internal static class ConfigFieldValidator
         try
         {
             GatePolicy.NormalizeSeverityOverrides(
-                value.EnumerateObject().Select(item =>
-                    new KeyValuePair<string, string>(
+                value
+                    .EnumerateObject()
+                    .Select(item => new KeyValuePair<string, string>(
                         item.Name,
                         item.Value.ValueKind == JsonValueKind.String
                             ? item.Value.GetString()!
                             : throw new ConfigException($"invalid config field: {input.Name}")
-                    )
-                )
+                    ))
             );
         }
         catch (FormatException)

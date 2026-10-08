@@ -75,13 +75,7 @@ public sealed class CliParserTests
         };
         var options = CliParser.Parse(
             new CliParseInput(
-                [
-                    "--fail-on",
-                    "warning,attention",
-                    "--severity-override",
-                    "upd203=warning",
-                    ".",
-                ],
+                ["--fail-on", "warning,attention", "--severity-override", "upd203=warning", "."],
                 config
             )
         );
@@ -94,9 +88,7 @@ public sealed class CliParserTests
     [Fact]
     public void EmptyFailOnArgumentExplicitlyDisablesFindingGate()
     {
-        var options = CliParser.Parse(
-            new CliParseInput(["--fail-on", ""], new CheckerConfig())
-        );
+        var options = CliParser.Parse(new CliParseInput(["--fail-on", ""], new CheckerConfig()));
 
         Assert.True(options.FailOnConfigured);
         Assert.Empty(options.FailOn);

@@ -4,8 +4,12 @@ namespace UpdCommanderChecker;
 
 internal static class GatePolicy
 {
-    private static readonly HashSet<string> SupportedSeverities =
-        new(StringComparer.Ordinal) { "error", "warning", "attention" };
+    private static readonly HashSet<string> SupportedSeverities = new(StringComparer.Ordinal)
+    {
+        "error",
+        "warning",
+        "attention",
+    };
 
     private static readonly Regex RulePattern = new(
         @"^UPD[0-9]{3,}$",
@@ -64,9 +68,9 @@ internal static class GatePolicy
         {
             throw new FormatException("expected UPDnnn=severity");
         }
-        var normalized = NormalizeSeverityOverrides(
-            [new KeyValuePair<string, string>(value[..separator], value[(separator + 1)..])]
-        );
+        var normalized = NormalizeSeverityOverrides([
+            new KeyValuePair<string, string>(value[..separator], value[(separator + 1)..]),
+        ]);
         return normalized.Single();
     }
 
@@ -78,7 +82,10 @@ internal static class GatePolicy
         return findings
             .Select(finding =>
                 overrides.TryGetValue(finding.Code.ToUpperInvariant(), out var severity)
-                    ? finding with { Severity = severity }
+                    ? finding with
+                    {
+                        Severity = severity,
+                    }
                     : finding
             )
             .ToList();

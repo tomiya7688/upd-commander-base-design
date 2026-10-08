@@ -78,9 +78,7 @@ internal static class Program
             lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
         }
 
-        var failOn = options.FailOnConfigured
-            ? options.FailOn
-            : LegacyFailOn(options);
+        var failOn = options.FailOnConfigured ? options.FailOn : LegacyFailOn(options);
         var failed = GatePolicy.ShouldFail(findings, failOn);
         if (failed)
         {

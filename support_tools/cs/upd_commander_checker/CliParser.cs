@@ -11,9 +11,7 @@ internal static class CliParser
         var ignores = new List<string>(config.Ignore);
         var warningsAsErrors = config.WarningsAsErrors;
         var attentionsAsErrors = false;
-        var failOn = config.FailOn is null
-            ? new List<string>()
-            : new List<string>(config.FailOn);
+        var failOn = config.FailOn is null ? new List<string>() : new List<string>(config.FailOn);
         var failOnConfigured = config.FailOn is not null;
         var severityOverrides = new Dictionary<string, string>(
             config.SeverityOverrides,
@@ -69,7 +67,9 @@ internal static class CliParser
                 }
                 catch (FormatException exception)
                 {
-                    throw new CliUsageException($"invalid value for --fail-on: {exception.Message}");
+                    throw new CliUsageException(
+                        $"invalid value for --fail-on: {exception.Message}"
+                    );
                 }
                 failOnConfigured = true;
             }
