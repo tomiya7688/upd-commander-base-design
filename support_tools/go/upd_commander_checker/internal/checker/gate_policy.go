@@ -2,8 +2,16 @@ package checker
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 )
+
+type GateException struct {
+	Rule   string `json:"rule"`
+	Path   string `json:"path"`
+	Reason string `json:"reason"`
+	Line   *int   `json:"line,omitempty"`
+}
 
 var supportedSeverities = map[string]struct{}{
 	"error": {}, "warning": {}, "attention": {},
@@ -48,6 +56,57 @@ func NormalizeSeverityOverrides(values map[string]string) (map[string]string, bo
 		result[code] = severity
 	}
 	return result, true
+}
+
+func NormalizeGateExceptions(values []GateException) ([]GateException, bool) {
+	result := make([]GateException, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		value.Rule = strings.ToUpper(value.Rule)
+		value.Reason = strings.TrimSpace(value.Reason)
+		if !updRulePattern.MatchString(value.Rule) || !isExactRelativePath(value.Path) || value.Reason == "" || strings.ContainsAny(value.Reason, "\r\n") {
+			return nil, false
+		}
+		if value.Line != nil && *value.Line < 1 {
+			return nil, false
+		}
+		key := value.Rule + "\x00" + value.Path
+		if value.Line != nil {
+			key += "\x00" + strconv.Itoa(*value.Line)
+		}
+		if _, exists := seen[key]; exists {
+			return nil, false
+		}
+		seen[key] = struct{}{}
+		result = append(result, value)
+	}
+	return result, true
+}
+
+func isExactRelativePath(value string) bool {
+	if value == "" || strings.ContainsAny(value, `\\:*?[]`) || strings.HasPrefix(value, "/") {
+		return false
+	}
+	for _, segment := range strings.Split(value, "/") {
+		if segment == "" || segment == "." || segment == ".." {
+			return false
+		}
+	}
+	return true
+}
+
+func GateExceptionReason(finding Finding, exceptions []GateException) string {
+	for _, exception := range exceptions {
+		if exception.Rule == strings.ToUpper(finding.Code) && exception.Path == finding.Path && exception.Line != nil && *exception.Line == finding.Line {
+			return exception.Reason
+		}
+	}
+	for _, exception := range exceptions {
+		if exception.Rule == strings.ToUpper(finding.Code) && exception.Path == finding.Path && exception.Line == nil {
+			return exception.Reason
+		}
+	}
+	return ""
 }
 
 func ParseSeverityOverrideArgument(value string) (string, string, bool) {

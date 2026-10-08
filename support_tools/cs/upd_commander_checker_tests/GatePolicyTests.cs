@@ -48,4 +48,28 @@ public sealed class GatePolicyTests
         Assert.True(GatePolicy.ShouldFail(effective, ["warning"]));
         Assert.False(GatePolicy.ShouldFail(effective, []));
     }
+
+    [Fact]
+    public void GateExceptionMatchesRulePathAndOptionalLine()
+    {
+        var finding = new Finding("src/a.cs", 4, "UPD203", "direct I/O", "error");
+        var exceptions = GatePolicy.NormalizeGateExceptions([
+            new GateException("upd203", "src/a.cs", "approved", 4),
+            new GateException("UPD203", "src/a.cs", "file allowance", null),
+            new GateException("UPD203", "src/b.cs", "file allowance", null),
+        ]);
+
+        Assert.Equal("approved", GatePolicy.GateExceptionReason(finding, exceptions));
+        Assert.Null(GatePolicy.GateExceptionReason(finding with { Line = 5 }, exceptions.Take(1)));
+        Assert.Equal(
+            "file allowance",
+            GatePolicy.GateExceptionReason(finding with { Line = 5 }, exceptions)
+        );
+        Assert.True(GatePolicy.ShouldFail([finding], ["error"]));
+        Assert.Throws<FormatException>(() =>
+            GatePolicy.NormalizeGateExceptions([
+                new GateException("UPD203", "../a.cs", "invalid", null),
+            ])
+        );
+    }
 }

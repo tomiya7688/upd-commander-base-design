@@ -4,6 +4,7 @@ from pathlib import Path
 from .config import ConfigError, load_config
 from .gate_policy import (
     apply_severity_overrides,
+    exception_reason,
     parse_fail_on_argument,
     parse_severity_override_argument,
     should_fail,
@@ -76,8 +77,11 @@ def main() -> int:
         level = {"error": "E", "warning": "W", "attention": "A"}.get(
             finding.severity, "A"
         )
+        display_path = _display_path(finding.path, target)
+        reason = exception_reason(finding, display_path, config.gate_exceptions)
+        suffix = f" [gate exception: {reason}]" if reason is not None else ""
         lines.append(
-            f"{level} {finding.code} {_display_path(finding.path, target)}:{finding.line} {finding.message}"
+            f"{level} {finding.code} {display_path}:{finding.line} {finding.message}{suffix}"
         )
 
     error_count = sum(item.severity == "error" for item in findings)
@@ -90,7 +94,15 @@ def main() -> int:
         if attentions_as_errors:
             legacy_fail_on.append("attention")
         fail_on = tuple(legacy_fail_on)
-    failed = should_fail(findings, fail_on or ())
+    gate_findings = [
+        finding
+        for finding in findings
+        if exception_reason(
+            finding, _display_path(finding.path, target), config.gate_exceptions
+        )
+        is None
+    ]
+    failed = should_fail(gate_findings, fail_on or ())
     if failed:
         lines.append(f"FAIL e={error_count} w={warning_count} a={attention_count}")
         return finish_report(lines, output, 1)

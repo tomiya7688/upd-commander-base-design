@@ -21,6 +21,10 @@ func TestInvalidGateConfigReturnsError(t *testing.T) {
 		`{"fail_on":null}`, `{"fail_on":"error"}`, `{"fail_on":["fatal"]}`,
 		`{"severity_overrides":null}`, `{"severity_overrides":[]}`,
 		`{"severity_overrides":{"bad":"error"}}`, `{"severity_overrides":{"UPD101":"fatal"}}`,
+		`{"gate_exceptions":null}`,
+		`{"gate_exceptions":[{"rule":"UPD203","path":"../a.go","reason":"bad"}]}`,
+		`{"gate_exceptions":[{"rule":"UPD203","path":"a.go","reason":""}]}`,
+		`{"gate_exceptions":[{"rule":"UPD203","path":"a.go","reason":"ok","extra":1}]}`,
 	} {
 		t.Run(content, func(t *testing.T) {
 			if err := writeGateConfigAndChdir(t, content); err != nil {
@@ -30,6 +34,16 @@ func TestInvalidGateConfigReturnsError(t *testing.T) {
 				t.Fatal("expected config error")
 			}
 		})
+	}
+}
+
+func TestLoadsGateExceptions(t *testing.T) {
+	if err := writeGateConfigAndChdir(t, `{"gate_exceptions":[{"rule":"upd203","path":"src/a.go","line":8,"reason":"approved"}]}`); err != nil {
+		t.Fatal(err)
+	}
+	config, err := LoadConfig()
+	if err != nil || len(config.GateExceptions) != 1 || config.GateExceptions[0].Rule != "UPD203" || config.GateExceptions[0].Line == nil || *config.GateExceptions[0].Line != 8 {
+		t.Fatalf("gate exceptions not loaded: %#v, %v", config.GateExceptions, err)
 	}
 }
 

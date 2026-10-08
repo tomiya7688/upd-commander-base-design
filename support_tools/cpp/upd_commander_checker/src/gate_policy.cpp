@@ -41,6 +41,28 @@ std::string trim_ascii(std::string value) {
     return value;
 }
 
+bool is_exact_relative_path(const std::string& value) {
+    if (value.empty() || value.front() == '/' ||
+        value.find_first_of("\\:*?[]") != std::string::npos) {
+        return false;
+    }
+    std::size_t start = 0;
+    while (start <= value.size()) {
+        const std::size_t separator = value.find('/', start);
+        const std::string segment = value.substr(
+            start,
+            separator == std::string::npos ? std::string::npos : separator - start);
+        if (segment.empty() || segment == "." || segment == "..") {
+            return false;
+        }
+        if (separator == std::string::npos) {
+            break;
+        }
+        start = separator + 1;
+    }
+    return true;
+}
+
 }  // namespace
 
 bool normalize_fail_on(
@@ -95,6 +117,51 @@ bool normalize_severity_overrides(
         (*normalized)[rule] = severity;
     }
     return true;
+}
+
+bool normalize_gate_exceptions(
+    const std::vector<GateException>& values,
+    std::vector<GateException>* normalized) {
+    normalized->clear();
+    std::set<std::string> seen;
+    for (auto value : values) {
+        value.rule = upper_ascii(value.rule);
+        value.reason = trim_ascii(value.reason);
+        if (!is_upd_rule(value.rule) || !is_exact_relative_path(value.path) ||
+            value.reason.empty() || value.reason.find_first_of("\r\n") != std::string::npos ||
+            value.line < 0) {
+            return false;
+        }
+        std::string key = value.rule;
+        key.push_back('\0');
+        key += value.path;
+        key.push_back('\0');
+        key += std::to_string(value.line);
+        if (!seen.insert(key).second) {
+            return false;
+        }
+        normalized->push_back(std::move(value));
+    }
+    return true;
+}
+
+std::string gate_exception_reason(
+    const Finding& finding,
+    const std::vector<GateException>& exceptions) {
+    for (const auto& exception : exceptions) {
+        if (exception.rule == upper_ascii(finding.code) &&
+            exception.path == finding.path &&
+            exception.line != 0 && exception.line == finding.line) {
+            return exception.reason;
+        }
+    }
+    for (const auto& exception : exceptions) {
+        if (exception.rule == upper_ascii(finding.code) &&
+            exception.path == finding.path && exception.line == 0) {
+            return exception.reason;
+        }
+    }
+    return {};
 }
 
 bool parse_severity_override_argument(

@@ -2,6 +2,14 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class GateException:
+    rule: str
+    path: str
+    reason: str
+    line: int | None = None
+
+
+@dataclass(frozen=True)
 class CheckerConfig:
     input_path: str = "."
     output_path: str = ""
@@ -9,6 +17,7 @@ class CheckerConfig:
     warnings_as_errors: bool = False
     fail_on: tuple[str, ...] | None = None
     severity_overrides: tuple[tuple[str, str], ...] = ()
+    gate_exceptions: tuple[GateException, ...] = ()
     common_roots: tuple[str, ...] = ("common", "shared")
     enabled_rules: tuple[str, ...] | None = None
     upd301_max_inputs: int = 2

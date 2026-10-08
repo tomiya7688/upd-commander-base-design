@@ -38,6 +38,7 @@ internal static class ConfigLoader
             config.SeverityOverrides = GatePolicy.NormalizeSeverityOverrides(
                 config.SeverityOverrides
             );
+            config.GateExceptions = GatePolicy.NormalizeGateExceptions(config.GateExceptions);
 
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(

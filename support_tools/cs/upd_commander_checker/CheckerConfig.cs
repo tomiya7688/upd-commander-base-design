@@ -22,6 +22,9 @@ internal sealed class CheckerConfig
     [JsonPropertyName("severity_overrides")]
     public Dictionary<string, string> SeverityOverrides { get; set; } = new();
 
+    [JsonPropertyName("gate_exceptions")]
+    public List<GateException> GateExceptions { get; set; } = new();
+
     [JsonPropertyName("common_roots")]
     public List<string> CommonRoots { get; set; } = ["common", "shared"];
 

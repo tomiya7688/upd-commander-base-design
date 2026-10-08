@@ -42,5 +42,17 @@ int main() {
     assert(!upd_checker::should_fail(effective, {"error"}));
     assert(upd_checker::should_fail(effective, {"warning"}));
     assert(!upd_checker::should_fail(effective, {}));
+    std::vector<upd_checker::GateException> exceptions;
+    assert(upd_checker::normalize_gate_exceptions(
+        {{"upd203", "src/a.cpp", "approved", 2},
+         {"UPD203", "src/a.cpp", "file allowance", 0},
+         {"UPD203", "src/b.cpp", "file allowance", 0}},
+        &exceptions));
+    assert(upd_checker::gate_exception_reason(findings.front(), exceptions) == "approved");
+    auto different_line = findings.front();
+    different_line.line = 3;
+    assert(upd_checker::gate_exception_reason(different_line, exceptions) == "file allowance");
+    assert(!upd_checker::normalize_gate_exceptions(
+        {{"UPD203", "../src/a.cpp", "bad", 0}}, &exceptions));
     return 0;
 }

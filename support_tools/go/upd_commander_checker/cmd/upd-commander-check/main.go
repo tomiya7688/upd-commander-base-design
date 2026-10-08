@@ -108,6 +108,7 @@ func main() {
 	warnings := 0
 	attentions := 0
 	lines := []string{}
+	gateFindings := make([]checker.Finding, 0, len(findings))
 	for _, finding := range findings {
 		level := "A"
 		switch finding.Severity {
@@ -120,10 +121,17 @@ func main() {
 		default:
 			attentions++
 		}
-		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message))
+		reason := checker.GateExceptionReason(finding, config.GateExceptions)
+		suffix := ""
+		if reason != "" {
+			suffix = fmt.Sprintf(" [gate exception: %s]", reason)
+		} else {
+			gateFindings = append(gateFindings, finding)
+		}
+		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s%s", level, finding.Code, finding.Path, finding.Line, finding.Message, suffix))
 	}
 
-	if checker.ShouldFail(findings, gate) {
+	if checker.ShouldFail(gateFindings, gate) {
 		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
 		finish(finishInput{lines: lines, output: output, code: 1})
 	}
