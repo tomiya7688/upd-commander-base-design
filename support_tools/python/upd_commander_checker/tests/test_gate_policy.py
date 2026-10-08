@@ -112,7 +112,7 @@ class GatePolicyTest(unittest.TestCase):
             with patch("sys.argv", ["checker", str(target)]), patch(
                 "upd_commander_checker.cli.load_config", return_value=config
             ), patch("upd_commander_checker.cli.scan_path", return_value=[finding]), redirect_stdout(output):
-                self.assertEqual(0, main())
+                self.assertEqual(0, main(), output.getvalue())
             self.assertIn("E UPD203 src/sample.py:1 direct I/O [gate exception: approved boundary]", output.getvalue())
             self.assertIn("OK", output.getvalue())
 

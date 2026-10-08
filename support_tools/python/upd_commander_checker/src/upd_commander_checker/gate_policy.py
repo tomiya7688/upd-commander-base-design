@@ -1,7 +1,7 @@
 import re
 from dataclasses import replace
 
-from .config_model import GateException
+from .gate_exception import GateException
 from .finding import Finding
 
 SEVERITIES = frozenset({"error", "warning", "attention"})
