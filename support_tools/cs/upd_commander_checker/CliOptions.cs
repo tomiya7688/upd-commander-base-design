@@ -5,5 +5,8 @@ internal sealed record CliOptions(
     string Output,
     IReadOnlyList<string> Ignores,
     bool WarningsAsErrors,
-    bool AttentionsAsErrors
+    bool AttentionsAsErrors,
+    IReadOnlyList<string> FailOn,
+    bool FailOnConfigured,
+    IReadOnlyDictionary<string, string> SeverityOverrides
 );

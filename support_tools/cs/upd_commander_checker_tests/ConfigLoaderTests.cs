@@ -10,6 +10,12 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"ignore\":null}", "ignore")]
     [InlineData("{\"ignore\":[null]}", "ignore")]
     [InlineData("{\"warnings_as_errors\":null}", "warnings_as_errors")]
+    [InlineData("{\"fail_on\":null}", "fail_on")]
+    [InlineData("{\"fail_on\":[\"fatal\"]}", "fail_on")]
+    [InlineData("{\"severity_overrides\":null}", "severity_overrides")]
+    [InlineData("{\"severity_overrides\":[]}", "severity_overrides")]
+    [InlineData("{\"severity_overrides\":{\"UPD101\":\"fatal\"}}", "severity_overrides")]
+    [InlineData("{\"severity_overrides\":{\"bad\":\"error\"}}", "severity_overrides")]
     [InlineData("{\"enabled_rules\":null}", "enabled_rules")]
     [InlineData("{\"input\":1}", "input")]
     [InlineData("{\"warnings_as_errors\":\"true\"}", "warnings_as_errors")]
@@ -112,6 +118,29 @@ public sealed class ConfigLoaderTests
         );
         Assert.Equal(4, configured.ModelGroupMinItems);
         Assert.Equal(3, configured.ModelGroupMinOccurrences);
+    }
+
+    [Fact]
+    public void GatePolicyLoadsAndNormalizes()
+    {
+        var config = ConfigLoader.LoadFromPath(
+            WriteConfig(
+                "{\"fail_on\":[\" ERROR \",\"warning\",\"error\"],"
+                    + "\"severity_overrides\":{\"upd203\":\"WARNING\"}}"
+            )
+        );
+
+        Assert.Equal(["error", "warning"], config.FailOn);
+        Assert.Equal("warning", config.SeverityOverrides["UPD203"]);
+    }
+
+    [Fact]
+    public void ExplicitEmptyGateIsNotTreatedAsMissing()
+    {
+        var config = ConfigLoader.LoadFromPath(WriteConfig("{\"fail_on\":[]}"));
+
+        Assert.NotNull(config.FailOn);
+        Assert.Empty(config.FailOn);
     }
 
     [Fact]
