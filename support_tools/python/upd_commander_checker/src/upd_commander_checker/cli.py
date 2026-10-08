@@ -117,6 +117,6 @@ def main() -> int:
 def _display_path(path: Path, target: Path) -> str:
     root = target if target.is_dir() else target.parent
     try:
-        return path.relative_to(root).as_posix()
+        return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return path.as_posix()
