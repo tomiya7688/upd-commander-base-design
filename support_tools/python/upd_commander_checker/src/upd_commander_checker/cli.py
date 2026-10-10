@@ -9,6 +9,13 @@ from .baseline import (
     write_baseline,
 )
 from .config import ConfigError, load_config
+from .gate_policy import (
+    apply_severity_overrides,
+    exception_reason,
+    parse_fail_on_argument,
+    parse_severity_override_argument,
+    should_fail,
+)
 from .report_output import finish_report
 from .rule_selection import filter_enabled_findings
 from .scanner import scan_path
@@ -24,11 +31,16 @@ def build_parser() -> argparse.ArgumentParser:
     baseline_group = parser.add_mutually_exclusive_group()
     baseline_group.add_argument("--write-baseline", nargs="?", const="", metavar="PATH")
     baseline_group.add_argument("--baseline", metavar="PATH")
+    parser.add_argument("--fail-on", default=None, metavar="SEVERITIES")
+    parser.add_argument(
+        "--severity-override", action="append", default=[], metavar="RULE=SEVERITY"
+    )
     return parser
 
 
 def main() -> int:
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
     try:
         config = load_config()
     except ConfigError as exc:
@@ -39,6 +51,19 @@ def main() -> int:
     ignores = tuple(config.ignore) + tuple(args.ignore)
     warnings_as_errors = config.warnings_as_errors or args.warnings_as_errors
     attentions_as_errors = args.attentions_as_errors
+    explicit_gate = args.fail_on is not None or config.fail_on is not None
+    try:
+        fail_on = (
+            parse_fail_on_argument(args.fail_on)
+            if args.fail_on is not None
+            else config.fail_on
+        )
+        overrides = dict(config.severity_overrides)
+        for item in args.severity_override:
+            rule, severity = parse_severity_override_argument(item)
+            overrides[rule] = severity
+    except ValueError as exc:
+        parser.error(str(exc))
 
     if not target.exists():
         return finish_report([f"E UPD000 {target}: missing"], output, 2)
@@ -56,6 +81,7 @@ def main() -> int:
         ),
         config.enabled_rules,
     )
+    findings = apply_severity_overrides(findings, overrides)
     finding_records = _baseline_records(findings, target)
     statuses: dict[str, str] = {}
     resolved: list[dict[str, object]] = []
@@ -80,7 +106,6 @@ def main() -> int:
     except (BaselineError, OSError, ValueError) as exc:
         print(f"BASELINE ERROR: {exc}")
         return 2
-
     lines = []
     for finding in findings:
         level = {"error": "E", "warning": "W", "attention": "A"}.get(
@@ -90,6 +115,9 @@ def main() -> int:
             f"{level} {finding.code} {_display_path(finding.path, target)}:"
             f"{finding.line} {finding.message}"
         )
+        display_path = _display_path(finding.path, target)
+        reason = exception_reason(finding, display_path, config.gate_exceptions)
+        suffix = f" [gate exception: {reason}]" if reason is not None else ""
         if args.baseline is not None:
             identity = finding_fingerprint(
                 finding.code,
@@ -98,7 +126,7 @@ def main() -> int:
                 finding.context,
             )
             line = f"{statuses[identity]} {line}"
-        lines.append(line)
+        lines.append(line + suffix)
 
     for entry in resolved:
         level = {"error": "E", "warning": "W", "attention": "A"}.get(
@@ -113,11 +141,22 @@ def main() -> int:
     error_count = sum(item.severity == "error" for item in findings)
     warning_count = sum(item.severity == "warning" for item in findings)
     attention_count = sum(item.severity == "attention" for item in findings)
-    failed = (
-        error_count > 0
-        or warnings_as_errors and warning_count > 0
-        or attentions_as_errors and attention_count > 0
-    )
+    if not explicit_gate:
+        legacy_fail_on = ["error"]
+        if warnings_as_errors:
+            legacy_fail_on.append("warning")
+        if attentions_as_errors:
+            legacy_fail_on.append("attention")
+        fail_on = tuple(legacy_fail_on)
+    gate_findings = [
+        finding
+        for finding in findings
+        if exception_reason(
+            finding, _display_path(finding.path, target), config.gate_exceptions
+        )
+        is None
+    ]
+    failed = should_fail(gate_findings, fail_on or ())
     if failed:
         lines.append(f"FAIL e={error_count} w={warning_count} a={attention_count}")
         return finish_report(lines, output, 1)
@@ -132,7 +171,7 @@ def main() -> int:
 def _display_path(path: Path, target: Path) -> str:
     root = _scan_root(target)
     try:
-        return path.relative_to(root).as_posix()
+        return path.resolve().relative_to(root.resolve()).as_posix()
     except ValueError:
         return path.as_posix()
 

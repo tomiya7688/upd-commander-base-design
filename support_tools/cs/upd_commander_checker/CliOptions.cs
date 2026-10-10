@@ -6,6 +6,9 @@ internal sealed record CliOptions(
     IReadOnlyList<string> Ignores,
     bool WarningsAsErrors,
     bool AttentionsAsErrors,
+    IReadOnlyList<string> FailOn,
+    bool FailOnConfigured,
+    IReadOnlyDictionary<string, string> SeverityOverrides,
     bool WriteBaseline = false,
     string WriteBaselinePath = "",
     string BaselinePath = ""

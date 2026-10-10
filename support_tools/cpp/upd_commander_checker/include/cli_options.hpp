@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 #include <vector>
 
 #include "cli_usage_error.hpp"
@@ -17,6 +18,9 @@ struct CliOptions {
     bool write_baseline = false;
     std::string write_baseline_path;
     std::string baseline_path;
+    std::vector<std::string> fail_on;
+    bool fail_on_configured = false;
+    std::map<std::string, std::string> severity_overrides;
 };
 
 CliOptions parse_cli(int argc, char* argv[], const Config& config);

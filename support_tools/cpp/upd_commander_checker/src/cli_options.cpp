@@ -1,4 +1,5 @@
 #include "cli_options.hpp"
+#include "gate_policy.hpp"
 
 #include <string>
 
@@ -26,6 +27,9 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
         config.warnings_as_errors,
         false,
     };
+    options.fail_on = config.fail_on;
+    options.fail_on_configured = config.fail_on_configured;
+    options.severity_overrides = config.severity_overrides;
     bool target_specified = false;
 
     for (int index = 1; index < argc; ++index) {
@@ -48,6 +52,21 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
             options.warnings_as_errors = true;
         } else if (argument == "--attentions-as-errors") {
             options.attentions_as_errors = true;
+        } else if (argument == "--fail-on") {
+            const std::string value = read_value(index, argc, argv, argument);
+            if (!parse_fail_on_argument(value, &options.fail_on)) {
+                throw CliUsageError("invalid value for --fail-on");
+            }
+            options.fail_on_configured = true;
+        } else if (argument == "--severity-override") {
+            const std::string value = read_value(index, argc, argv, argument);
+            std::string rule;
+            std::string severity;
+            if (!parse_severity_override_argument(value, &rule, &severity)) {
+                throw CliUsageError(
+                    "invalid value for --severity-override; expected UPDnnn=severity");
+            }
+            options.severity_overrides[rule] = severity;
         } else if (starts_with_dash(argument)) {
             throw CliUsageError("unknown option: " + argument);
         } else if (target_specified) {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include "gate_policy.hpp"
 #include <vector>
 
 #include "config_error.hpp"
@@ -12,6 +14,10 @@ struct Config {
     std::string output;
     std::vector<std::string> ignore;
     bool warnings_as_errors = false;
+    std::vector<std::string> fail_on;
+    bool fail_on_configured = false;
+    std::map<std::string, std::string> severity_overrides;
+    std::vector<GateException> gate_exceptions;
     std::vector<std::string> common_roots = {"common", "shared"};
     int upd301_max_inputs = 2;
     int flat_layer_min_files = 12;

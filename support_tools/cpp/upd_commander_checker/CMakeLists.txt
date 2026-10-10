@@ -55,6 +55,7 @@ add_library(upd_checker_core
     src/data_type_location_rules.cpp
     src/dependency_rules.cpp
     src/executable_path.cpp
+    src/gate_policy.cpp
     src/ignore_rules.cpp
     src/model_attention_rules.cpp
     src/report_output.cpp
@@ -144,4 +145,8 @@ if(BUILD_TESTING)
     target_compile_definitions(upd_checker_baseline_tests PRIVATE
         BASELINE_FIXTURE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../../specification/baseline-fingerprint-fixtures.json")
     add_test(NAME upd_checker_baseline_tests COMMAND upd_checker_baseline_tests)
+
+    add_executable(upd_checker_gate_policy_tests tests/gate_policy_tests.cpp)
+    target_link_libraries(upd_checker_gate_policy_tests PRIVATE upd_checker_core)
+    add_test(NAME upd_checker_gate_policy_tests COMMAND upd_checker_gate_policy_tests)
 endif()

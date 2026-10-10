@@ -21,6 +21,11 @@ class ConfigTest(unittest.TestCase):
                         "output": "reports/check.txt",
                         "ignore": ["generated/**"],
                         "warnings_as_errors": True,
+                        "fail_on": ["error", "warning"],
+                        "severity_overrides": {"upd203": "warning"},
+                        "gate_exceptions": [
+                            {"rule": "upd203", "path": "src/a.py", "line": 8, "reason": "approved"}
+                        ],
                         "common_roots": ["contracts", "Shared", "contracts"],
                         "enabled_rules": ["UPD101", "UPD202"],
                         "upd301_max_inputs": 3,
@@ -42,6 +47,12 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(str((root / "reports" / "check.txt").resolve()), config.output_path)
             self.assertEqual(("generated/**",), config.ignore)
             self.assertTrue(config.warnings_as_errors)
+            self.assertEqual(("error", "warning"), config.fail_on)
+            self.assertEqual((("UPD203", "warning"),), config.severity_overrides)
+            self.assertEqual("UPD203", config.gate_exceptions[0].rule)
+            self.assertEqual("src/a.py", config.gate_exceptions[0].path)
+            self.assertEqual(8, config.gate_exceptions[0].line)
+            self.assertEqual("approved", config.gate_exceptions[0].reason)
             self.assertEqual(("contracts", "shared"), config.common_roots)
             self.assertEqual(("UPD101", "UPD202"), config.enabled_rules)
             self.assertEqual(3, config.upd301_max_inputs)
@@ -147,6 +158,22 @@ class ConfigTest(unittest.TestCase):
                         load_config()
                 finally:
                     os.chdir(original)
+
+    def test_invalid_gate_exception_raises_config_error(self) -> None:
+        original = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "config").mkdir()
+            (root / "config" / "path.json").write_text(
+                '{"gate_exceptions":[{"rule":"UPD203","path":"../a.py","reason":"approved"}]}',
+                encoding="utf-8",
+            )
+            try:
+                os.chdir(root)
+                with self.assertRaisesRegex(ConfigError, "gate_exceptions"):
+                    load_config()
+            finally:
+                os.chdir(original)
 
     def test_invalid_common_roots_raise_config_error(self) -> None:
         invalid_values = (

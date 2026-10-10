@@ -31,6 +31,14 @@ internal static class ConfigLoader
                 .CommonRoots.Select(item => item.Trim().ToLowerInvariant())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            if (config.FailOn is not null)
+            {
+                config.FailOn = GatePolicy.NormalizeFailOn(config.FailOn);
+            }
+            config.SeverityOverrides = GatePolicy.NormalizeSeverityOverrides(
+                config.SeverityOverrides
+            );
+            config.GateExceptions = GatePolicy.NormalizeGateExceptions(config.GateExceptions);
 
             var root = Directory.GetParent(Path.GetDirectoryName(path)!)!.FullName;
             config.Input = Resolve(

@@ -98,6 +98,23 @@ UPD 適合性にも設計品質の主要部分にも直結せず、より読み�
 
 ## 4. Self Check と一般利用の分離
 
+### CI gate policy
+
+CI gate changes only the exit decision; it must not hide or remove findings. Every enabled rule still runs and all findings remain in the report.
+
+- `fail_on` is an optional list of `error`, `warning`, and/or `attention`. When present, only listed effective severities fail the run. An empty list means no finding severity blocks CI.
+- `severity_overrides` is an optional object mapping a rule ID such as `UPD101` to one of the three severities. The override is applied to the reported finding and gate decision, without changing detection or fingerprint identity.
+- `gate_exceptions` is an optional list of local, reasoned gate allowances. Each entry has `rule`, `path`, `reason`, and optional positive integer `line`. `path` is an exact, case-sensitive, forward-slash path relative to the scan target; it cannot contain wildcards or `.` / `..` segments. Omitting `line` matches every finding for that rule in that file; specifying it matches only that line. If both file-wide and line-specific entries match, the line-specific reason takes precedence.
+- A matching gate exception is evaluated after severity overrides. It removes only that finding from the set of gate candidates; detection, reported severity, summary counts, and the finding itself remain unchanged. The finding line includes `[gate exception: <reason>]` so the allowance is auditable.
+- Gate exceptions are not `ignore` rules: ignore suppresses a finding from output, while a gate exception keeps it visible and only prevents it from failing CI. A reason is mandatory and must be a non-empty, single-line value.
+- CLI `--fail-on error,warning` replaces the configured list. Repeated `--severity-override UPD101=warning` entries override that rule's configured value; other configured overrides remain.
+- When `fail_on` is absent from both CLI and config, legacy behavior is retained: Error fails by default, `warnings_as_errors` adds Warning, and `--attentions-as-errors` adds Attention. An explicitly supplied `fail_on` is authoritative over these legacy toggles.
+- Invalid severity names, rule IDs, or value types are configuration/usage errors, not silent fallbacks.
+
+The baseline CI policy in #117 composes with this common gate: it selects which findings (for example NEW only) are candidates, then applies the same effective-severity policy. It must not duplicate severity parsing or override rules.
+
+## 5. Self Check と一般利用の分離
+
 | モード | Error | Warning | Attention |
 |--------|--------|---------|-----------|
 | 一般プロジェクト既定 | CI失敗 | 失敗にしない | 失敗にしない |
@@ -106,7 +123,7 @@ UPD 適合性にも設計品質の主要部分にも直結せず、より読み�
 Checker 自身は設計例として扱うため、Self Check では Warning / Attention も残さないことを目標とします。
 これは一般プロジェクトへ推奨・小技を強制する規定ではありません。
 
-## 5. 変更時の同期規則
+## 6. 変更時の同期規則
 
 - severity の意味を変える場合は、先にこの文書を更新する
 - 既存 rule の severity を上げ下げする場合は、対応する rule 仕様と 4言語実装・回帰テストを同一変更で同期する
@@ -114,7 +131,7 @@ Checker 自身は設計例として扱うため、Self Check では Warning / At
 - 小技を Warning / Error に昇格させない
 - 新規 rule を追加するときは、必須 / 推奨 / 小技のどれに属するかをこの文書または対応仕様に明記する
 
-## 6. 判断順序（再掲）
+## 7. 判断順序（再掲）
 
 ```text
 1. UPD Core Rules（Error）を守る

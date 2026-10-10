@@ -53,6 +53,11 @@ OK
   "output": "",
   "ignore": ["tests/**", "generated/**"],
   "warnings_as_errors": false,
+  "fail_on": ["error", "warning"],
+  "severity_overrides": {"UPD203": "warning"},
+  "gate_exceptions": [
+    {"rule": "UPD203", "path": "applications/main/process/Main.cs", "line": 42, "reason": "approved I/O boundary"}
+  ],
   "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
@@ -60,6 +65,10 @@ OK
 `input` / `output` の相対パスは `config` の親基準です。`output` を設定するとコンソールと同じ短い結果をファイルにも保存します。CLI指定は設定より優先されます。
 
 `enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
+
+`fail_on` は `error` / `warning` / `attention` のうち、終了コード1にするseverityを指定します。未指定時は従来どおりerrorが失敗し、`warnings_as_errors` と `--attentions-as-errors` で追加できます。明示的な `fail_on` または `--fail-on` は従来フラグより優先されます。`"fail_on": []` または `--fail-on ""` はfindingによる失敗を無効にします。CLI例: `--fail-on error,warning --severity-override UPD203=warning`。`severity_overrides` / `--severity-override` はfindingを保持したまま有効severityを変更し、表示・集計・ゲートに反映します。CLI overrideは同じルールの設定値より優先です。
+
+`gate_exceptions` はrule・相対path・任意の1始まりlineでgate対象を限定し、必須の理由をFinding行へ表示します。対象Findingと集計は残りますが、CI gateだけを通過できます。pathはscan targetからの大文字小文字を区別する `/` 区切り完全一致です。`ignore` のように検出・出力を抑止しません。
 
 ## Ignore
 

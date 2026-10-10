@@ -1,6 +1,7 @@
 #include "config.hpp"
 
 #include "executable_path.hpp"
+#include "gate_policy.hpp"
 #include "rule_selection.hpp"
 #include "strict_json.hpp"
 
@@ -181,6 +182,85 @@ Config load_config(const std::string& executable_path) {
     const std::string output = read_string_field(root, "output");
     const std::vector<std::string> ignore = read_string_array_field(root, "ignore");
     const bool warnings_as_errors = read_bool_field(root, "warnings_as_errors");
+    bool fail_on_configured = false;
+    std::vector<std::string> fail_on =
+        read_string_array_field(root, "fail_on", &fail_on_configured);
+    if (fail_on_configured) {
+        std::vector<std::string> normalized;
+        if (!normalize_fail_on(fail_on, &normalized)) {
+            throw ConfigError("invalid config field: fail_on");
+        }
+        fail_on = std::move(normalized);
+    }
+    std::map<std::string, std::string> severity_overrides;
+    if (const JsonValue* value = find_field(root, "severity_overrides")) {
+        if (value->type != JsonValue::Type::object) {
+            throw ConfigError("invalid config field: severity_overrides");
+        }
+        std::map<std::string, std::string> raw_overrides;
+        for (const auto& item : value->object_value) {
+            if (item.second.type != JsonValue::Type::string) {
+                throw ConfigError("invalid config field: severity_overrides");
+            }
+            raw_overrides[item.first] = item.second.string_value;
+        }
+        if (!normalize_severity_overrides(raw_overrides, &severity_overrides)) {
+            throw ConfigError("invalid config field: severity_overrides");
+        }
+    }
+    std::vector<GateException> gate_exceptions;
+    if (const JsonValue* value = find_field(root, "gate_exceptions")) {
+        if (value->type != JsonValue::Type::array) {
+            throw ConfigError("invalid config field: gate_exceptions");
+        }
+        std::vector<GateException> raw_exceptions;
+        for (const auto& item : value->array_value) {
+            if (item.type != JsonValue::Type::object || item.object_value.size() < 3 ||
+                item.object_value.size() > 4) {
+                throw ConfigError("invalid config field: gate_exceptions");
+            }
+            for (const auto& field : item.object_value) {
+                if (field.first != "rule" && field.first != "path" &&
+                    field.first != "reason" && field.first != "line") {
+                    throw ConfigError("invalid config field: gate_exceptions");
+                }
+            }
+            const auto read_required_string = [&item](const std::string& name) {
+                const auto found = item.object_value.find(name);
+                if (found == item.object_value.end() ||
+                    found->second.type != JsonValue::Type::string) {
+                    throw ConfigError("invalid config field: gate_exceptions");
+                }
+                return found->second.string_value;
+            };
+            GateException exception;
+            exception.rule = read_required_string("rule");
+            exception.path = read_required_string("path");
+            exception.reason = read_required_string("reason");
+            if (const auto line = item.object_value.find("line");
+                line != item.object_value.end()) {
+                const auto& raw_line = line->second.number_value;
+                if (line->second.type != JsonValue::Type::number || raw_line.empty() ||
+                    !std::all_of(raw_line.begin(), raw_line.end(),
+                                 [](char ch) { return ch >= '0' && ch <= '9'; })) {
+                    throw ConfigError("invalid config field: gate_exceptions");
+                }
+                try {
+                    const long long parsed = std::stoll(raw_line);
+                    if (parsed < 1 || parsed > std::numeric_limits<int>::max()) {
+                        throw ConfigError("invalid config field: gate_exceptions");
+                    }
+                    exception.line = static_cast<int>(parsed);
+                } catch (const std::exception&) {
+                    throw ConfigError("invalid config field: gate_exceptions");
+                }
+            }
+            raw_exceptions.push_back(std::move(exception));
+        }
+        if (!normalize_gate_exceptions(raw_exceptions, &gate_exceptions)) {
+            throw ConfigError("invalid config field: gate_exceptions");
+        }
+    }
     std::vector<std::string> common_roots = {"common", "shared"};
     if (find_field(root, "common_roots") != nullptr) {
         common_roots = normalize_common_roots(read_string_array_field(root, "common_roots"));
@@ -214,6 +294,10 @@ Config load_config(const std::string& executable_path) {
     config.output = output.empty() ? "" : resolve_path(base, output);
     config.ignore = ignore;
     config.warnings_as_errors = warnings_as_errors;
+    config.fail_on = std::move(fail_on);
+    config.fail_on_configured = fail_on_configured;
+    config.severity_overrides = std::move(severity_overrides);
+    config.gate_exceptions = std::move(gate_exceptions);
     config.common_roots = std::move(common_roots);
     config.upd301_max_inputs = upd301_max_inputs;
     config.flat_layer_min_files = flat_layer_min_files;
