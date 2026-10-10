@@ -43,6 +43,9 @@ void test_null_and_invalid_typed_fields() {
         {"{\"severity_overrides\":null}", "severity_overrides"},
         {"{\"severity_overrides\":{\"UPD101\":\"fatal\"}}", "severity_overrides"},
         {"{\"severity_overrides\":{\"bad\":\"error\"}}", "severity_overrides"},
+        {"{\"gate_exceptions\":null}", "gate_exceptions"},
+        {"{\"gate_exceptions\":[{\"rule\":\"UPD203\",\"path\":\"../a.cpp\",\"reason\":\"bad\"}]}", "gate_exceptions"},
+        {"{\"gate_exceptions\":[{\"rule\":\"UPD203\",\"path\":\"a.cpp\",\"reason\":\"ok\",\"extra\":1}]}", "gate_exceptions"},
         {"{\"enabled_rules\":null}", "enabled_rules"},
         {"{\"input\":1}", "input"},
         {"{\"warnings_as_errors\":\"true\"}", "warnings_as_errors"},
@@ -58,11 +61,17 @@ void test_valid_gate_policy_config() {
     write_config(
         root,
         "{\"fail_on\":[\" ERROR \",\"warning\",\"error\"],"
-        "\"severity_overrides\":{\"upd203\":\"WARNING\"}}");
+        "\"severity_overrides\":{\"upd203\":\"WARNING\"},"
+        "\"gate_exceptions\":[{\"rule\":\"upd203\",\"path\":\"src/a.cpp\","
+        "\"line\":8,\"reason\":\"approved\"}]}");
     const auto config = upd_checker::load_config((root / "checker").string());
     assert(config.fail_on_configured);
     assert((config.fail_on == std::vector<std::string>{"error", "warning"}));
     assert(config.severity_overrides.at("UPD203") == "warning");
+    assert(config.gate_exceptions.size() == 1);
+    assert(config.gate_exceptions.front().rule == "UPD203");
+    assert(config.gate_exceptions.front().line == 8);
+    assert(config.gate_exceptions.front().reason == "approved");
     std::filesystem::remove_all(root);
 
     const auto empty_root =

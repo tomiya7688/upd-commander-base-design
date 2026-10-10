@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -15,6 +16,7 @@ type Config struct {
 	WarningsAsErrors          bool              `json:"warnings_as_errors"`
 	FailOn                    *[]string         `json:"fail_on"`
 	SeverityOverrides         map[string]string `json:"severity_overrides"`
+	GateExceptions            []GateException   `json:"gate_exceptions"`
 	CommonRoots               []string          `json:"common_roots"`
 	Upd301MaxInputs           int               `json:"upd301_max_inputs"`
 	FlatLayerMinFiles         int               `json:"flat_layer_min_files"`
@@ -71,6 +73,19 @@ func LoadConfig() (Config, error) {
 			return Config{}, fmt.Errorf("invalid config field: severity_overrides")
 		}
 		config.SeverityOverrides = normalized
+	}
+	if value, ok := raw["gate_exceptions"]; ok {
+		var exceptions []GateException
+		decoder := json.NewDecoder(bytes.NewReader(value))
+		decoder.DisallowUnknownFields()
+		if isJSONNull(value) || decoder.Decode(&exceptions) != nil {
+			return Config{}, fmt.Errorf("invalid config field: gate_exceptions")
+		}
+		normalized, valid := NormalizeGateExceptions(exceptions)
+		if !valid {
+			return Config{}, fmt.Errorf("invalid config field: gate_exceptions")
+		}
+		config.GateExceptions = normalized
 	}
 	if value, ok := raw["common_roots"]; ok {
 		var roots []string

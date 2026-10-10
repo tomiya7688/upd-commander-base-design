@@ -61,6 +61,66 @@ internal static class GatePolicy
         return result;
     }
 
+    internal static List<GateException> NormalizeGateExceptions(IEnumerable<GateException> values)
+    {
+        var result = new List<GateException>();
+        var seen = new HashSet<(string Rule, string Path, int? Line)>();
+        foreach (var value in values)
+        {
+            var rule = value.Rule.ToUpperInvariant();
+            var reason = value.Reason.Trim();
+            if (
+                !RulePattern.IsMatch(rule)
+                || !IsExactRelativePath(value.Path)
+                || reason.Length == 0
+                || reason.Contains('\r')
+                || reason.Contains('\n')
+                || value.Line is < 1
+            )
+            {
+                throw new FormatException("contains an invalid gate exception");
+            }
+            if (!seen.Add((rule, value.Path, value.Line)))
+            {
+                throw new FormatException("contains a duplicate gate exception");
+            }
+            result.Add(value with { Rule = rule, Reason = reason });
+        }
+        return result;
+    }
+
+    private static bool IsExactRelativePath(string value)
+    {
+        return value.Length > 0
+            && !value.StartsWith('/')
+            && value.IndexOfAny(['\\', ':', '*', '?', '[', ']']) < 0
+            && value
+                .Split('/')
+                .All(segment => segment.Length > 0 && segment is not "." and not "..");
+    }
+
+    internal static string? GateExceptionReason(
+        Finding finding,
+        IEnumerable<GateException> exceptions
+    )
+    {
+        var matching = exceptions.ToList();
+        return matching
+                .FirstOrDefault(exception =>
+                    exception.Rule == finding.Code.ToUpperInvariant()
+                    && exception.Path == finding.Path
+                    && exception.Line == finding.Line
+                )
+                ?.Reason
+            ?? matching
+                .FirstOrDefault(exception =>
+                    exception.Rule == finding.Code.ToUpperInvariant()
+                    && exception.Path == finding.Path
+                    && exception.Line is null
+                )
+                ?.Reason;
+    }
+
     internal static KeyValuePair<string, string> ParseSeverityOverrideArgument(string value)
     {
         var separator = value.IndexOf('=');

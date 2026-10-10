@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .gate_exception import GateException
+
 
 @dataclass(frozen=True)
 class CheckerConfig:
@@ -9,6 +11,7 @@ class CheckerConfig:
     warnings_as_errors: bool = False
     fail_on: tuple[str, ...] | None = None
     severity_overrides: tuple[tuple[str, str], ...] = ()
+    gate_exceptions: tuple[GateException, ...] = ()
     common_roots: tuple[str, ...] = ("common", "shared")
     enabled_rules: tuple[str, ...] | None = None
     upd301_max_inputs: int = 2

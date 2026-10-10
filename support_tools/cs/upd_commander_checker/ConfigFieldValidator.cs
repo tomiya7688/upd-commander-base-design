@@ -13,6 +13,7 @@ internal static class ConfigFieldValidator
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
         RequireFailOn(new ConfigFieldInput(root, "fail_on"));
         RequireSeverityOverrides(new ConfigFieldInput(root, "severity_overrides"));
+        ConfigGateExceptionValidator.Validate(new ConfigFieldInput(root, "gate_exceptions"));
         RequireCommonRoots(new ConfigFieldInput(root, "common_roots"));
         RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
         RequirePositiveInteger(new ConfigFieldInput(root, "flat_layer_min_files"));

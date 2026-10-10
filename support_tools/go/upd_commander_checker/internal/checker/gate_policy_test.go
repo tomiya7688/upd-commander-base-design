@@ -48,3 +48,24 @@ func TestApplySeverityOverridesAndShouldFail(t *testing.T) {
 		t.Fatal("empty explicit gate should pass")
 	}
 }
+
+func TestGateExceptionMatchesRulePathAndOptionalLine(t *testing.T) {
+	line := 5
+	exceptions, ok := NormalizeGateExceptions([]GateException{
+		{Rule: "upd203", Path: "src/a.go", Line: &line, Reason: "approved"},
+		{Rule: "UPD203", Path: "src/a.go", Reason: "file allowance"},
+		{Rule: "UPD203", Path: "src/b.go", Reason: "file allowance"},
+	})
+	if !ok || GateExceptionReason(Finding{Code: "UPD203", Path: "src/a.go", Line: 5}, exceptions) != "approved" {
+		t.Fatalf("line exception did not match: %#v", exceptions)
+	}
+	if GateExceptionReason(Finding{Code: "UPD203", Path: "src/a.go", Line: 6}, exceptions) != "file allowance" {
+		t.Fatal("file-wide exception did not apply outside the line-specific match")
+	}
+	if GateExceptionReason(Finding{Code: "UPD203", Path: "src/b.go", Line: 9}, exceptions) != "file allowance" {
+		t.Fatal("file exception did not match every line")
+	}
+	if _, ok := NormalizeGateExceptions([]GateException{{Rule: "UPD203", Path: "../a.go", Reason: "bad"}}); ok {
+		t.Fatal("accepted parent traversal")
+	}
+}

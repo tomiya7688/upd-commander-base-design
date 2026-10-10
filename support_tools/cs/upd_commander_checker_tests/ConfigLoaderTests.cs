@@ -17,6 +17,15 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"severity_overrides\":{\"UPD101\":null}}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":{\"UPD101\":\"fatal\"}}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":{\"bad\":\"error\"}}", "severity_overrides")]
+    [InlineData("{\"gate_exceptions\":null}", "gate_exceptions")]
+    [InlineData(
+        "{\"gate_exceptions\":[{\"rule\":\"UPD203\",\"path\":\"../a.cs\",\"reason\":\"bad\"}]}",
+        "gate_exceptions"
+    )]
+    [InlineData(
+        "{\"gate_exceptions\":[{\"rule\":\"UPD203\",\"path\":\"a.cs\",\"reason\":\"ok\",\"extra\":1}]}",
+        "gate_exceptions"
+    )]
     [InlineData("{\"enabled_rules\":null}", "enabled_rules")]
     [InlineData("{\"input\":1}", "input")]
     [InlineData("{\"warnings_as_errors\":\"true\"}", "warnings_as_errors")]
@@ -127,12 +136,15 @@ public sealed class ConfigLoaderTests
         var config = ConfigLoader.LoadFromPath(
             WriteConfig(
                 "{\"fail_on\":[\" ERROR \",\"warning\",\"error\"],"
-                    + "\"severity_overrides\":{\"upd203\":\"WARNING\"}}"
+                    + "\"severity_overrides\":{\"upd203\":\"WARNING\"},"
+                    + "\"gate_exceptions\":[{\"rule\":\"upd203\",\"path\":\"src/a.cs\",\"line\":8,\"reason\":\"approved\"}]}"
             )
         );
 
         Assert.Equal(["error", "warning"], config.FailOn);
         Assert.Equal("warning", config.SeverityOverrides["UPD203"]);
+        Assert.Equal("UPD203", Assert.Single(config.GateExceptions).Rule);
+        Assert.Equal(8, config.GateExceptions[0].Line);
     }
 
     [Fact]

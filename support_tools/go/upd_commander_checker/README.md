@@ -40,11 +40,16 @@ OK
   "warnings_as_errors": false,
   "fail_on": ["error", "warning"],
   "severity_overrides": {"UPD203": "warning"},
+  "gate_exceptions": [
+    {"rule": "UPD203", "path": "applications/main/process/main.go", "line": 42, "reason": "approved I/O boundary"}
+  ],
   "enabled_rules": ["UPD101", "UPD102", "UPD203"]
 }
 ```
 
 `input` / `output` の相対パスは `config` の親基準です。`output` を指定するとコンソール出力と同じ結果をファイルにも保存します。CLI指定は設定より優先されます。
+
+`gate_exceptions` はrule・相対path・任意の1始まりlineでgate対象を限定し、必須の理由をFinding行へ表示します。対象Findingと集計は残りますが、CI gateだけを通過できます。pathはscan targetからの大文字小文字を区別する `/` 区切り完全一致です。`ignore` のように検出・出力を抑止しません。
 
 `enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
 

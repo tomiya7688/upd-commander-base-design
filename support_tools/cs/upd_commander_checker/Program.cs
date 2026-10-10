@@ -58,6 +58,7 @@ internal static class Program
         var warnings = 0;
         var attentions = 0;
         var lines = new List<string>();
+        var gateFindings = new List<Finding>();
         foreach (var finding in findings)
         {
             var level = "A";
@@ -75,11 +76,19 @@ internal static class Program
             {
                 attentions++;
             }
-            lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
+            var reason = GatePolicy.GateExceptionReason(finding, config.GateExceptions);
+            var suffix = reason is null ? "" : $" [gate exception: {reason}]";
+            if (reason is null)
+            {
+                gateFindings.Add(finding);
+            }
+            lines.Add(
+                $"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}{suffix}"
+            );
         }
 
         var failOn = options.FailOnConfigured ? options.FailOn : LegacyFailOn(options);
-        var failed = GatePolicy.ShouldFail(findings, failOn);
+        var failed = GatePolicy.ShouldFail(gateFindings, failOn);
         if (failed)
         {
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");

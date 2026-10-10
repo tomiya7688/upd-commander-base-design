@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     int warnings = 0;
     int attentions = 0;
     std::vector<std::string> lines;
+    std::vector<upd_checker::Finding> gate_findings;
     for (const auto& finding : findings) {
         std::string level = "A ";
         if (finding.severity == "error") {
@@ -62,9 +63,17 @@ int main(int argc, char* argv[]) {
         } else {
             ++attentions;
         }
+        const std::string reason =
+            upd_checker::gate_exception_reason(finding, config.gate_exceptions);
+        const std::string suffix = reason.empty()
+            ? ""
+            : " [gate exception: " + reason + "]";
+        if (reason.empty()) {
+            gate_findings.push_back(finding);
+        }
         lines.push_back(
             level + finding.code + " " + finding.path + ":" +
-            std::to_string(finding.line) + " " + finding.message);
+            std::to_string(finding.line) + " " + finding.message + suffix);
     }
 
     std::vector<std::string> fail_on = options.fail_on;
@@ -77,7 +86,7 @@ int main(int argc, char* argv[]) {
             fail_on.push_back("attention");
         }
     }
-    if (upd_checker::should_fail(findings, fail_on)) {
+    if (upd_checker::should_fail(gate_findings, fail_on)) {
         lines.push_back(
             "FAIL e=" + std::to_string(errors) +
             " w=" + std::to_string(warnings) +
