@@ -5,6 +5,7 @@
 
 #include "cli_options.hpp"
 #include "config.hpp"
+#include "gate_policy.hpp"
 #include "report_output.hpp"
 #include "rule_selection.hpp"
 #include "scanner.hpp"
@@ -40,10 +41,12 @@ int main(int argc, char* argv[]) {
             config.flat_layer_min_direct_percent,
             config.model_group_min_items,
             config.model_group_min_occurrences);
-    const auto findings = upd_checker::filter_enabled_findings({
+    const auto selected_findings = upd_checker::filter_enabled_findings({
         scanned_findings,
         config.enabled_rules,
         config.enabled_rules_configured});
+    const auto findings = upd_checker::apply_severity_overrides(
+        selected_findings, options.severity_overrides);
     int errors = 0;
     int warnings = 0;
     int attentions = 0;
@@ -64,9 +67,17 @@ int main(int argc, char* argv[]) {
             std::to_string(finding.line) + " " + finding.message);
     }
 
-    if (errors > 0 ||
-        (options.warnings_as_errors && warnings > 0) ||
-        (options.attentions_as_errors && attentions > 0)) {
+    std::vector<std::string> fail_on = options.fail_on;
+    if (!options.fail_on_configured) {
+        fail_on = {"error"};
+        if (options.warnings_as_errors) {
+            fail_on.push_back("warning");
+        }
+        if (options.attentions_as_errors) {
+            fail_on.push_back("attention");
+        }
+    }
+    if (upd_checker::should_fail(findings, fail_on)) {
         lines.push_back(
             "FAIL e=" + std::to_string(errors) +
             " w=" + std::to_string(warnings) +

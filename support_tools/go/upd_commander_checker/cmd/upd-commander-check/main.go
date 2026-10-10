@@ -16,6 +16,18 @@ func (items *stringList) Set(value string) error {
 	return nil
 }
 
+type optionalString struct {
+	value string
+	set   bool
+}
+
+func (value *optionalString) String() string { return value.value }
+func (value *optionalString) Set(input string) error {
+	value.value = input
+	value.set = true
+	return nil
+}
+
 func main() {
 	config, configErr := checker.LoadConfig()
 	if configErr != nil {
@@ -26,10 +38,14 @@ func main() {
 	var output string
 	var warningsAsErrors bool
 	var attentionsAsErrors bool
+	var failOn optionalString
+	var severityOverrides stringList
 	flag.Var(&ignores, "ignore", "ignore path glob; repeatable")
 	flag.StringVar(&output, "output", "", "report output path")
 	flag.BoolVar(&warningsAsErrors, "warnings-as-errors", false, "warnings fail the check")
 	flag.BoolVar(&attentionsAsErrors, "attentions-as-errors", false, "attentions fail the check")
+	flag.Var(&failOn, "fail-on", "comma-separated severities that fail the check")
+	flag.Var(&severityOverrides, "severity-override", "override a rule severity as UPDnnn=severity; repeatable")
 	flag.Parse()
 
 	target := config.Input
@@ -41,6 +57,39 @@ func main() {
 	}
 	ignores = append(stringList(config.Ignore), ignores...)
 	warningsAsErrors = warningsAsErrors || config.WarningsAsErrors
+	explicitGate := failOn.set || config.FailOn != nil
+	gate := []string{"error"}
+	if config.FailOn != nil {
+		gate = append([]string{}, (*config.FailOn)...)
+	}
+	if failOn.set {
+		var valid bool
+		gate, valid = checker.ParseFailOnArgument(failOn.value)
+		if !valid {
+			fmt.Fprintln(os.Stderr, "CONFIG ERROR: invalid --fail-on")
+			os.Exit(2)
+		}
+	}
+	if !explicitGate {
+		if warningsAsErrors {
+			gate = append(gate, "warning")
+		}
+		if attentionsAsErrors {
+			gate = append(gate, "attention")
+		}
+	}
+	overrides := make(map[string]string, len(config.SeverityOverrides)+len(severityOverrides))
+	for rule, severity := range config.SeverityOverrides {
+		overrides[rule] = severity
+	}
+	for _, item := range severityOverrides {
+		rule, severity, valid := checker.ParseSeverityOverrideArgument(item)
+		if !valid {
+			fmt.Fprintln(os.Stderr, "CONFIG ERROR: invalid --severity-override; expected UPDnnn=severity")
+			os.Exit(2)
+		}
+		overrides[rule] = severity
+	}
 
 	if _, err := os.Stat(target); err != nil {
 		finish(finishInput{lines: []string{fmt.Sprintf("E UPD000 %s missing", target)}, output: output, code: 2})
@@ -54,6 +103,7 @@ func main() {
 	options.ModelGroupMinOccurrences = config.ModelGroupMinOccurrences
 	options.CommonRoots = config.CommonRoots
 	findings := checker.FilterEnabledFindings(checker.ScanPathWithOptions(target, ignores, options), config.EnabledRules)
+	findings = checker.ApplySeverityOverrides(findings, overrides)
 	errors := 0
 	warnings := 0
 	attentions := 0
@@ -73,7 +123,7 @@ func main() {
 		lines = append(lines, fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message))
 	}
 
-	if errors > 0 || warningsAsErrors && warnings > 0 || attentionsAsErrors && attentions > 0 {
+	if checker.ShouldFail(findings, gate) {
 		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
 		finish(finishInput{lines: lines, output: output, code: 1})
 	}

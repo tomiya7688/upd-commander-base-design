@@ -11,12 +11,71 @@ internal static class ConfigFieldValidator
         RequireKind(new ConfigKindFieldInput(root, "output", JsonValueKind.String));
         RequireStringArray(new ConfigFieldInput(root, "ignore"));
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
+        RequireFailOn(new ConfigFieldInput(root, "fail_on"));
+        RequireSeverityOverrides(new ConfigFieldInput(root, "severity_overrides"));
         RequireCommonRoots(new ConfigFieldInput(root, "common_roots"));
         RequirePositiveInteger(new ConfigFieldInput(root, "upd301_max_inputs"));
         RequirePositiveInteger(new ConfigFieldInput(root, "flat_layer_min_files"));
         RequirePercentInteger(new ConfigFieldInput(root, "flat_layer_min_direct_percent"));
         RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_items"), 3);
         RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_occurrences"), 2);
+    }
+
+    private static void RequireFailOn(ConfigFieldInput input)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (value.ValueKind != JsonValueKind.Array)
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
+        try
+        {
+            GatePolicy.NormalizeFailOn(
+                value
+                    .EnumerateArray()
+                    .Select(item =>
+                        item.ValueKind == JsonValueKind.String
+                            ? item.GetString()!
+                            : throw new ConfigException($"invalid config field: {input.Name}")
+                    )
+            );
+        }
+        catch (FormatException)
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
+    }
+
+    private static void RequireSeverityOverrides(ConfigFieldInput input)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
+        try
+        {
+            GatePolicy.NormalizeSeverityOverrides(
+                value
+                    .EnumerateObject()
+                    .Select(item => new KeyValuePair<string, string>(
+                        item.Name,
+                        item.Value.ValueKind == JsonValueKind.String
+                            ? item.Value.GetString()!
+                            : throw new ConfigException($"invalid config field: {input.Name}")
+                    ))
+            );
+        }
+        catch (FormatException)
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
     }
 
     private static void RequireKind(ConfigKindFieldInput input)

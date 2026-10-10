@@ -11,6 +11,12 @@ internal static class CliParser
         var ignores = new List<string>(config.Ignore);
         var warningsAsErrors = config.WarningsAsErrors;
         var attentionsAsErrors = false;
+        var failOn = config.FailOn is null ? new List<string>() : new List<string>(config.FailOn);
+        var failOnConfigured = config.FailOn is not null;
+        var severityOverrides = new Dictionary<string, string>(
+            config.SeverityOverrides,
+            StringComparer.Ordinal
+        );
         var targetSpecified = false;
 
         for (var index = 0; index < args.Length; index++)
@@ -46,6 +52,48 @@ internal static class CliParser
             {
                 attentionsAsErrors = true;
             }
+            else if (argument == "--fail-on")
+            {
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                {
+                    throw new CliUsageException($"missing value for {argument}");
+                }
+                try
+                {
+                    failOn = GatePolicy.ParseFailOnArgument(args[++index]);
+                }
+                catch (FormatException exception)
+                {
+                    throw new CliUsageException(
+                        $"invalid value for --fail-on: {exception.Message}"
+                    );
+                }
+                failOnConfigured = true;
+            }
+            else if (argument == "--severity-override")
+            {
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                {
+                    throw new CliUsageException($"missing value for {argument}");
+                }
+                try
+                {
+                    var parsed = GatePolicy.ParseSeverityOverrideArgument(args[++index]);
+                    severityOverrides[parsed.Key] = parsed.Value;
+                }
+                catch (FormatException exception)
+                {
+                    throw new CliUsageException(
+                        $"invalid value for --severity-override: {exception.Message}"
+                    );
+                }
+            }
             else if (argument.StartsWith("-", StringComparison.Ordinal))
             {
                 throw new CliUsageException($"unknown option: {argument}");
@@ -61,6 +109,15 @@ internal static class CliParser
             }
         }
 
-        return new CliOptions(target, output, ignores, warningsAsErrors, attentionsAsErrors);
+        return new CliOptions(
+            target,
+            output,
+            ignores,
+            warningsAsErrors,
+            attentionsAsErrors,
+            failOn,
+            failOnConfigured,
+            severityOverrides
+        );
     }
 }

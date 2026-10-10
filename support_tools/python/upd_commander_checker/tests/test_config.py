@@ -21,6 +21,8 @@ class ConfigTest(unittest.TestCase):
                         "output": "reports/check.txt",
                         "ignore": ["generated/**"],
                         "warnings_as_errors": True,
+                        "fail_on": ["error", "warning"],
+                        "severity_overrides": {"upd203": "warning"},
                         "common_roots": ["contracts", "Shared", "contracts"],
                         "enabled_rules": ["UPD101", "UPD202"],
                         "upd301_max_inputs": 3,
@@ -42,6 +44,8 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(str((root / "reports" / "check.txt").resolve()), config.output_path)
             self.assertEqual(("generated/**",), config.ignore)
             self.assertTrue(config.warnings_as_errors)
+            self.assertEqual(("error", "warning"), config.fail_on)
+            self.assertEqual((("UPD203", "warning"),), config.severity_overrides)
             self.assertEqual(("contracts", "shared"), config.common_roots)
             self.assertEqual(("UPD101", "UPD202"), config.enabled_rules)
             self.assertEqual(3, config.upd301_max_inputs)

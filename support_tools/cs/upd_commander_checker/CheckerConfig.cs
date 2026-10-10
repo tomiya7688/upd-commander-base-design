@@ -16,6 +16,12 @@ internal sealed class CheckerConfig
     [JsonPropertyName("warnings_as_errors")]
     public bool WarningsAsErrors { get; set; }
 
+    [JsonPropertyName("fail_on")]
+    public List<string>? FailOn { get; set; }
+
+    [JsonPropertyName("severity_overrides")]
+    public Dictionary<string, string> SeverityOverrides { get; set; } = new();
+
     [JsonPropertyName("common_roots")]
     public List<string> CommonRoots { get; set; } = ["common", "shared"];
 

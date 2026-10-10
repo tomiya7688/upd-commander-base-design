@@ -33,7 +33,7 @@ internal static class Program
             );
         }
 
-        var findings = RuleSelection.Filter(
+        var selectedFindings = RuleSelection.Filter(
             new RuleSelectionInput(
                 Scanner.ScanPath(
                     new ScanPathInput(
@@ -49,6 +49,10 @@ internal static class Program
                 ),
                 config.EnabledRules
             )
+        );
+        var findings = GatePolicy.ApplySeverityOverrides(
+            selectedFindings,
+            options.SeverityOverrides
         );
         var errors = 0;
         var warnings = 0;
@@ -74,10 +78,8 @@ internal static class Program
             lines.Add($"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}");
         }
 
-        var failed =
-            errors > 0
-            || (options.WarningsAsErrors && warnings > 0)
-            || (options.AttentionsAsErrors && attentions > 0);
+        var failOn = options.FailOnConfigured ? options.FailOn : LegacyFailOn(options);
+        var failed = GatePolicy.ShouldFail(findings, failOn);
         if (failed)
         {
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
@@ -85,5 +87,19 @@ internal static class Program
         }
         lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
         return ReportOutput.Finish(new FinishInput(lines, options.Output, 0));
+    }
+
+    private static IReadOnlyList<string> LegacyFailOn(CliOptions options)
+    {
+        var failOn = new List<string> { "error" };
+        if (options.WarningsAsErrors)
+        {
+            failOn.Add("warning");
+        }
+        if (options.AttentionsAsErrors)
+        {
+            failOn.Add("attention");
+        }
+        return failOn;
     }
 }
