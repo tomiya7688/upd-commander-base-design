@@ -86,6 +86,7 @@ Process Messenger
 
 ## ドキュメント
 
+- [日本語ドキュメント執筆ガイド](docs/japanese-writing-guide.md) — 日本語文書の用語・規則強度・レビュー基準
 - [Architecture](docs/architecture.md) — 全体構造と責務
 - [Layer Rules](docs/layer-rules.md) — UI / Process / Data 各層の規則
 - [Commander & Messenger](docs/commander-messenger.md) — Commander と Messenger の責務
