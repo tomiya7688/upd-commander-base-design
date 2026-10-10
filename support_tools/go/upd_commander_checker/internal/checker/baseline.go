@@ -19,7 +19,10 @@ import (
 const BaselineSchemaVersion = 1
 const BaselineFingerprintVersion = 1
 
-// BaselineEntry stores identity fields and optional display metadata.
+// {
+// 責務: [BaselineEntry: Finding identityと任意の表示metadataを保持する]
+// フィールド: [Fingerprint/Rule/Path/Symbol/Context: identity, Severity/Line/Message: 表示情報]
+// }
 type BaselineEntry struct {
 	Fingerprint string `json:"fingerprint"`
 	Rule        string `json:"rule"`
@@ -31,13 +34,23 @@ type BaselineEntry struct {
 	Message     string `json:"message,omitempty"`
 }
 
-// Baseline is the portable versioned finding snapshot.
+// {
+// 責務: [Baseline: portableなversion付きFinding snapshotを表す]
+// フィールド: [SchemaVersion/FingerprintVersion: 契約version, Findings: baseline entry一覧]
+// }
 type Baseline struct {
 	SchemaVersion      int             `json:"schema_version"`
 	FingerprintVersion int             `json:"fingerprint_version"`
 	Findings           []BaselineEntry `json:"findings"`
 }
 
+// {
+// 責務: [UnmarshalJSON: entry JSONの必須fieldとmetadata型を検証して復号する]
+// 処理: [1: 必須string fieldを確認する, 2: 任意metadataを確認する, 3: entryへ復号する]
+// 引数: [data: JSON bytes]
+// 戻り値: [なし]
+// エラー: [JSON構文またはfield型・欠落が不正な場合]
+// }
 func (entry *BaselineEntry) UnmarshalJSON(data []byte) error {
 	type alias BaselineEntry
 	var fields map[string]json.RawMessage
@@ -74,6 +87,13 @@ func (entry *BaselineEntry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// {
+// 責務: [UnmarshalJSON: baseline JSONに必須のversionとfindingsを確認して復号する]
+// 処理: [1: 必須fieldを確認する, 2: findingsのnullを拒否する, 3: baselineへ復号する]
+// 引数: [data: JSON bytes]
+// 戻り値: [なし]
+// エラー: [JSON構文または必須fieldが不正な場合]
+// }
 func (baseline *Baseline) UnmarshalJSON(data []byte) error {
 	type alias Baseline
 	var fields map[string]json.RawMessage
@@ -101,7 +121,13 @@ const findingFingerprintDomainV1 = "upd-finding-fingerprint-v1"
 var baselineRulePattern = regexp.MustCompile(`^UPD[0-9]{3,}$`)
 var drivePathPattern = regexp.MustCompile(`^[A-Za-z]:/`)
 
-// CanonicalFindingPath normalizes a repository-relative path for baseline identity.
+// {
+// 責務: [CanonicalFindingPath: repository相対pathをbaseline用に正規化する]
+// 処理: [1: NFCとslash区切りを適用する, 2: 絶対pathと親参照を拒否する, 3: dot要素を整理する]
+// 引数: [value: 正規化するpath]
+// 戻り値: [canonical path]
+// エラー: [不正pathまたは空pathの場合]
+// }
 func CanonicalFindingPath(value string) (string, error) {
 	canonical := norm.NFC.String(strings.ReplaceAll(value, "\\", "/"))
 	if path.IsAbs(canonical) || strings.HasPrefix(canonical, "//") || drivePathPattern.MatchString(canonical) {
@@ -119,7 +145,13 @@ func CanonicalFindingPath(value string) (string, error) {
 	return canonical, nil
 }
 
-// FindingFingerprint returns the version 1 SHA-256 identity shared by all checkers.
+// {
+// 責務: [FindingFingerprint: 全Checker共通のversion 1 SHA-256 identityを生成する]
+// 処理: [1: rule/path/symbol/contextを正規化する, 2: domain separator付きでhash化する]
+// 引数: [rule/findingPath/symbol/context: Finding identityを構成する値]
+// 戻り値: [sha256:形式のfingerprint]
+// エラー: [identity fieldが契約に反する場合]
+// }
 func FindingFingerprint(rule string, findingPath string, symbol string, context string) (string, error) {
 	canonicalRule := strings.ToUpper(norm.NFC.String(rule))
 	if !baselineRulePattern.MatchString(canonicalRule) {
@@ -144,7 +176,13 @@ func FindingFingerprint(rule string, findingPath string, symbol string, context 
 	return "sha256:" + hex.EncodeToString(digest[:]), nil
 }
 
-// BuildBaseline validates identities and returns a deterministic baseline.
+// {
+// 責務: [BuildBaseline: Finding identityを検証し決定的なbaselineを構築する]
+// 処理: [1: entryを正規化する, 2: fingerprintの重複を拒否する, 3: fingerprint順に整列する]
+// 引数: [findings: 記録するentry一覧]
+// 戻り値: [version 1 baseline]
+// エラー: [identity不正または重複の場合]
+// }
 func BuildBaseline(findings []BaselineEntry) (Baseline, error) {
 	entries := make([]BaselineEntry, 0, len(findings))
 	seen := make(map[string]struct{}, len(findings))
@@ -163,7 +201,13 @@ func BuildBaseline(findings []BaselineEntry) (Baseline, error) {
 	return Baseline{SchemaVersion: BaselineSchemaVersion, FingerprintVersion: BaselineFingerprintVersion, Findings: entries}, nil
 }
 
-// ValidateBaseline validates schema versions, entries, and recomputed fingerprints.
+// {
+// 責務: [ValidateBaseline: schema version・entry・再計算fingerprintを検証する]
+// 処理: [1: versionを確認する, 2: entryをcanonical化する, 3: fingerprint重複を拒否する]
+// 引数: [baseline: 検証するsnapshot]
+// 戻り値: [検証済みbaseline]
+// エラー: [未対応versionまたは不正entryの場合]
+// }
 func ValidateBaseline(baseline Baseline) (Baseline, error) {
 	if baseline.SchemaVersion != BaselineSchemaVersion {
 		return Baseline{}, fmt.Errorf("unsupported schema_version %d; supported version is %d", baseline.SchemaVersion, BaselineSchemaVersion)
@@ -186,7 +230,14 @@ func ValidateBaseline(baseline Baseline) (Baseline, error) {
 	return baseline, nil
 }
 
-// WriteBaseline writes a deterministic, indented UTF-8 JSON snapshot.
+// {
+// 責務: [WriteBaseline: 決定的なbaselineを整形済みUTF-8 JSONで保存する]
+// 処理: [1: baselineを構築する, 2: 親directoryを用意する, 3: JSONと改行を書き込む]
+// 引数: [filename: 保存先, findings: 記録するentry一覧]
+// 戻り値: [なし]
+// 副作用: [必要なdirectoryとbaselineファイルを作成する]
+// エラー: [構築・directory作成・JSON書込に失敗した場合]
+// }
 func WriteBaseline(filename string, findings []BaselineEntry) error {
 	baseline, err := BuildBaseline(findings)
 	if err != nil {
@@ -204,7 +255,13 @@ func WriteBaseline(filename string, findings []BaselineEntry) error {
 	return os.WriteFile(filename, append(data, '\n'), 0o644)
 }
 
-// LoadBaseline reads and validates a baseline document.
+// {
+// 責務: [LoadBaseline: baseline JSONを読み込み契約に従って検証する]
+// 処理: [1: ファイルを読む, 2: 余分なJSON dataがないことを確認する, 3: baselineを検証する]
+// 引数: [filename: 読み込むファイル]
+// 戻り値: [検証済みbaseline]
+// エラー: [ファイル・JSON・version・entryの検証に失敗した場合]
+// }
 func LoadBaseline(filename string) (Baseline, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -222,7 +279,13 @@ func LoadBaseline(filename string) (Baseline, error) {
 	return ValidateBaseline(baseline)
 }
 
-// CompareBaseline classifies current findings against a validated snapshot.
+// {
+// 責務: [CompareBaseline: 現在のFindingをsnapshotとの差分に分類する]
+// 処理: [1: baselineと現在のentryを検証する, 2: fingerprint集合を比較する, 3: 各分類を整列する]
+// 引数: [current: 現在のFinding, baseline: 比較対象snapshot]
+// 戻り値: [NEW/EXISTING/RESOLVEDに分けた結果]
+// エラー: [baselineまたは現在のidentityが不正・重複する場合]
+// }
 func CompareBaseline(current []BaselineEntry, baseline Baseline) (ClassifiedBaseline, error) {
 	validated, err := ValidateBaseline(baseline)
 	if err != nil {
@@ -262,6 +325,13 @@ func CompareBaseline(current []BaselineEntry, baseline Baseline) (ClassifiedBase
 	return result, nil
 }
 
+// {
+// 責務: [canonicalBaselineEntry: entryを正規化し、必要なら既存fingerprintを照合する]
+// 処理: [1: identityを計算する, 2: fieldをcanonical化する, 3: severity・line・hashを検証する]
+// 引数: [entry: 検査するbaseline entry, verifyFingerprint: 保存済みhashを照合するか]
+// 戻り値: [canonical entry]
+// エラー: [identityまたはmetadataが契約に反する場合]
+// }
 func canonicalBaselineEntry(entry BaselineEntry, verifyFingerprint bool) (BaselineEntry, error) {
 	fingerprint, err := FindingFingerprint(entry.Rule, entry.Path, entry.Symbol, entry.Context)
 	if err != nil {

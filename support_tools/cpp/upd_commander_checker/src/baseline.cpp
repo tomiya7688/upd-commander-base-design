@@ -27,10 +27,23 @@
 namespace upd_checker {
 namespace {
 
+// {
+// 責務: [rotate_right: SHA-256内部wordを指定bit数だけ循環右シフトする]
+// 処理: [1: 右shiftと左shiftの結果をORする]
+// 引数: [value: 対象word, amount: shift bit数]
+// 戻り値: [循環右shift後のword]
+// }
 std::uint32_t rotate_right(std::uint32_t value, int amount) {
     return (value >> amount) | (value << (32 - amount));
 }
 
+// {
+// 責務: [normalize_nfc: UTF-8文字列をUnicode NFCへ正規化する]
+// 処理: [1: OS別Unicode APIでUTF-8を変換する, 2: NFCを適用する, 3: UTF-8へ戻す]
+// 引数: [input: 正規化する文字列]
+// 戻り値: [NFC形式のUTF-8文字列]
+// エラー: [UTF-8またはUnicode変換が不正な場合]
+// }
 std::string normalize_nfc(const std::string& input) {
 #ifdef _WIN32
     const int wide_length = MultiByteToWideChar(
@@ -110,6 +123,13 @@ std::string normalize_nfc(const std::string& input) {
 #endif
 }
 
+// {
+// 責務: [canonical_rule: rule codeを大文字UPD形式へ正規化する]
+// 処理: [1: NFCと大文字化を行う, 2: UPDと3桁以上の数字を検証する]
+// 引数: [input: rule code]
+// 戻り値: [canonical rule code]
+// エラー: [rule形式が契約に一致しない場合]
+// }
 std::string canonical_rule(const std::string& input) {
     std::string rule = normalize_nfc(input);
     std::transform(rule.begin(), rule.end(), rule.begin(), [](unsigned char ch) {
@@ -122,6 +142,13 @@ std::string canonical_rule(const std::string& input) {
     return rule;
 }
 
+// {
+// 責務: [canonical_path: repository相対pathをfingerprint用に正規化する]
+// 処理: [1: NFCとslash区切りを適用する, 2: 絶対pathと親参照を拒否する, 3: dot要素を除く]
+// 引数: [input: path]
+// 戻り値: [canonical path]
+// エラー: [不正pathまたは空pathの場合]
+// }
 std::string canonical_path(const std::string& input) {
     std::string path = normalize_nfc(input);
     std::replace(path.begin(), path.end(), '\\', '/');
@@ -164,6 +191,12 @@ constexpr std::array<std::uint32_t, 64> k_round = {
     0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
     0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2};
 
+// {
+// 責務: [sha256:入力bytesのSHA-256 digestを小文字hexで返す]
+// 処理: [1: paddingとbit長を付与する, 2: 512-bit blockを圧縮する, 3: stateをhex化する]
+// 引数: [input: hash対象bytes]
+// 戻り値: [64桁の小文字hex digest]
+// }
 std::string sha256(const std::string& input) {
     std::vector<std::uint8_t> data(input.begin(), input.end());
     const std::uint64_t bit_length = static_cast<std::uint64_t>(data.size()) * 8;
@@ -201,6 +234,13 @@ std::string sha256(const std::string& input) {
     return result.str();
 }
 
+// {
+// 責務: [required_field: JSON objectから必須fieldを取得する]
+// 処理: [1: object型とfield存在を確認する]
+// 引数: [object: 読み取り元, name: 必須field名]
+// 戻り値: [fieldのJSON値への参照]
+// エラー: [object型でない、またはfieldが欠落する場合]
+// }
 const JsonValue& required_field(const JsonValue& object, const std::string& name) {
     if (object.type != JsonValue::Type::object) throw std::invalid_argument("baseline entry must be an object");
     const auto found = object.object_value.find(name);
@@ -208,11 +248,25 @@ const JsonValue& required_field(const JsonValue& object, const std::string& name
     return found->second;
 }
 
+// {
+// 責務: [json_string: JSON値を必須文字列として読み取る]
+// 処理: [1: JSON kindを確認する]
+// 引数: [value: 読み取るJSON値, field: 診断用field名]
+// 戻り値: [文字列値]
+// エラー: [JSON値が文字列でない場合]
+// }
 std::string json_string(const JsonValue& value, const std::string& field) {
     if (value.type != JsonValue::Type::string) throw std::invalid_argument(field + " must be a string");
     return value.string_value;
 }
 
+// {
+// 責務: [json_integer: JSON値を範囲内の整数として解析する]
+// 処理: [1: JSON numberを検査する, 2: 全桁を整数へ変換する]
+// 引数: [value: 読み取るJSON値, field: 診断用field名]
+// 戻り値: [解析した整数]
+// エラー: [整数表記でない、または範囲外の場合]
+// }
 int json_integer(const JsonValue& value, const std::string& field) {
     if (value.type != JsonValue::Type::number || value.number_value.empty()) throw std::invalid_argument(field + " must be an integer");
     int result = 0;
@@ -221,6 +275,13 @@ int json_integer(const JsonValue& value, const std::string& field) {
     return result;
 }
 
+// {
+// 責務: [canonical_entry: entry fieldを正規化しmetadataとfingerprintを検証する]
+// 処理: [1: identityを正規化する, 2: severityとlineを確認する, 3: 必要ならhashを照合する]
+// 引数: [entry: 検査対象, verify_fingerprint: 保存済みhashを確認するか]
+// 戻り値: [canonical entry]
+// エラー: [identityまたはmetadataが契約に反する場合]
+// }
 BaselineEntry canonical_entry(BaselineEntry entry, bool verify_fingerprint) {
     const std::string fingerprint = finding_fingerprint(entry.rule, entry.path, entry.symbol, entry.context);
     entry.rule = canonical_rule(entry.rule);
@@ -234,6 +295,12 @@ BaselineEntry canonical_entry(BaselineEntry entry, bool verify_fingerprint) {
     return entry;
 }
 
+// {
+// 責務: [quote_json: 文字列をJSON string literalへescapeする]
+// 処理: [1: quote・slash・制御文字をescapeする, 2: quoteで囲む]
+// 引数: [value: JSON化する文字列]
+// 戻り値: [JSON string literal]
+// }
 std::string quote_json(const std::string& value) {
     std::ostringstream output;
     output << '"';
@@ -255,6 +322,12 @@ std::string quote_json(const std::string& value) {
     return output.str();
 }
 
+// {
+// 責務: [serialize_baseline: Baselineを契約順の整形済みJSONへ変換する]
+// 処理: [1: versionとfindingsを出力する, 2: optional metadataを含める]
+// 引数: [baseline: serializeするsnapshot]
+// 戻り値: [末尾改行を含むJSON文書]
+// }
 std::string serialize_baseline(const Baseline& baseline) {
     std::ostringstream output;
     output << "{\n  \"schema_version\": " << baseline.schema_version

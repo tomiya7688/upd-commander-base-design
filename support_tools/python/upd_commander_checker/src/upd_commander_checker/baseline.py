@@ -26,14 +26,26 @@ _REQUIRED_ENTRY_FIELDS = {
 }
 
 
+# {
+# 責務: [BaselineError: baselineの不正やFinding identityの曖昧さを通知する]
+# フィールド: [args: ValueErrorから継承する診断情報]
+# 処理: [1: 検証失敗の理由を例外として保持する]
+# }
 class BaselineError(ValueError):
-    """A malformed baseline or ambiguous finding identity."""
+    """baselineの不正やFinding identityの曖昧さを表す。"""
 
 
+# {
+# 責務: [finding_fingerprint: Finding identityから安定したv1 fingerprintを生成する]
+# 処理: [1: rule/path/symbol/contextを正規化する, 2: NUL区切りのSHA-256を計算する]
+# 引数: [rule/path/symbol/context: Finding identityを構成する値]
+# 戻り値: [sha256:形式の小文字hex fingerprint]
+# エラー: [rule・path・contextが契約に反する場合]
+# }
 def finding_fingerprint(
     rule: str, path: str, symbol: str, context: str
 ) -> str:
-    """Return the v1 fingerprint for canonical identity fields."""
+    """正規化したidentity fieldからversion 1 fingerprintを返す。"""
     canonical_rule = unicodedata.normalize("NFC", rule).upper()
     if _RULE_PATTERN.fullmatch(canonical_rule) is None:
         raise BaselineError("rule must match UPD followed by at least three digits")
@@ -70,8 +82,15 @@ def finding_fingerprint(
     return "sha256:" + hashlib.sha256(payload).hexdigest()
 
 
+# {
+# 責務: [build_baseline: Finding一覧から決定的なversion 1 baselineを構築する]
+# 処理: [1: Findingをentryへ変換する, 2: fingerprintの一意性を検証する, 3: 順序を固定する]
+# 引数: [findings: baselineへ記録するFinding一覧]
+# 戻り値: [schema_version等を含むbaseline辞書]
+# エラー: [identityが不正または重複する場合]
+# }
 def build_baseline(findings: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    """Build a deterministic v1 baseline from canonical Finding mappings."""
+    """Finding一覧から決定的なversion 1 baselineを構築する。"""
     entries: list[dict[str, Any]] = []
     seen: set[str] = set()
     for finding in findings:
@@ -91,8 +110,15 @@ def build_baseline(findings: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     }
 
 
+# {
+# 責務: [write_baseline: 検証済みbaselineをJSONファイルへ保存する]
+# 処理: [1: baselineを構築する, 2: 親directoryを作る, 3: UTF-8 JSONを書き込む]
+# 引数: [path: 保存先, findings: 記録するFinding一覧]
+# 戻り値: [なし]
+# 副作用: [baselineファイルと必要な親directoryを作成する]
+# }
 def write_baseline(path: Path, findings: Iterable[Mapping[str, Any]]) -> None:
-    """Write a validated, deterministic baseline JSON document."""
+    """検証済みbaselineをJSONファイルへ保存する。"""
     baseline = build_baseline(findings)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -101,8 +127,15 @@ def write_baseline(path: Path, findings: Iterable[Mapping[str, Any]]) -> None:
     )
 
 
+# {
+# 責務: [load_baseline: JSONファイルを読み込みversion 1 baselineとして検証する]
+# 処理: [1: UTF-8 JSONを読む, 2: 構造とidentityを検証する]
+# 引数: [path: 読み込むbaselineファイル]
+# 戻り値: [検証・正規化済みbaseline辞書]
+# エラー: [読込・JSON解析・契約検証に失敗した場合]
+# }
 def load_baseline(path: Path) -> dict[str, Any]:
-    """Read and strictly validate a v1 baseline document."""
+    """JSONファイルを読み込みversion 1 baselineとして検証する。"""
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
@@ -110,6 +143,13 @@ def load_baseline(path: Path) -> dict[str, Any]:
     return validate_baseline(document)
 
 
+# {
+# 責務: [validate_baseline: baseline v1のschemaとFinding identityを検証する]
+# 処理: [1: versionと必須fieldを確認する, 2: entryを正規化する, 3: fingerprintと一意性を確認する]
+# 引数: [document: 検証対象のJSON値]
+# 戻り値: [検証・正規化済みbaseline辞書]
+# エラー: [型・version・path・fingerprint等が契約に反する場合]
+# }
 def validate_baseline(document: Any) -> dict[str, Any]:
     if not isinstance(document, dict):
         raise BaselineError("baseline root must be an object")
@@ -182,10 +222,17 @@ def validate_baseline(document: Any) -> dict[str, Any]:
     }
 
 
+# {
+# 責務: [compare_findings: 現在とbaselineのFindingをNEW/EXISTING/RESOLVEDへ分類する]
+# 処理: [1: baselineと現在のFindingを正規化する, 2: fingerprint集合を比較する]
+# 引数: [current: 現在のFinding一覧, baseline: 比較するbaseline]
+# 戻り値: [分類別のFinding辞書]
+# エラー: [baselineまたは現在のidentityが不正・重複する場合]
+# }
 def compare_findings(
     current: Iterable[Mapping[str, Any]], baseline: Mapping[str, Any]
 ) -> dict[str, list[dict[str, Any]]]:
-    """Classify current and baseline findings without discarding either set."""
+    """Findingを分類し、通常の出力対象からは除外しない。"""
     validated = validate_baseline(dict(baseline))
     current_by_fingerprint: dict[str, dict[str, Any]] = {}
     for finding in current:
@@ -217,6 +264,13 @@ def compare_findings(
     return {"new": new, "existing": existing, "resolved": resolved}
 
 
+# {
+# 責務: [_entry_from_finding: Findingをcanonical baseline entryへ変換する]
+# 処理: [1: 必須fieldを確認する, 2: identityを正規化する, 3: fingerprintとmetadataを作る]
+# 引数: [finding: 変換するFinding]
+# 戻り値: [baseline schemaのentry辞書]
+# エラー: [必須field欠落または値の型が不正な場合]
+# }
 def _entry_from_finding(finding: Mapping[str, Any]) -> dict[str, Any]:
     try:
         rule = finding["rule"]
@@ -259,12 +313,25 @@ def _entry_from_finding(finding: Mapping[str, Any]) -> dict[str, Any]:
     return entry
 
 
+# {
+# 責務: [_canonical_path: repository相対pathをslash区切りのcanonical表記にする]
+# 処理: [1: Unicodeと区切りを正規化する, 2: 空要素とdot要素を整理する]
+# 引数: [path: 正規化対象のpath]
+# 戻り値: [canonical path]
+# }
 def _canonical_path(path: str) -> str:
     normalized = unicodedata.normalize("NFC", path.replace("\\", "/"))
     parsed = PurePosixPath(normalized)
     return "/".join(part for part in parsed.parts if part not in {"", "."})
 
 
+# {
+# 責務: [_string_field: Findingから必須文字列fieldを取得する]
+# 処理: [1: fieldの型を確認する]
+# 引数: [finding: 読み取り元, name: field名, index: Finding位置]
+# 戻り値: [取得した文字列]
+# エラー: [fieldが文字列でない場合]
+# }
 def _string_field(finding: Mapping[str, Any], name: str, index: int) -> str:
     value = finding[name]
     if not isinstance(value, str):
@@ -272,6 +339,12 @@ def _string_field(finding: Mapping[str, Any], name: str, index: int) -> str:
     return value
 
 
+# {
+# 責務: [_with_status: baseline entryへ差分statusを付ける]
+# 処理: [1: entryを複製する, 2: statusを追加する]
+# 引数: [entry: 元entry, status: NEW/EXISTING/RESOLVED]
+# 戻り値: [statusを持つ新しいentry辞書]
+# }
 def _with_status(entry: Mapping[str, Any], status: str) -> dict[str, Any]:
     result = dict(entry)
     result["status"] = status
