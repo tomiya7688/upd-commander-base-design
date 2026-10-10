@@ -86,6 +86,7 @@ Process Messenger
 
 ## Documentation
 
+- [Japanese Documentation Writing Guide](docs/japanese-writing-guide.md) — terminology, rule strength, and review criteria for Japanese documentation
 - [Architecture](docs/architecture.en.md) — overall structure and responsibilities
 - [Layer Rules](docs/layer-rules.en.md) — rules for UI / Process / Data
 - [Commander & Messenger](docs/commander-messenger.en.md) — responsibilities of Commander and Messenger
