@@ -16,6 +16,7 @@ struct Config {
     bool warnings_as_errors = false;
     std::vector<std::string> fail_on;
     bool fail_on_configured = false;
+    std::string fail_on_scope = "all";
     std::map<std::string, std::string> severity_overrides;
     std::vector<GateException> gate_exceptions;
     std::vector<std::string> common_roots = {"common", "shared"};

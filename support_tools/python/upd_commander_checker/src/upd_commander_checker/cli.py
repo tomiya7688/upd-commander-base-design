@@ -38,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
     baseline_group.add_argument("--write-baseline", nargs="?", const="", metavar="PATH")
     baseline_group.add_argument("--baseline", metavar="PATH")
     parser.add_argument("--fail-on", default=None, metavar="SEVERITIES")
+    parser.add_argument("--fail-on-scope", choices=("all", "new"), default=None)
     parser.add_argument(
         "--severity-override", action="append", default=[], metavar="RULE=SEVERITY"
     )
@@ -63,6 +64,10 @@ def main() -> int:
     ignores = tuple(config.ignore) + tuple(args.ignore)
     warnings_as_errors = config.warnings_as_errors or args.warnings_as_errors
     attentions_as_errors = args.attentions_as_errors
+    fail_on_scope = args.fail_on_scope or config.fail_on_scope
+    if fail_on_scope == "new" and args.baseline is None:
+        print("CONFIG ERROR: fail_on_scope=new requires --baseline")
+        return 2
     explicit_gate = args.fail_on is not None or config.fail_on is not None
     try:
         fail_on = (
@@ -163,6 +168,17 @@ def main() -> int:
     gate_findings = [
         finding
         for finding in findings
+        if (
+            fail_on_scope == "all"
+            or statuses.get(
+                finding_fingerprint(
+                    finding.code,
+                    _display_path(finding.path, target),
+                    finding.symbol,
+                    finding.context,
+                )
+            ) == "NEW"
+        )
         if exception_reason(
             finding, _display_path(finding.path, target), config.gate_exceptions
         )

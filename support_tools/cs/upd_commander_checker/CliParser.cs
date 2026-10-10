@@ -13,6 +13,7 @@ internal static class CliParser
         var attentionsAsErrors = false;
         var failOn = config.FailOn is null ? new List<string>() : new List<string>(config.FailOn);
         var failOnConfigured = config.FailOn is not null;
+        var failOnScope = config.FailOnScope;
         var severityOverrides = new Dictionary<string, string>(
             config.SeverityOverrides,
             StringComparer.Ordinal
@@ -100,6 +101,23 @@ internal static class CliParser
                 }
                 failOnConfigured = true;
             }
+            else if (argument == "--fail-on-scope")
+            {
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                {
+                    throw new CliUsageException($"missing value for {argument}");
+                }
+                failOnScope = args[++index];
+                if (failOnScope is not ("all" or "new"))
+                {
+                    throw new CliUsageException(
+                        "invalid value for --fail-on-scope; expected all or new"
+                    );
+                }
+            }
             else if (argument == "--severity-override")
             {
                 if (
@@ -138,6 +156,8 @@ internal static class CliParser
 
         if (writeBaseline && baselinePath.Length > 0)
             throw new CliUsageException("--write-baseline and --baseline are mutually exclusive");
+        if (failOnScope == "new" && baselinePath.Length == 0)
+            throw new CliUsageException("fail_on_scope=new requires --baseline");
         return new CliOptions(
             target,
             output,
@@ -146,6 +166,7 @@ internal static class CliParser
             attentionsAsErrors,
             failOn,
             failOnConfigured,
+            failOnScope,
             severityOverrides,
             writeBaseline,
             writeBaselinePath,

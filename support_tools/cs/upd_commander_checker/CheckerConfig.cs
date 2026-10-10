@@ -19,6 +19,9 @@ internal sealed class CheckerConfig
     [JsonPropertyName("fail_on")]
     public List<string>? FailOn { get; set; }
 
+    [JsonPropertyName("fail_on_scope")]
+    public string FailOnScope { get; set; } = "all";
+
     [JsonPropertyName("severity_overrides")]
     public Dictionary<string, string> SeverityOverrides { get; set; } = new();
 

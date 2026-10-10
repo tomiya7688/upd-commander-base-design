@@ -47,6 +47,10 @@ void test_baseline_flags() {
     const auto comparison = parse({"checker", "--baseline", "baseline.json", "source"});
     assert(comparison.baseline_path == "baseline.json");
     assert(fails_with({"checker", "--write-baseline", "--baseline", "baseline.json"}, "mutually exclusive"));
+    assert(fails_with({"checker", "--fail-on-scope", "new"}, "requires --baseline"));
+    assert(fails_with({"checker", "--fail-on-scope", "invalid"}, "all or new"));
+    const auto new_scope = parse({"checker", "--baseline", "baseline.json", "--fail-on-scope", "new"});
+    assert(new_scope.fail_on_scope == "new");
 }
 
 void test_multiple_targets_fail() {

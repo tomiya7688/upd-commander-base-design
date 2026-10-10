@@ -12,6 +12,7 @@ internal static class ConfigFieldValidator
         RequireStringArray(new ConfigFieldInput(root, "ignore"));
         RequireBoolean(new ConfigFieldInput(root, "warnings_as_errors"));
         RequireFailOn(new ConfigFieldInput(root, "fail_on"));
+        RequireFailOnScope(new ConfigFieldInput(root, "fail_on_scope"));
         RequireSeverityOverrides(new ConfigFieldInput(root, "severity_overrides"));
         ConfigGateExceptionValidator.Validate(new ConfigFieldInput(root, "gate_exceptions"));
         RequireCommonRoots(new ConfigFieldInput(root, "common_roots"));
@@ -20,6 +21,18 @@ internal static class ConfigFieldValidator
         RequirePercentInteger(new ConfigFieldInput(root, "flat_layer_min_direct_percent"));
         RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_items"), 3);
         RequireMinimumInteger(new ConfigFieldInput(root, "model_group_min_occurrences"), 2);
+    }
+
+    private static void RequireFailOnScope(ConfigFieldInput input)
+    {
+        if (!input.Root.TryGetProperty(input.Name, out var value))
+        {
+            return;
+        }
+        if (value.ValueKind != JsonValueKind.String || value.GetString() is not ("all" or "new"))
+        {
+            throw new ConfigException($"invalid config field: {input.Name}");
+        }
     }
 
     private static void RequireFailOn(ConfigFieldInput input)

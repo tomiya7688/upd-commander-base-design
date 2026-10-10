@@ -39,6 +39,9 @@ def load_config() -> CheckerConfig:
         fail_on = normalize_fail_on(data["fail_on"]) if "fail_on" in data else None
     except ValueError as exc:
         raise ConfigError("invalid config field: fail_on") from exc
+    fail_on_scope = data.get("fail_on_scope", "all")
+    if not isinstance(fail_on_scope, str) or fail_on_scope not in {"all", "new"}:
+        raise ConfigError("invalid config field: fail_on_scope")
     try:
         severity_overrides = normalize_severity_overrides(data.get("severity_overrides", {}))
     except ValueError as exc:
@@ -100,6 +103,7 @@ def load_config() -> CheckerConfig:
         ignore=ignore,
         warnings_as_errors=warnings_as_errors,
         fail_on=fail_on,
+        fail_on_scope=fail_on_scope,
         severity_overrides=severity_overrides,
         gate_exceptions=gate_exceptions,
         common_roots=common_roots,

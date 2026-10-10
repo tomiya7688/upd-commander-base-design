@@ -15,6 +15,7 @@ type Config struct {
 	Ignore                    []string          `json:"ignore"`
 	WarningsAsErrors          bool              `json:"warnings_as_errors"`
 	FailOn                    *[]string         `json:"fail_on"`
+	FailOnScope               string            `json:"fail_on_scope"`
 	SeverityOverrides         map[string]string `json:"severity_overrides"`
 	GateExceptions            []GateException   `json:"gate_exceptions"`
 	CommonRoots               []string          `json:"common_roots"`
@@ -27,7 +28,7 @@ type Config struct {
 }
 
 func LoadConfig() (Config, error) {
-	config := Config{Input: ".", CommonRoots: []string{"common", "shared"}, Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80, ModelGroupMinItems: 3, ModelGroupMinOccurrences: 2}
+	config := Config{Input: ".", FailOnScope: "all", CommonRoots: []string{"common", "shared"}, Upd301MaxInputs: 2, FlatLayerMinFiles: 12, FlatLayerMinDirectPercent: 80, ModelGroupMinItems: 3, ModelGroupMinOccurrences: 2}
 	path := findConfigPath()
 	if path == "" {
 		return config, nil
@@ -62,6 +63,11 @@ func LoadConfig() (Config, error) {
 			return Config{}, fmt.Errorf("invalid config field: fail_on")
 		}
 		config.FailOn = &normalized
+	}
+	if value, ok := raw["fail_on_scope"]; ok {
+		if !decodeConfigString(value, &config.FailOnScope) || (config.FailOnScope != "all" && config.FailOnScope != "new") {
+			return Config{}, fmt.Errorf("invalid config field: fail_on_scope")
+		}
 	}
 	if value, ok := raw["severity_overrides"]; ok {
 		var overrides map[string]string

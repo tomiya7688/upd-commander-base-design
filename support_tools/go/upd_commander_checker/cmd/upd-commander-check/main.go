@@ -131,6 +131,11 @@ func runCLI(args []string, config checker.Config) int {
 	var writeBaseline optionalPathFlag
 	var baselinePath string
 	var failOn optionalString
+	failOnScopeDefault := config.FailOnScope
+	if failOnScopeDefault == "" {
+		failOnScopeDefault = "all"
+	}
+	var failOnScope string
 	var severityOverrides stringList
 	flags := flag.NewFlagSet("upd-commander-check", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
@@ -141,12 +146,19 @@ func runCLI(args []string, config checker.Config) int {
 	flags.Var(&writeBaseline, "write-baseline", "write a baseline (optional path via --write-baseline=PATH)")
 	flags.StringVar(&baselinePath, "baseline", "", "compare findings with a baseline JSON file")
 	flags.Var(&failOn, "fail-on", "comma-separated severities that fail the check")
+	flags.StringVar(&failOnScope, "fail-on-scope", failOnScopeDefault, "findings subject to the gate: all or new")
 	flags.Var(&severityOverrides, "severity-override", "override a rule severity as UPDnnn=severity; repeatable")
 	if err := flags.Parse(args); err != nil {
 		return finishReport([]string{fmt.Sprintf("CLI ERROR: %s", err)}, "", 2)
 	}
 	if writeBaseline.enabled && baselinePath != "" {
 		return finishReport([]string{"CLI ERROR: --write-baseline and --baseline are mutually exclusive"}, "", 2)
+	}
+	if failOnScope != "all" && failOnScope != "new" {
+		return finishReport([]string{"CONFIG ERROR: invalid --fail-on-scope; expected all or new"}, "", 2)
+	}
+	if failOnScope == "new" && baselinePath == "" {
+		return finishReport([]string{"CONFIG ERROR: fail_on_scope=new requires --baseline"}, "", 2)
 	}
 
 	target := config.Input
@@ -257,18 +269,18 @@ func runCLI(args []string, config checker.Config) int {
 			attentions++
 		}
 		line := fmt.Sprintf("%s %s %s:%d %s", level, finding.Code, finding.Path, finding.Line, finding.Message)
+		fingerprint, fingerprintErr := checker.FindingFingerprint(finding.Code, finding.Path, finding.Symbol, finding.Context)
+		if fingerprintErr != nil && baselinePath != "" {
+			return finishReport([]string{fmt.Sprintf("BASELINE ERROR: %s", fingerprintErr)}, output, 2)
+		}
 		reason := checker.GateExceptionReason(finding, config.GateExceptions)
 		suffix := ""
 		if reason != "" {
 			suffix = fmt.Sprintf(" [gate exception: %s]", reason)
-		} else {
+		} else if failOnScope == "all" || statuses[fingerprint] == "NEW" {
 			gateFindings = append(gateFindings, finding)
 		}
 		if baselinePath != "" {
-			fingerprint, err := checker.FindingFingerprint(finding.Code, finding.Path, finding.Symbol, finding.Context)
-			if err != nil {
-				return finishReport([]string{fmt.Sprintf("BASELINE ERROR: %s", err)}, output, 2)
-			}
 			line = statuses[fingerprint] + " " + line
 		}
 		lines = append(lines, line+suffix)

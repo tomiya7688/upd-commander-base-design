@@ -20,6 +20,7 @@ struct CliOptions {
     std::string baseline_path;
     std::vector<std::string> fail_on;
     bool fail_on_configured = false;
+    std::string fail_on_scope = "all";
     std::map<std::string, std::string> severity_overrides;
 };
 

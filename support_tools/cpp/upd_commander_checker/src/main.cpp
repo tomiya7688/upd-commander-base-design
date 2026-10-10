@@ -113,18 +113,20 @@ int main(int argc, char* argv[]) {
         const std::string suffix = reason.empty()
             ? ""
             : " [gate exception: " + reason + "]";
-        if (reason.empty()) {
-            gate_findings.push_back(finding);
-        }
+        std::string fingerprint;
         if (!options.baseline_path.empty()) {
             try {
-                const auto fingerprint = upd_checker::finding_fingerprint(
+                fingerprint = upd_checker::finding_fingerprint(
                     finding.code, finding.path, finding.symbol, finding.context);
                 result_line = statuses.at(fingerprint) + " " + result_line;
             } catch (const std::exception& error) {
                 return upd_checker::finish_report(
                     {"BASELINE ERROR: " + std::string(error.what())}, options.output, 2);
             }
+        }
+        if (reason.empty() &&
+            (options.fail_on_scope == "all" || statuses[fingerprint] == "NEW")) {
+            gate_findings.push_back(finding);
         }
         lines.push_back(std::move(result_line) + suffix);
     }
