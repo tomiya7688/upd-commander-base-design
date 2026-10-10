@@ -40,6 +40,24 @@ public sealed class CliParserTests
     }
 
     [Fact]
+    public void NewOnlyGateRequiresBaselineAndCanBeOverridden()
+    {
+        var configured = new CheckerConfig { FailOnScope = "new" };
+        Assert.Throws<CliUsageException>(() => CliParser.Parse(new CliParseInput([], configured)));
+        var options = CliParser.Parse(
+            new CliParseInput(["--baseline", "baseline.json", "--fail-on-scope", "all"], configured)
+        );
+        Assert.Equal("all", options.FailOnScope);
+        var newScope = CliParser.Parse(
+            new CliParseInput(
+                ["--baseline", "baseline.json", "--fail-on-scope", "new"],
+                new CheckerConfig()
+            )
+        );
+        Assert.Equal("new", newScope.FailOnScope);
+    }
+
+    [Fact]
     public void OptionCannotConsumeAnotherOptionAsValue()
     {
         var error = Assert.Throws<CliUsageException>(() =>

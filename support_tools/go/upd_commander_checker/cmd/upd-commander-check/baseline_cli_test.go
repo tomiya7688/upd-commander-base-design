@@ -78,3 +78,48 @@ func TestBaselineCLIRejectsCorruptAndConflictingFlags(t *testing.T) {
 		t.Fatalf("expected malformed/missing baseline exit code 2, got %d", code)
 	}
 }
+
+func TestBaselineCLINewScopeAndRequiresBaseline(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "commander.go")
+	if err := os.WriteFile(source, []byte("package commander\nimport \"os\"\nfunc Commander() { os.Exit(0) }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rules := []string{"UPD203"}
+	reportPath := filepath.Join(root, "report.txt")
+	config := checker.Config{Input: root, Output: reportPath, EnabledRules: &rules}
+	baseline := filepath.Join(root, ".upd-baseline.json")
+	if code := runCLI([]string{"--write-baseline"}, config); code != 1 {
+		t.Fatalf("expected initial finding failure, got %d", code)
+	}
+	if code := runCLI([]string{"--baseline", baseline, "--fail-on-scope", "new"}, config); code != 0 {
+		t.Fatalf("expected existing finding to pass new-only gate, got %d", code)
+	}
+	report, err := os.ReadFile(reportPath)
+	if err != nil || !strings.Contains(string(report), "OK e=1 w=0 a=0") {
+		t.Fatalf("expected all existing findings in success summary, got %s (err=%v)", report, err)
+	}
+	if err := os.WriteFile(source, []byte("package commander\nimport \"os\"\nfunc Commander() { os.Exit(0) }\nfunc Another() { os.Remove(\"x\") }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code := runCLI([]string{"--baseline", baseline, "--fail-on-scope", "new"}, config); code != 1 {
+		t.Fatalf("expected new finding to fail new-only gate, got %d", code)
+	}
+	report, err = os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatalf("read report: %v", err)
+	}
+	if !strings.Contains(string(report), "EXISTING E UPD203") || !strings.Contains(string(report), "NEW E UPD203") {
+		t.Fatalf("expected all findings to remain reported, got %s", report)
+	}
+	if code := runCLI([]string{"--baseline", baseline, "--fail-on", "warning", "--severity-override", "UPD203=warning", "--fail-on-scope", "new"}, config); code != 1 {
+		t.Fatalf("expected NEW warning to fail when warning is selected, got %d", code)
+	}
+	report, err = os.ReadFile(reportPath)
+	if err != nil || !strings.Contains(string(report), "NEW W UPD203") {
+		t.Fatalf("expected NEW warning to remain reported, got %s (err=%v)", report, err)
+	}
+	if code := runCLI([]string{"--fail-on-scope", "new"}, config); code != 2 {
+		t.Fatalf("expected missing-baseline configuration error, got %d", code)
+	}
+}

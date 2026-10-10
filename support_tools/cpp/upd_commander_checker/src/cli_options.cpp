@@ -29,6 +29,7 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
     };
     options.fail_on = config.fail_on;
     options.fail_on_configured = config.fail_on_configured;
+    options.fail_on_scope = config.fail_on_scope;
     options.severity_overrides = config.severity_overrides;
     bool target_specified = false;
 
@@ -58,6 +59,11 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
                 throw CliUsageError("invalid value for --fail-on");
             }
             options.fail_on_configured = true;
+        } else if (argument == "--fail-on-scope") {
+            options.fail_on_scope = read_value(index, argc, argv, argument);
+            if (options.fail_on_scope != "all" && options.fail_on_scope != "new") {
+                throw CliUsageError("invalid value for --fail-on-scope; expected all or new");
+            }
         } else if (argument == "--severity-override") {
             const std::string value = read_value(index, argc, argv, argument);
             std::string rule;
@@ -79,6 +85,9 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
 
     if (options.write_baseline && !options.baseline_path.empty()) {
         throw CliUsageError("--write-baseline and --baseline are mutually exclusive");
+    }
+    if (options.fail_on_scope == "new" && options.baseline_path.empty()) {
+        throw CliUsageError("fail_on_scope=new requires --baseline");
     }
 
     return options;

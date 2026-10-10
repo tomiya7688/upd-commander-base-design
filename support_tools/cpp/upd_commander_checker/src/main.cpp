@@ -113,18 +113,20 @@ int main(int argc, char* argv[]) {
         const std::string suffix = reason.empty()
             ? ""
             : " [gate exception: " + reason + "]";
-        if (reason.empty()) {
-            gate_findings.push_back(finding);
-        }
+        std::string fingerprint;
         if (!options.baseline_path.empty()) {
             try {
-                const auto fingerprint = upd_checker::finding_fingerprint(
+                fingerprint = upd_checker::finding_fingerprint(
                     finding.code, finding.path, finding.symbol, finding.context);
                 result_line = statuses.at(fingerprint) + " " + result_line;
             } catch (const std::exception& error) {
                 return upd_checker::finish_report(
                     {"BASELINE ERROR: " + std::string(error.what())}, options.output, 2);
             }
+        }
+        if (reason.empty() &&
+            (options.fail_on_scope == "all" || statuses[fingerprint] == "NEW")) {
+            gate_findings.push_back(finding);
         }
         lines.push_back(std::move(result_line) + suffix);
     }
@@ -152,7 +154,12 @@ int main(int argc, char* argv[]) {
             " a=" + std::to_string(attentions));
         return upd_checker::finish_report(lines, options.output, 1);
     }
-    if (warnings > 0 || attentions > 0) {
+    if (options.fail_on_scope == "new") {
+        lines.push_back(
+            "OK e=" + std::to_string(errors) +
+            " w=" + std::to_string(warnings) +
+            " a=" + std::to_string(attentions));
+    } else if (warnings > 0 || attentions > 0) {
         lines.push_back(
             "OK w=" + std::to_string(warnings) +
             " a=" + std::to_string(attentions));

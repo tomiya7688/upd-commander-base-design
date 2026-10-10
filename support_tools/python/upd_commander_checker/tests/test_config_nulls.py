@@ -19,6 +19,8 @@ class ConfigNullTest(unittest.TestCase):
             ({"input": 1}, "input"),
             ({"warnings_as_errors": "true"}, "warnings_as_errors"),
             ({"fail_on": None}, "fail_on"),
+            ({"fail_on_scope": None}, "fail_on_scope"),
+            ({"fail_on_scope": "existing"}, "fail_on_scope"),
             ({"severity_overrides": None}, "severity_overrides"),
             ({"upd301_max_inputs": None}, "upd301_max_inputs"),
             ({"upd301_max_inputs": True}, "upd301_max_inputs"),

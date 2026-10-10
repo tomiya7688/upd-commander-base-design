@@ -192,6 +192,14 @@ Config load_config(const std::string& executable_path) {
         }
         fail_on = std::move(normalized);
     }
+    std::string fail_on_scope = "all";
+    if (const JsonValue* value = find_field(root, "fail_on_scope")) {
+        if (value->type != JsonValue::Type::string ||
+            (value->string_value != "all" && value->string_value != "new")) {
+            throw ConfigError("invalid config field: fail_on_scope");
+        }
+        fail_on_scope = value->string_value;
+    }
     std::map<std::string, std::string> severity_overrides;
     if (const JsonValue* value = find_field(root, "severity_overrides")) {
         if (value->type != JsonValue::Type::object) {
@@ -296,6 +304,7 @@ Config load_config(const std::string& executable_path) {
     config.warnings_as_errors = warnings_as_errors;
     config.fail_on = std::move(fail_on);
     config.fail_on_configured = fail_on_configured;
+    config.fail_on_scope = std::move(fail_on_scope);
     config.severity_overrides = std::move(severity_overrides);
     config.gate_exceptions = std::move(gate_exceptions);
     config.common_roots = std::move(common_roots);

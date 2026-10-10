@@ -132,15 +132,13 @@ internal static class Program
             var line = $"{level} {finding.Code} {finding.Path}:{finding.Line} {finding.Message}";
             var reason = GatePolicy.GateExceptionReason(finding, config.GateExceptions);
             var suffix = reason is null ? "" : $" [gate exception: {reason}]";
-            if (reason is null)
-            {
-                gateFindings.Add(finding);
-            }
+            var fingerprint = "";
             if (options.BaselinePath.Length > 0)
             {
                 try
                 {
-                    line = $"{statuses[BaselineService.FromFinding(finding).Fingerprint]} {line}";
+                    fingerprint = BaselineService.FromFinding(finding).Fingerprint;
+                    line = $"{statuses[fingerprint]} {line}";
                 }
                 catch (Exception exception)
                     when (exception
@@ -153,6 +151,15 @@ internal static class Program
                         new FinishInput([$"BASELINE ERROR: {exception.Message}"], options.Output, 2)
                     );
                 }
+            }
+            if (
+                reason is null
+                && (
+                    options.FailOnScope == "all" || statuses.GetValueOrDefault(fingerprint) == "NEW"
+                )
+            )
+            {
+                gateFindings.Add(finding);
             }
             lines.Add(line + suffix);
         }
@@ -174,7 +181,14 @@ internal static class Program
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
             return ReportOutput.Finish(new FinishInput(lines, options.Output, 1));
         }
-        lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
+        if (options.FailOnScope == "new")
+        {
+            lines.Add($"OK e={errors} w={warnings} a={attentions}");
+        }
+        else
+        {
+            lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
+        }
         return ReportOutput.Finish(new FinishInput(lines, options.Output, 0));
     }
 

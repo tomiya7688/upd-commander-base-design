@@ -74,7 +74,7 @@ EXEビルド時に `dist/upd-commander-check/config/path.json` を自動生成�
 }
 ```
 
-`fail_on` は `error` / `warning` / `attention` のうちCI失敗にするseverityを指定します。空配列はfinding severityによる失敗を無効にします。`severity_overrides` はruleごとの報告severityとgate severityを変更します。CLIでは `--fail-on error,warning` と `--severity-override UPD203=warning` を指定できます。`fail_on` を省略した場合は従来どおりErrorで失敗し、既存の `warnings_as_errors` / `--attentions-as-errors` が追加昇格として働きます。
+`fail_on` は `error` / `warning` / `attention` のうちCI失敗にするseverityを指定します。空配列はfinding severityによる失敗を無効にします。`fail_on_scope` は gate 対象を `all`（既定）または `new` にします。`new` は `--baseline` と併用し、NEW findingだけを gate 対象にします。`--fail-on-scope all|new` は設定値を上書きします。全findingの出力・集計は変わりません。`severity_overrides` はruleごとの報告severityとgate severityを変更します。CLIでは `--fail-on error,warning` と `--severity-override UPD203=warning` を指定できます。`fail_on` を省略した場合は従来どおりErrorで失敗し、既存の `warnings_as_errors` / `--attentions-as-errors` が追加昇格として働きます。
 
 `gate_exceptions` はrule・相対path・任意の1始まりlineでgate対象を限定し、必須の理由をFinding行へ表示します。対象Findingと集計は残りますが、CI gateだけを通過できます。pathはscan targetからの大文字小文字を区別する `/` 区切り完全一致です。`ignore` のように検出・出力を抑止しません。
 

@@ -8,6 +8,7 @@ internal sealed record CliOptions(
     bool AttentionsAsErrors,
     IReadOnlyList<string> FailOn,
     bool FailOnConfigured,
+    string FailOnScope,
     IReadOnlyDictionary<string, string> SeverityOverrides,
     bool WriteBaseline = false,
     string WriteBaselinePath = "",

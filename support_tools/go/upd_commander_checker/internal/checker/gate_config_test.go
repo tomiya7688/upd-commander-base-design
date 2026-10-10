@@ -19,6 +19,7 @@ func TestExplicitEmptyFailOnIsPreserved(t *testing.T) {
 func TestInvalidGateConfigReturnsError(t *testing.T) {
 	for _, content := range []string{
 		`{"fail_on":null}`, `{"fail_on":"error"}`, `{"fail_on":["fatal"]}`,
+		`{"fail_on_scope":null}`, `{"fail_on_scope":"existing"}`,
 		`{"severity_overrides":null}`, `{"severity_overrides":[]}`,
 		`{"severity_overrides":{"bad":"error"}}`, `{"severity_overrides":{"UPD101":"fatal"}}`,
 		`{"gate_exceptions":null}`,
@@ -34,6 +35,23 @@ func TestInvalidGateConfigReturnsError(t *testing.T) {
 				t.Fatal("expected config error")
 			}
 		})
+	}
+}
+
+func TestFailOnScopeDefaultsAndLoads(t *testing.T) {
+	if err := writeGateConfigAndChdir(t, `{}`); err != nil {
+		t.Fatal(err)
+	}
+	config, err := LoadConfig()
+	if err != nil || config.FailOnScope != "all" {
+		t.Fatalf("default fail_on_scope not loaded: %q, %v", config.FailOnScope, err)
+	}
+	if err := writeGateConfigAndChdir(t, `{"fail_on_scope":"new"}`); err != nil {
+		t.Fatal(err)
+	}
+	config, err = LoadConfig()
+	if err != nil || config.FailOnScope != "new" {
+		t.Fatalf("new fail_on_scope not loaded: %q, %v", config.FailOnScope, err)
 	}
 }
 

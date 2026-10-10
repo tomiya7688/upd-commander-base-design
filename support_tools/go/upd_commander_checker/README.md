@@ -43,7 +43,7 @@ go run ./cmd/upd-commander-check --write-baseline=.upd-baseline.json path/to/pro
 go run ./cmd/upd-commander-check --baseline=.upd-baseline.json path/to/project
 ```
 
-破損したbaselineや未対応schema/fingerprint versionは `BASELINE ERROR` として終了コード2で報告します。`--write-baseline` と `--baseline` は同時に指定できません。
+破損したbaselineや未対応schema/fingerprint versionは `BASELINE ERROR` として終了コード2で報告します。`--write-baseline` と `--baseline` は同時に指定できません。`fail_on_scope: "new"` または `--fail-on-scope new` を使うとNEW findingだけがgate対象になります（`--baseline` が必須）。全findingの出力・集計は維持されます。
 
 ## config/path.json
 
@@ -70,7 +70,7 @@ go run ./cmd/upd-commander-check --baseline=.upd-baseline.json path/to/project
 
 `enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
 
-`fail_on` は `error` / `warning` / `attention` のうち、終了コード1にするseverityを指定します。未指定時は従来どおりerrorが失敗し、`warnings_as_errors` と `--attentions-as-errors` で追加できます。明示的な `fail_on` または `--fail-on` は従来フラグより優先されます。`"fail_on": []` または `--fail-on ""` はfindingによる失敗を無効にします。CLI例: `--fail-on error,warning --severity-override UPD203=warning`。`severity_overrides` / `--severity-override` はfindingを保持したまま有効severityを変更し、表示・集計・ゲートに反映します。CLI overrideは同じルールの設定値より優先です。
+`fail_on` は `error` / `warning` / `attention` のうち、終了コード1にするseverityを指定します。未指定時は従来どおりerrorが失敗し、`warnings_as_errors` と `--attentions-as-errors` で追加できます。明示的な `fail_on` または `--fail-on` は従来フラグより優先されます。`"fail_on": []` または `--fail-on ""` はfindingによる失敗を無効にします。`fail_on_scope` は gate 対象を `all`（既定）または `new` にします。`new` は `--baseline` と併用し、NEW findingだけを対象にします。`--fail-on-scope all|new` は設定値を上書きし、全findingの出力・集計は維持します。CLI例: `--fail-on error,warning --severity-override UPD203=warning`。`severity_overrides` / `--severity-override` はfindingを保持したまま有効severityを変更し、表示・集計・ゲートに反映します。CLI overrideは同じルールの設定値より優先です。
 
 ## Ignore
 

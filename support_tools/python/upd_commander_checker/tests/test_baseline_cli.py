@@ -10,6 +10,57 @@ from upd_commander_checker.config_model import CheckerConfig
 
 
 class BaselineCliTests(unittest.TestCase):
+    def test_new_scope_does_not_fail_existing_findings_and_requires_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "ui").mkdir()
+            (root / "data").mkdir()
+            (root / "ui" / "screen_processing.py").write_text(
+                "from data.storage import load\n", encoding="utf-8"
+            )
+            (root / "data" / "storage.py").write_text(
+                "def load():\n    return None\n", encoding="utf-8"
+            )
+            baseline = root / "baseline.json"
+            self._run(root, ["--write-baseline", str(baseline)])
+            self.assertEqual(1, self.last_exit_code)
+
+            output = self._run(
+                root, ["--baseline", str(baseline), "--fail-on-scope", "new"]
+            )
+            self.assertEqual(0, self.last_exit_code)
+            self.assertIn("EXISTING E UPD101", output)
+            self.assertIn("OK e=1 w=0 a=0", output)
+
+            (root / "ui" / "settings_processing.py").write_text(
+                "from data.storage import load\n", encoding="utf-8"
+            )
+            new_output = self._run(
+                root, ["--baseline", str(baseline), "--fail-on", "error", "--fail-on-scope", "new"]
+            )
+            self.assertEqual(1, self.last_exit_code)
+            self.assertIn("EXISTING E UPD101", new_output)
+            self.assertIn("NEW E UPD101", new_output)
+
+            warning_output = self._run(
+                root,
+                [
+                    "--baseline",
+                    str(baseline),
+                    "--fail-on",
+                    "warning",
+                    "--severity-override",
+                    "UPD101=warning",
+                    "--fail-on-scope",
+                    "new",
+                ],
+            )
+            self.assertEqual(1, self.last_exit_code)
+            self.assertIn("NEW W UPD101", warning_output)
+
+            self._run(root, ["--fail-on-scope", "new"])
+            self.assertEqual(2, self.last_exit_code)
+
     def test_write_then_compare_reports_existing_and_resolved(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

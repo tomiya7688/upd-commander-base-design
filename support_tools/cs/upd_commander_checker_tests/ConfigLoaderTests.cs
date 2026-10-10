@@ -12,6 +12,8 @@ public sealed class ConfigLoaderTests
     [InlineData("{\"warnings_as_errors\":null}", "warnings_as_errors")]
     [InlineData("{\"fail_on\":null}", "fail_on")]
     [InlineData("{\"fail_on\":[\"fatal\"]}", "fail_on")]
+    [InlineData("{\"fail_on_scope\":null}", "fail_on_scope")]
+    [InlineData("{\"fail_on_scope\":\"existing\"}", "fail_on_scope")]
     [InlineData("{\"severity_overrides\":null}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":[]}", "severity_overrides")]
     [InlineData("{\"severity_overrides\":{\"UPD101\":null}}", "severity_overrides")]

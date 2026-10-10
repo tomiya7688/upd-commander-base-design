@@ -40,6 +40,7 @@ void test_null_and_invalid_typed_fields() {
         {"{\"warnings_as_errors\":null}", "warnings_as_errors"},
         {"{\"fail_on\":null}", "fail_on"},
         {"{\"fail_on\":[\"fatal\"]}", "fail_on"},
+        {"{\"fail_on_scope\":\"existing\"}", "fail_on_scope"},
         {"{\"severity_overrides\":null}", "severity_overrides"},
         {"{\"severity_overrides\":{\"UPD101\":\"fatal\"}}", "severity_overrides"},
         {"{\"severity_overrides\":{\"bad\":\"error\"}}", "severity_overrides"},
