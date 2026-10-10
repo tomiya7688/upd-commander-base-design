@@ -95,13 +95,17 @@ func TestBaselineCLINewScopeAndRequiresBaseline(t *testing.T) {
 	if code := runCLI([]string{"--baseline", baseline, "--fail-on-scope", "new"}, config); code != 0 {
 		t.Fatalf("expected existing finding to pass new-only gate, got %d", code)
 	}
+	report, err := os.ReadFile(reportPath)
+	if err != nil || !strings.Contains(string(report), "OK e=1 w=0 a=0") {
+		t.Fatalf("expected all existing findings in success summary, got %s (err=%v)", report, err)
+	}
 	if err := os.WriteFile(source, []byte("package commander\nimport \"os\"\nfunc Commander() { os.Exit(0) }\nfunc Another() { os.Remove(\"x\") }\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if code := runCLI([]string{"--baseline", baseline, "--fail-on-scope", "new"}, config); code != 1 {
 		t.Fatalf("expected new finding to fail new-only gate, got %d", code)
 	}
-	report, err := os.ReadFile(reportPath)
+	report, err = os.ReadFile(reportPath)
 	if err != nil {
 		t.Fatalf("read report: %v", err)
 	}

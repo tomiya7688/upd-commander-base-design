@@ -189,7 +189,11 @@ def main() -> int:
         lines.append(f"FAIL e={error_count} w={warning_count} a={attention_count}")
         return finish_report(lines, output, 1)
 
-    if warning_count or attention_count:
+    if fail_on_scope == "new":
+        lines.append(
+            f"OK e={error_count} w={warning_count} a={attention_count}"
+        )
+    elif warning_count or attention_count:
         lines.append(f"OK w={warning_count} a={attention_count}")
     else:
         lines.append("OK")

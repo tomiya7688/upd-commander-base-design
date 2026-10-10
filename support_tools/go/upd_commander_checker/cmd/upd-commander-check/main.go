@@ -297,7 +297,9 @@ func runCLI(args []string, config checker.Config) int {
 		lines = append(lines, fmt.Sprintf("FAIL e=%d w=%d a=%d", errors, warnings, attentions))
 		return finishReport(lines, output, 1)
 	}
-	if warnings > 0 || attentions > 0 {
+	if failOnScope == "new" {
+		lines = append(lines, fmt.Sprintf("OK e=%d w=%d a=%d", errors, warnings, attentions))
+	} else if warnings > 0 || attentions > 0 {
 		lines = append(lines, fmt.Sprintf("OK w=%d a=%d", warnings, attentions))
 	} else {
 		lines = append(lines, "OK")

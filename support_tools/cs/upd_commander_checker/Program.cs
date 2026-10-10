@@ -181,7 +181,14 @@ internal static class Program
             lines.Add($"FAIL e={errors} w={warnings} a={attentions}");
             return ReportOutput.Finish(new FinishInput(lines, options.Output, 1));
         }
-        lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
+        if (options.FailOnScope == "new")
+        {
+            lines.Add($"OK e={errors} w={warnings} a={attentions}");
+        }
+        else
+        {
+            lines.Add(warnings > 0 || attentions > 0 ? $"OK w={warnings} a={attentions}" : "OK");
+        }
         return ReportOutput.Finish(new FinishInput(lines, options.Output, 0));
     }
 

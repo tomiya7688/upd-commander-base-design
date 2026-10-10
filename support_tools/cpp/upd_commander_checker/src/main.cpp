@@ -154,7 +154,12 @@ int main(int argc, char* argv[]) {
             " a=" + std::to_string(attentions));
         return upd_checker::finish_report(lines, options.output, 1);
     }
-    if (warnings > 0 || attentions > 0) {
+    if (options.fail_on_scope == "new") {
+        lines.push_back(
+            "OK e=" + std::to_string(errors) +
+            " w=" + std::to_string(warnings) +
+            " a=" + std::to_string(attentions));
+    } else if (warnings > 0 || attentions > 0) {
         lines.push_back(
             "OK w=" + std::to_string(warnings) +
             " a=" + std::to_string(attentions));

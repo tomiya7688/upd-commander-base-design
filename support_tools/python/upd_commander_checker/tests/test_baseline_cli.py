@@ -30,7 +30,7 @@ class BaselineCliTests(unittest.TestCase):
             )
             self.assertEqual(0, self.last_exit_code)
             self.assertIn("EXISTING E UPD101", output)
-            self.assertIn("OK", output)
+            self.assertIn("OK e=1 w=0 a=0", output)
 
             (root / "ui" / "settings_processing.py").write_text(
                 "from data.storage import load\n", encoding="utf-8"
