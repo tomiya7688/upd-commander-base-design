@@ -2,8 +2,19 @@ using System.Text.Json;
 
 namespace UpdCommanderChecker;
 
+// {
+// 責務: [Program: C# Checkerのprocess entryと終了code決定を担当する]
+// フィールド: [なし]
+// 処理: [1: CLIを解釈する, 2: scan・baseline・gateを実行する]
+// }
 internal static class Program
 {
+    // {
+    // 責務: [Main: Checkerを実行しCLI結果に対応する終了codeを返す]
+    // 処理: [1: configと引数を読む, 2: Findingをscan・比較する, 3: gate結果を出力する]
+    // 引数: [args: process起動引数]
+    // 戻り値: [成功0、Finding gate失敗1、設定・実行エラー2]
+    // }
     private static int Main(string[] args)
     {
         CheckerConfig config;
@@ -167,6 +178,12 @@ internal static class Program
         return ReportOutput.Finish(new FinishInput(lines, options.Output, 0));
     }
 
+    // {
+    // 責務: [LegacyFailOn: fail_on未指定時に従来のseverity gateを再現する]
+    // 処理: [1: errorを含める, 2: legacy flagに応じwarning/attentionを追加する]
+    // 引数: [options: CLI gate設定]
+    // 戻り値: [失敗対象severity一覧]
+    // }
     private static IReadOnlyList<string> LegacyFailOn(CliOptions options)
     {
         var failOn = new List<string> { "error" };

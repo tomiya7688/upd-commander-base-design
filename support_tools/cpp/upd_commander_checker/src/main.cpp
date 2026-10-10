@@ -13,6 +13,12 @@
 #include "rule_selection.hpp"
 #include "scanner.hpp"
 
+// {
+// 責務: [main: Checkerの設定・CLI・scan・baseline・gate処理を統括する]
+// 処理: [1: 設定とCLIを検証する, 2: Findingをscanして分類する, 3: 結果と終了codeを出力する]
+// 引数: [argc/argv: process起動引数]
+// 戻り値: [成功0、Finding gate失敗1、設定・実行エラー2]
+// }
 int main(int argc, char* argv[]) {
     upd_checker::Config config;
     try {

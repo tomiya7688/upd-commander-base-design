@@ -9,21 +9,62 @@ import (
 	"upd_commander_checker/internal/checker"
 )
 
+// {
+// 責務: [stringList: repeat指定可能なCLI文字列値を保持する]
+// フィールド: [要素: CLIから追加された文字列]
+// }
 type stringList []string
 
+// {
+// 責務: [String: stringListをflag package向けに表示する]
+// 処理: [1: 要素を文字列表現へ変換する]
+// 引数: [items: 表示対象]
+// 戻り値: [listの文字列表現]
+// }
 func (items *stringList) String() string { return fmt.Sprint([]string(*items)) }
+
+// {
+// 責務: [Set: CLIから受けた値をstringListへ追加する]
+// 処理: [1: 値を末尾へ追加する]
+// 引数: [value: 追加値]
+// 戻り値: [成功時nil]
+// }
 func (items *stringList) Set(value string) error {
 	*items = append(*items, value)
 	return nil
 }
 
+// {
+// 責務: [optionalPathFlag: 値なしでも有効化できるbaseline出力flagを表す]
+// フィールド: [enabled: flag指定の有無, path: 任意の保存先]
+// }
 type optionalPathFlag struct {
 	enabled bool
 	path    string
 }
 
-func (value *optionalPathFlag) String() string   { return value.path }
+// {
+// 責務: [String: flagの現在値を返す]
+// 処理: [1: 保存先pathを返す]
+// 引数: [value: flag状態]
+// 戻り値: [保存先path]
+// }
+func (value *optionalPathFlag) String() string { return value.path }
+
+// {
+// 責務: [IsBoolFlag: 値を省略したflag指定を許可する]
+// 処理: [1: bool flagとして扱うことを示す]
+// 引数: [value: flag状態]
+// 戻り値: [常にtrue]
+// }
 func (value *optionalPathFlag) IsBoolFlag() bool { return true }
+
+// {
+// 責務: [Set: baseline出力flagを有効化し任意pathを保存する]
+// 処理: [1: flagを有効にする, 2: true以外の値をpathとして保持する]
+// 引数: [input: flag値]
+// 戻り値: [成功時nil]
+// }
 func (value *optionalPathFlag) Set(input string) error {
 	value.enabled = true
 	if input != "true" {
@@ -32,18 +73,41 @@ func (value *optionalPathFlag) Set(input string) error {
 	return nil
 }
 
+// {
+// 責務: [optionalString: 値とCLIで明示指定されたかを保持する]
+// フィールド: [value: 指定値, set: flag指定の有無]
+// }
 type optionalString struct {
 	value string
 	set   bool
 }
 
+// {
+// 責務: [String: flagの現在値を返す]
+// 処理: [1: value fieldを文字列として返す]
+// 引数: [value: flag状態]
+// 戻り値: [指定文字列]
+// }
 func (value *optionalString) String() string { return value.value }
+
+// {
+// 責務: [Set: flag値を保存し明示指定済みにする]
+// 処理: [1: 値を保存する, 2: set状態をtrueにする]
+// 引数: [input: flag値]
+// 戻り値: [成功時nil]
+// }
 func (value *optionalString) Set(input string) error {
 	value.value = input
 	value.set = true
 	return nil
 }
 
+// {
+// 責務: [main: configを読込みCheckerを実行するprocess entry]
+// 処理: [1: configを検証する, 2: CLI実行結果をprocess終了codeに反映する]
+// 引数: [なし]
+// 戻り値: [なし]
+// }
 func main() {
 	config, configErr := checker.LoadConfig()
 	if configErr != nil {
@@ -53,6 +117,12 @@ func main() {
 	os.Exit(runCLI(os.Args[1:], config))
 }
 
+// {
+// 責務: [runCLI: scan・baseline比較・gate判定を実行して報告する]
+// 処理: [1: flagとconfigを統合する, 2: Findingをscan・分類する, 3: gate結果を出力する]
+// 引数: [args: CLI引数, config: 読込済み設定]
+// 戻り値: [成功0、Finding gate失敗1、設定・実行エラー2]
+// }
 func runCLI(args []string, config checker.Config) int {
 	var ignores stringList
 	var output string
@@ -223,6 +293,12 @@ func runCLI(args []string, config checker.Config) int {
 	return finishReport(lines, output, 0)
 }
 
+// {
+// 責務: [scanRoot: targetがfileかdirectoryかに応じscan rootを決める]
+// 処理: [1: target metadataを調べる, 2: fileなら親directoryを返す]
+// 引数: [target: scan対象]
+// 戻り値: [scan root path]
+// }
 func scanRoot(target string) string {
 	info, err := os.Stat(target)
 	if err == nil && info.IsDir() {

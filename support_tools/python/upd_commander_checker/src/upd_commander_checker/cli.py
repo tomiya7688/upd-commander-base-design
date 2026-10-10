@@ -21,6 +21,12 @@ from .rule_selection import filter_enabled_findings
 from .scanner import scan_path
 
 
+# {
+# 責務: [build_parser: Checker CLIの位置引数とoptionを定義する]
+# 処理: [1: target/output/ignore optionを登録する, 2: baselineとgate optionを登録する]
+# 引数: [なし]
+# 戻り値: [設定済みArgumentParser]
+# }
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="upd-commander-check")
     parser.add_argument("target", nargs="?", default=None)
@@ -38,6 +44,12 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# {
+# 責務: [main: scan・baseline比較・gate判定を実行して報告する]
+# 処理: [1: configとCLIを検証する, 2: Findingをscan・分類する, 3: gate結果を出力する]
+# 引数: [なし]
+# 戻り値: [成功0、Finding gate失敗1、設定・実行エラー2]
+# }
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -168,6 +180,12 @@ def main() -> int:
     return finish_report(lines, output, 0)
 
 
+# {
+# 責務: [_display_path: Finding pathをscan root相対の表示形式へ変換する]
+# 処理: [1: scan rootを決める, 2: 相対path化し、範囲外なら元pathを使う]
+# 引数: [path: Finding path, target: scan target]
+# 戻り値: [表示用path]
+# }
 def _display_path(path: Path, target: Path) -> str:
     root = _scan_root(target)
     try:
@@ -176,10 +194,22 @@ def _display_path(path: Path, target: Path) -> str:
         return path.as_posix()
 
 
+# {
+# 責務: [_scan_root: targetがfileかdirectoryかに応じscan rootを返す]
+# 処理: [1: directoryならtargetを返す, 2: fileなら親directoryを返す]
+# 引数: [target: scan target]
+# 戻り値: [scan root]
+# }
 def _scan_root(target: Path) -> Path:
     return target if target.is_dir() else target.parent
 
 
+# {
+# 責務: [_baseline_records: Findingをbaseline書込用のidentity recordへ変換する]
+# 処理: [1: identityと表示metadataを抽出する, 2: pathをscan root相対にする]
+# 引数: [findings: scan結果, target: scan target]
+# 戻り値: [baseline entry辞書一覧]
+# }
 def _baseline_records(findings: list, target: Path) -> list[dict[str, object]]:
     records: list[dict[str, object]] = []
     for finding in findings:
