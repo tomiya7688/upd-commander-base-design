@@ -18,6 +18,9 @@ internal static class CliParser
             StringComparer.Ordinal
         );
         var targetSpecified = false;
+        var writeBaseline = false;
+        var writeBaselinePath = "";
+        var baselinePath = "";
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -43,6 +46,30 @@ internal static class CliParser
                     throw new CliUsageException($"missing value for {argument}");
                 }
                 output = args[++index];
+            }
+            else if (argument == "--write-baseline")
+            {
+                writeBaseline = true;
+            }
+            else if (argument.StartsWith("--write-baseline=", StringComparison.Ordinal))
+            {
+                writeBaseline = true;
+                writeBaselinePath = argument["--write-baseline=".Length..];
+            }
+            else if (argument == "--baseline")
+            {
+                if (
+                    index + 1 >= args.Length
+                    || args[index + 1].StartsWith("-", StringComparison.Ordinal)
+                )
+                    throw new CliUsageException("missing value for --baseline");
+                baselinePath = args[++index];
+            }
+            else if (argument.StartsWith("--baseline=", StringComparison.Ordinal))
+            {
+                baselinePath = argument["--baseline=".Length..];
+                if (baselinePath.Length == 0)
+                    throw new CliUsageException("missing value for --baseline");
             }
             else if (argument == "--warnings-as-errors")
             {
@@ -109,6 +136,8 @@ internal static class CliParser
             }
         }
 
+        if (writeBaseline && baselinePath.Length > 0)
+            throw new CliUsageException("--write-baseline and --baseline are mutually exclusive");
         return new CliOptions(
             target,
             output,
@@ -117,7 +146,10 @@ internal static class CliParser
             attentionsAsErrors,
             failOn,
             failOnConfigured,
-            severityOverrides
+            severityOverrides,
+            writeBaseline,
+            writeBaselinePath,
+            baselinePath
         );
     }
 }

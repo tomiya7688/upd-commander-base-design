@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -9,3 +9,5 @@ class Finding:
     code: str
     message: str
     severity: str = "error"
+    symbol: str = field(default="", compare=False)
+    context: str = field(default="", compare=False)

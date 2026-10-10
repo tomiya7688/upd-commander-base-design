@@ -28,7 +28,10 @@ internal static class Scanner
                     ".updcommanderignore",
                     1,
                     "UPD001",
-                    $"read failed: {exception.Message}"
+                    $"read failed: {exception.Message}",
+                    "error",
+                    "",
+                    "ignore-file-read-error"
                 ),
             ];
         }

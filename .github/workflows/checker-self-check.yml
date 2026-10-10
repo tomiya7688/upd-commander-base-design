@@ -69,8 +69,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install libclang
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev
+      - name: Install libclang and ICU
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev libicu-dev
       - name: Configure
         working-directory: support_tools/cpp/upd_commander_checker
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -94,6 +94,53 @@ jobs:
           echo "$output"
           test "$status" -eq 2
           grep -q "CONFIG ERROR:" <<< "$output"
+      - name: Baseline CLI workflow
+        working-directory: support_tools/cpp/upd_commander_checker
+        shell: bash
+        run: |
+          target="$(mktemp -d)"
+          trap 'rm -rf "$target"' EXIT
+          mkdir -p "$target/commander"
+          printf '#include <fstream>\nint run() { std::ifstream input("first.txt"); return 0; }\n' > "$target/commander/first.cpp"
+          set +e
+          written="$(./build/upd-commander-check --write-baseline="$target/baseline.json" "$target")"
+          write_status=$?
+          set -e
+          echo "$written"
+          test "$write_status" -eq 1
+          grep -q "E UPD203" <<< "$written"
+          set +e
+          existing="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          existing_status=$?
+          set -e
+          echo "$existing"
+          test "$existing_status" -eq 1
+          grep -q "EXISTING E UPD203" <<< "$existing"
+          printf '#include <fstream>\nint run() { std::ifstream input("second.txt"); return 0; }\n' > "$target/commander/second.cpp"
+          set +e
+          changed="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          changed_status=$?
+          set -e
+          echo "$changed"
+          test "$changed_status" -eq 1
+          grep -q "EXISTING E UPD203" <<< "$changed"
+          grep -q "NEW E UPD203" <<< "$changed"
+          rm "$target/commander/first.cpp"
+          set +e
+          resolved="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target")"
+          resolved_status=$?
+          set -e
+          echo "$resolved"
+          test "$resolved_status" -eq 1
+          grep -q "RESOLVED E UPD203" <<< "$resolved"
+          printf '{ broken' > "$target/baseline.json"
+          set +e
+          invalid="$(./build/upd-commander-check --baseline "$target/baseline.json" "$target" 2>&1)"
+          status=$?
+          set -e
+          echo "$invalid"
+          test "$status" -eq 2
+          grep -q "BASELINE ERROR:" <<< "$invalid"
       - name: Self check
         working-directory: support_tools/cpp/upd_commander_checker
         run: ./build/upd-commander-check --warnings-as-errors --attentions-as-errors --ignore "build/**" .
@@ -115,6 +162,48 @@ jobs:
       - name: Unit test
         working-directory: support_tools/cs/upd_commander_checker_tests
         run: dotnet test UpdCommanderChecker.Tests.csproj -c Release
+      - name: Baseline CLI workflow
+        working-directory: support_tools/cs/upd_commander_checker
+        shell: bash
+        run: |
+          target="$(mktemp -d)"
+          trap 'rm -rf "$target"' EXIT
+          mkdir -p "$target/process"
+          printf 'using System.IO;\nnamespace Sample.Process;\ninternal sealed class LoopCommander { internal void Run() { var value = File.ReadAllText("first.txt"); } }\n' > "$target/process/first_commander.cs"
+          set +e
+          written="$(dotnet bin/Release/net8.0/upd-commander-check.dll --write-baseline="$target/baseline.json" "$target")"
+          write_status=$?
+          set -e
+          test "$write_status" -eq 1
+          grep -q "UPD203" <<< "$written"
+          set +e
+          existing="$(dotnet bin/Release/net8.0/upd-commander-check.dll --baseline "$target/baseline.json" "$target")"
+          existing_status=$?
+          set -e
+          test "$existing_status" -eq 1
+          grep -q "EXISTING E UPD203" <<< "$existing"
+          printf 'using System.IO;\nnamespace Sample.Process;\ninternal sealed class SecondCommander { internal void Run() { var value = File.ReadAllText("second.txt"); } }\n' > "$target/process/second_commander.cs"
+          set +e
+          changed="$(dotnet bin/Release/net8.0/upd-commander-check.dll --baseline "$target/baseline.json" "$target")"
+          changed_status=$?
+          set -e
+          test "$changed_status" -eq 1
+          grep -q "EXISTING E UPD203" <<< "$changed"
+          grep -q "NEW E UPD203" <<< "$changed"
+          rm "$target/process/first_commander.cs"
+          set +e
+          resolved="$(dotnet bin/Release/net8.0/upd-commander-check.dll --baseline "$target/baseline.json" "$target")"
+          resolved_status=$?
+          set -e
+          test "$resolved_status" -eq 1
+          grep -q "RESOLVED E UPD203" <<< "$resolved"
+          printf '{ broken' > "$target/baseline.json"
+          set +e
+          invalid="$(dotnet bin/Release/net8.0/upd-commander-check.dll --baseline "$target/baseline.json" "$target" 2>&1)"
+          invalid_status=$?
+          set -e
+          test "$invalid_status" -eq 2
+          grep -q "BASELINE ERROR:" <<< "$invalid"
       - name: CLI integration test
         working-directory: support_tools/cs/upd_commander_checker
         shell: bash

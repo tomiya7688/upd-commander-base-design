@@ -1,8 +1,11 @@
 #include <filesystem>
 #include <iostream>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "baseline.hpp"
 #include "cli_options.hpp"
 #include "config.hpp"
 #include "gate_policy.hpp"
@@ -10,6 +13,12 @@
 #include "rule_selection.hpp"
 #include "scanner.hpp"
 
+// {
+// 責務: [main: Checkerの設定・CLI・scan・baseline・gate処理を統括する]
+// 処理: [1: 設定とCLIを検証する, 2: Findingをscanして分類する, 3: 結果と終了codeを出力する]
+// 引数: [argc/argv: process起動引数]
+// 戻り値: [成功0、Finding gate失敗1、設定・実行エラー2]
+// }
 int main(int argc, char* argv[]) {
     upd_checker::Config config;
     try {
@@ -47,6 +56,39 @@ int main(int argc, char* argv[]) {
         config.enabled_rules_configured});
     const auto findings = upd_checker::apply_severity_overrides(
         selected_findings, options.severity_overrides);
+
+    std::vector<upd_checker::BaselineEntry> baseline_findings;
+    baseline_findings.reserve(findings.size());
+    for (const auto& finding : findings) {
+        baseline_findings.push_back({
+            {}, finding.code, finding.path, finding.symbol, finding.context,
+            finding.severity, finding.line, finding.message});
+    }
+    std::map<std::string, std::string> statuses;
+    std::vector<upd_checker::BaselineEntry> resolved;
+    try {
+        if (options.write_baseline) {
+            std::filesystem::path baseline_path(options.write_baseline_path);
+            if (options.write_baseline_path.empty()) {
+                const std::filesystem::path target_path(options.target);
+                std::error_code error;
+                const bool is_directory = std::filesystem::is_directory(target_path, error);
+                const auto root = is_directory ? target_path : target_path.parent_path();
+                baseline_path = root / ".upd-baseline.json";
+            }
+            upd_checker::write_baseline(baseline_path.string(), baseline_findings);
+        } else if (!options.baseline_path.empty()) {
+            const auto baseline = upd_checker::load_baseline(options.baseline_path);
+            const auto comparison = upd_checker::compare_baseline(baseline_findings, baseline);
+            for (const auto& entry : comparison.new_findings) statuses[entry.fingerprint] = "NEW";
+            for (const auto& entry : comparison.existing) statuses[entry.fingerprint] = "EXISTING";
+            resolved = comparison.resolved;
+        }
+    } catch (const std::exception& error) {
+        return upd_checker::finish_report(
+            {"BASELINE ERROR: " + std::string(error.what())}, options.output, 2);
+    }
+
     int errors = 0;
     int warnings = 0;
     int attentions = 0;
@@ -63,6 +105,9 @@ int main(int argc, char* argv[]) {
         } else {
             ++attentions;
         }
+        std::string result_line =
+            level + finding.code + " " + finding.path + ":" +
+            std::to_string(finding.line) + " " + finding.message;
         const std::string reason =
             upd_checker::gate_exception_reason(finding, config.gate_exceptions);
         const std::string suffix = reason.empty()
@@ -71,9 +116,23 @@ int main(int argc, char* argv[]) {
         if (reason.empty()) {
             gate_findings.push_back(finding);
         }
-        lines.push_back(
-            level + finding.code + " " + finding.path + ":" +
-            std::to_string(finding.line) + " " + finding.message + suffix);
+        if (!options.baseline_path.empty()) {
+            try {
+                const auto fingerprint = upd_checker::finding_fingerprint(
+                    finding.code, finding.path, finding.symbol, finding.context);
+                result_line = statuses.at(fingerprint) + " " + result_line;
+            } catch (const std::exception& error) {
+                return upd_checker::finish_report(
+                    {"BASELINE ERROR: " + std::string(error.what())}, options.output, 2);
+            }
+        }
+        lines.push_back(std::move(result_line) + suffix);
+    }
+    for (const auto& finding : resolved) {
+        const std::string level = finding.severity == "error" ? "E" :
+            finding.severity == "warning" ? "W" : "A";
+        lines.push_back("RESOLVED " + level + " " + finding.rule + " " + finding.path + ":" +
+            (finding.line > 0 ? std::to_string(finding.line) : "?") + " " + finding.message);
     }
 
     std::vector<std::string> fail_on = options.fail_on;

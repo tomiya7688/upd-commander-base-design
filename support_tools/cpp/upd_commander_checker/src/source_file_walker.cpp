@@ -32,6 +32,8 @@ void add_read_failure(
         "UPD001",
         "read failed: " + error.message(),
         "error",
+        "",
+        "directory-read-error",
     });
 }
 

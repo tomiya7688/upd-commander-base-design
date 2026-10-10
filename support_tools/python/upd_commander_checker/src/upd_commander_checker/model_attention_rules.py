@@ -66,6 +66,8 @@ def model_attention_findings(
                 "UPD406",
                 f"repeated value group may benefit from a Model/DTO; items={items} occurrences={len(group)} kind={first[4]}",
                 "attention",
+                symbol="",
+                context="model-group:" + _signature(first),
             )
         )
     return findings

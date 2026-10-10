@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev libicu-dev
       - name: Configure
         working-directory: support_tools/cpp/upd_commander_checker
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release

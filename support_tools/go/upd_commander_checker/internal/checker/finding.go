@@ -6,4 +6,6 @@ type Finding struct {
 	Code     string
 	Message  string
 	Severity string
+	Symbol   string
+	Context  string
 }

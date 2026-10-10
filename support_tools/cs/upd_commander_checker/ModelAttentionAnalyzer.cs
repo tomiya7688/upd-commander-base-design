@@ -145,7 +145,9 @@ internal static class ModelAttentionAnalyzer
                 first.Line,
                 "UPD406",
                 $"repeated value group may benefit from a Model/DTO; items={string.Join(',', first.Items)} occurrences={ordered.Length} kind={first.Kind}",
-                "attention"
+                "attention",
+                "",
+                "model-group:" + group.Key
             );
         }
     }

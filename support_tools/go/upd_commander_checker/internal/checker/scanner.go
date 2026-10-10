@@ -52,7 +52,7 @@ func ScanPathWithOptions(target string, cliIgnore []string, options ScanOptions)
 
 	rules, ignoreErr := loadIgnoreRules(root)
 	if ignoreErr != nil {
-		return []Finding{{Path: ".updcommanderignore", Line: 1, Code: "UPD001", Message: "read failed: " + ignoreErr.Error(), Severity: "error"}}
+		return []Finding{{Path: ".updcommanderignore", Line: 1, Code: "UPD001", Message: "read failed: " + ignoreErr.Error(), Severity: "error", Context: "ignore-file-read-error"}}
 	}
 	var findings []Finding
 	var paths []string
@@ -62,7 +62,7 @@ func ScanPathWithOptions(target string, cliIgnore []string, options ScanOptions)
 			if relErr != nil {
 				rel = path
 			}
-			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
+			findings = append(findings, Finding{Path: filepath.ToSlash(rel), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error", Context: "directory-read-error"})
 			return nil
 		}
 		if entry == nil || entry.IsDir() || filepath.Ext(path) != ".go" {
@@ -80,7 +80,7 @@ func ScanPathWithOptions(target string, cliIgnore []string, options ScanOptions)
 		return nil
 	})
 	if walkErr != nil {
-		findings = append(findings, Finding{Path: filepath.ToSlash(target), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error"})
+		findings = append(findings, Finding{Path: filepath.ToSlash(target), Line: 1, Code: "UPD001", Message: "read failed: " + walkErr.Error(), Severity: "error", Context: "directory-read-error"})
 	}
 
 	dependencyPaths := paths
@@ -130,7 +130,7 @@ func scanFile(path string, rel string, classificationPath string, rules []Ignore
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
-		return []Finding{{Path: rel, Line: 1, Code: "UPD002", Message: "syntax error", Severity: "error"}}
+		return []Finding{{Path: rel, Line: 1, Code: "UPD002", Message: "syntax error", Severity: "error", Context: "syntax-error"}}
 	}
 	lines := readLines(path)
 	source := ClassifyPathWithCommonRoots(classificationPath, options.CommonRoots)
@@ -226,6 +226,8 @@ func checkFlatLayers(paths []string, root string, rules []IgnoreRule, minFiles i
 			Code:     "UPD405",
 			Message:  "large flat layer reduces navigability; consider grouping related responsibilities",
 			Severity: "attention",
+			Symbol:   layerRoot,
+			Context:  "flat-layer",
 		})
 	}
 	return findings

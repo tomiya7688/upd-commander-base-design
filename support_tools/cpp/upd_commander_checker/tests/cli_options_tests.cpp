@@ -35,6 +35,18 @@ void test_missing_values_fail() {
     assert(fails_with({"checker", "--ignore"}, "missing value"));
     assert(fails_with({"checker", "--output"}, "missing value"));
     assert(fails_with({"checker", "--output", "--warnings-as-errors"}, "missing value"));
+    assert(fails_with({"checker", "--baseline"}, "missing value"));
+}
+
+void test_baseline_flags() {
+    const auto default_path = parse({"checker", "--write-baseline", "source"});
+    assert(default_path.write_baseline);
+    assert(default_path.write_baseline_path.empty());
+    const auto explicit_path = parse({"checker", "--write-baseline=baseline.json", "source"});
+    assert(explicit_path.write_baseline_path == "baseline.json");
+    const auto comparison = parse({"checker", "--baseline", "baseline.json", "source"});
+    assert(comparison.baseline_path == "baseline.json");
+    assert(fails_with({"checker", "--write-baseline", "--baseline", "baseline.json"}, "mutually exclusive"));
 }
 
 void test_multiple_targets_fail() {
@@ -111,6 +123,7 @@ void test_gate_policy_arguments_override_config() {
 int main() {
     test_unknown_option_fails();
     test_missing_values_fail();
+    test_baseline_flags();
     test_multiple_targets_fail();
     test_invalid_gate_arguments_fail();
     test_valid_arguments_override_config();

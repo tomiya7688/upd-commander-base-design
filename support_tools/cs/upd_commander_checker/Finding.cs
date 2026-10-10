@@ -5,5 +5,7 @@ internal sealed record Finding(
     int Line,
     string Code,
     string Message,
-    string Severity = "error"
+    string Severity = "error",
+    string Symbol = "",
+    string Context = ""
 );

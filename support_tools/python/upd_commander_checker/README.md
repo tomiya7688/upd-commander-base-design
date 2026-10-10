@@ -43,6 +43,18 @@ FAIL e=2 w=1
 OK
 ```
 
+## Finding baseline
+
+既定では `.upd-baseline.json` を対象ルート直下に生成します。出力先を省略することも、明示することもできます。
+
+```bash
+upd-commander-check path/to/project --write-baseline
+upd-commander-check path/to/project --write-baseline path/to/baseline.json
+upd-commander-check path/to/project --baseline path/to/baseline.json
+```
+
+`--baseline` を指定すると現在のfindingを `NEW` / `EXISTING` として表示し、解消済み項目も `RESOLVED` 行で表示します。通常のfinding一覧と終了コード判定は維持します。baselineの破損や未対応versionは `BASELINE ERROR` と終了コード2で報告します。`--write-baseline` と `--baseline` は同時に指定できません。
+
 ## config/path.json
 
 EXEビルド時に `dist/upd-commander-check/config/path.json` を自動生成します。CUIとGUIで同じ設定を使用し、既存ファイルは上書きしません。

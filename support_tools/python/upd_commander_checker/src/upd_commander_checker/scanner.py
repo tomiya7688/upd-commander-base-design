@@ -34,7 +34,15 @@ def scan_path(
     try:
         ignore_rules = load_ignore_rules(root)
     except (OSError, UnicodeError) as exc:
-        return [Finding(Path(".updcommanderignore"), 1, "UPD001", f"read failed: {exc}")]
+        return [
+            Finding(
+                Path(".updcommanderignore"),
+                1,
+                "UPD001",
+                f"read failed: {exc}",
+                context="ignore-file-read-error",
+            )
+        ]
 
     findings: list[Finding] = []
     paths = _python_files(target, root, ignore_patterns, ignore_rules, findings)
@@ -99,6 +107,7 @@ def _python_files(
                     1,
                     "UPD001",
                     f"read failed: {error}",
+                    context="directory-read-error",
                 )
             )
 
@@ -162,9 +171,25 @@ def _scan_file(
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
     except (OSError, UnicodeError) as exc:
-        return [Finding(path, 1, "UPD001", f"read failed: {exc}")]
+        return [
+            Finding(
+                path,
+                1,
+                "UPD001",
+                f"read failed: {exc}",
+                context="source-read-error",
+            )
+        ]
     except SyntaxError as exc:
-        return [Finding(path, exc.lineno or 1, "UPD002", f"syntax: {exc.msg}")]
+        return [
+            Finding(
+                path,
+                exc.lineno or 1,
+                "UPD002",
+                f"syntax: {exc.msg}",
+                context="syntax-error",
+            )
+        ]
 
     module = classify_module(path, classification_root, common_roots)
     findings = check_dependencies(tree, module, internal_modules, common_roots)

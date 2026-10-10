@@ -332,6 +332,8 @@ std::vector<Finding> model_attention_findings(
                 items.str() + " occurrences=" + std::to_string(group.size()) +
                 " kind=" + first.kind,
             "attention",
+            "",
+            "model-group:" + entry.first,
         });
     }
     return findings;

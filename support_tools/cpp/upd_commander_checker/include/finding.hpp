@@ -10,6 +10,8 @@ struct Finding {
     std::string code;
     std::string message;
     std::string severity = "error";
+    std::string symbol;
+    std::string context;
 };
 
 }  // namespace upd_checker

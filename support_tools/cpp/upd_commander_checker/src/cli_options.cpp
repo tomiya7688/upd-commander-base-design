@@ -38,6 +38,16 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
             options.ignores.push_back(read_value(index, argc, argv, argument));
         } else if (argument == "--output") {
             options.output = read_value(index, argc, argv, argument);
+        } else if (argument == "--write-baseline") {
+            options.write_baseline = true;
+        } else if (argument.rfind("--write-baseline=", 0) == 0) {
+            options.write_baseline = true;
+            options.write_baseline_path = argument.substr(std::string("--write-baseline=").size());
+        } else if (argument == "--baseline") {
+            options.baseline_path = read_value(index, argc, argv, argument);
+        } else if (argument.rfind("--baseline=", 0) == 0) {
+            options.baseline_path = argument.substr(std::string("--baseline=").size());
+            if (options.baseline_path.empty()) throw CliUsageError("missing value for --baseline");
         } else if (argument == "--warnings-as-errors") {
             options.warnings_as_errors = true;
         } else if (argument == "--attentions-as-errors") {
@@ -65,6 +75,10 @@ CliOptions parse_cli(int argc, char* argv[], const Config& config) {
             options.target = argument;
             target_specified = true;
         }
+    }
+
+    if (options.write_baseline && !options.baseline_path.empty()) {
+        throw CliUsageError("--write-baseline and --baseline are mutually exclusive");
     }
 
     return options;
