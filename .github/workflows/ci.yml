@@ -6,6 +6,19 @@ on:
     branches: [main]
 
 jobs:
+  docs-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install formatter
+        run: npm ci
+      - name: Check documentation formatting
+        run: npm run format:check
+
   python:
     runs-on: ubuntu-latest
     steps:
@@ -86,6 +99,7 @@ jobs:
     name: required
     runs-on: ubuntu-latest
     needs:
+      - docs-format
       - python
       - go
       - cpp
@@ -96,6 +110,7 @@ jobs:
         shell: bash
         run: |
           test '${{ needs.python.result }}' = success
+          test '${{ needs.docs-format.result }}' = success
           test '${{ needs.go.result }}' = success
           test '${{ needs.cpp.result }}' = success
           test '${{ needs.csharp.result }}' = success
