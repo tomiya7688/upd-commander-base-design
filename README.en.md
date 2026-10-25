@@ -52,37 +52,70 @@ Data Layer
 
 ## Typical flow
 
+Instead of packing a whole feature into one long arrow, the diagrams below separate the four routes that cross layer boundaries. Arrows show responsibility handoffs; they do not prescribe a particular function-call sequence or synchronization model.
+
+| Notation | Meaning |
+| --- | --- |
+| `--[call]-->` | A Commander asks Processing or Messenger in the same layer to do work |
+| `--[result: ...]-->` | Processing returns a result to its Commander. A request for additional data is also returned as a result |
+| `==[message: ...]==>` | A Messenger carries a request or result to the Messenger in an adjacent layer |
+| `--[handoff]-->` | A Messenger passes received content to a Commander in the same layer |
+
+A Messenger may use direct method calls. The message notation does not require a queue or asynchronous processing. See [Data Flow](docs/data-flow.en.md) for more detail.
+
+### 1. UI → Process: Start processing from input
+
 ```text
-UI Input
-  ↓
-UI Commander
-  ↓
-UI Processing / UI Messenger
-  ↓
-Process Messenger
-  ↓
-Process Commander
-  ↓
-Process Processing
-  ↓
-Data Messenger (when needed)
-  ↓
-Data Commander
-  ↓
-Data Processing
-  ↓
-Data Messenger
-  ↓
-Process Messenger
-  ↓
-Process Commander
-  ↓
-Process Processing
-  ↓
-Process Messenger
-  ├─→ UI Messenger → UI Commander → UI Processing
-  └─→ Data Messenger → Data Commander → Data Processing
+UI Commander --[call: read input]--> UI Processing
+UI Processing --[result: input value]--> UI Commander
+UI Commander --[call]--> UI Messenger
+UI Messenger ==[message: request]==> Process Messenger
+Process Messenger --[handoff]--> Process Commander
+Process Commander --[call]--> Process Processing
 ```
+
+### 2. Process → Data: Request needed data
+
+```text
+Process Processing --[result: additional-data request]--> Process Commander
+Process Commander --[call]--> Process Messenger
+Process Messenger ==[message: data request]==> Data Messenger
+Data Messenger --[handoff]--> Data Commander
+Data Commander --[call]--> Data Processing
+```
+
+Processing returns the data it needs to its Commander as a result. Processing does not call Messenger or request data directly from Data.
+
+### 3. Data → Process: Return retrieved data
+
+```text
+Data Processing --[result: retrieved data]--> Data Commander
+Data Commander --[call]--> Data Messenger
+Data Messenger ==[message: retrieved data]==> Process Messenger
+Process Messenger --[handoff]--> Process Commander
+```
+
+### 4. Process → UI: Pass the final result for presentation
+
+```text
+Process Commander --[call: resume processing]--> Process Processing
+Process Processing --[result: final result]--> Process Commander
+Process Commander --[call]--> Process Messenger
+Process Messenger ==[message: final result]==> UI Messenger
+UI Messenger --[handoff]--> UI Commander
+UI Commander --[call]--> UI Processing
+```
+
+### End-to-end example: Product search
+
+This route searches for products using a keyword from a search screen and displays the results.
+
+1. UI Processing reads the keyword from the input field and returns it to UI Commander.
+2. UI Commander passes the search request to UI Messenger, which sends it to Process Messenger. Process Messenger hands it to Process Commander, which calls Process Processing.
+3. If product information is needed, Process Processing returns an additional-data request as a result to Process Commander. Process Commander asks Process Messenger to send the request, and Process Messenger sends it to Data Messenger.
+4. Data Messenger hands the request to Data Commander, which calls Data Processing. Data Processing returns the product information to Data Commander, which asks Data Messenger to send the response. Data Messenger sends the result to Process Messenger, which hands it to Process Commander.
+5. Process Commander resumes Process Processing, and Process Processing returns the search result.
+6. Process Commander asks Process Messenger to send the final result. Process Messenger sends it to UI Messenger, which hands it to UI Commander. UI Commander calls UI Processing to display the list.
 
 ## Documentation
 

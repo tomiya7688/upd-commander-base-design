@@ -52,37 +52,70 @@ Data Layer
 
 ## 基本フロー
 
+機能全体を1本の矢印に詰め込まず、層をまたぐ4つの区間に分けて示します。矢印は責務上の受け渡しを表し、特定の関数呼び出し順や同期方式を指定しません。
+
+| 表記 | 意味 |
+| --- | --- |
+| `--[呼出]-->` | Commanderが同じ層のProcessingまたはMessengerへ依頼する |
+| `--[結果返却: ...]-->` | Processingが結果をCommanderへ返す。追加データ要求も結果として返す |
+| `==[メッセージ: ...]==>` | Messengerが要求または結果を隣接層のMessengerへ運ぶ |
+| `--[受渡し]-->` | Messengerが受信内容を同じ層のCommanderへ渡す |
+
+Messengerは直接メソッド呼び出しでも実装できます。メッセージの表記はキューや非同期処理を必須にしません。詳しくは[Data Flow](docs/data-flow.md)を参照してください。
+
+### 1. UI → Process: 入力から処理を始める
+
 ```text
-UI Input
-  ↓
-UI Commander
-  ↓
-UI Processing / UI Messenger
-  ↓
-Process Messenger
-  ↓
-Process Commander
-  ↓
-Process Processing
-  ↓
-必要なら Data Messenger
-  ↓
-Data Commander
-  ↓
-Data Processing
-  ↓
-Data Messenger
-  ↓
-Process Messenger
-  ↓
-Process Commander
-  ↓
-Process Processing
-  ↓
-Process Messenger
-  ├─→ UI Messenger → UI Commander → UI Processing
-  └─→ Data Messenger → Data Commander → Data Processing
+UI Commander --[呼出: 入力を読む]--> UI Processing
+UI Processing --[結果返却: 入力値]--> UI Commander
+UI Commander --[呼出]--> UI Messenger
+UI Messenger ==[メッセージ: 要求]==> Process Messenger
+Process Messenger --[受渡し]--> Process Commander
+Process Commander --[呼出]--> Process Processing
 ```
+
+### 2. Process → Data: 必要なデータを要求する
+
+```text
+Process Processing --[結果返却: 追加データ要求]--> Process Commander
+Process Commander --[呼出]--> Process Messenger
+Process Messenger ==[メッセージ: データ要求]==> Data Messenger
+Data Messenger --[受渡し]--> Data Commander
+Data Commander --[呼出]--> Data Processing
+```
+
+Processingは必要なデータを結果としてCommanderへ返します。Processing自身がMessengerを呼んだり、Dataへ直接要求したりするわけではありません。
+
+### 3. Data → Process: 取得結果を返す
+
+```text
+Data Processing --[結果返却: 取得結果]--> Data Commander
+Data Commander --[呼出]--> Data Messenger
+Data Messenger ==[メッセージ: 取得結果]==> Process Messenger
+Process Messenger --[受渡し]--> Process Commander
+```
+
+### 4. Process → UI: 最終結果を表示へ渡す
+
+```text
+Process Commander --[呼出: 処理を再開]--> Process Processing
+Process Processing --[結果返却: 最終結果]--> Process Commander
+Process Commander --[呼出]--> Process Messenger
+Process Messenger ==[メッセージ: 最終結果]==> UI Messenger
+UI Messenger --[受渡し]--> UI Commander
+UI Commander --[呼出]--> UI Processing
+```
+
+### 一連の例: 商品検索
+
+検索画面のキーワードから商品を検索し、結果一覧を表示する流れです。
+
+1. UI Processingが入力欄からキーワードを読み、UI Commanderへ返します。
+2. UI CommanderはUI Messengerへ検索要求を渡し、UI MessengerがProcess Messengerへ送ります。Process Messengerは要求をProcess Commanderへ渡し、Process CommanderがProcess Processingを呼びます。
+3. 商品情報が必要な場合、Process Processingは追加データ要求を結果としてProcess Commanderへ返します。Process CommanderはProcess Messengerへ要求送信を依頼し、Process Messengerが要求をData Messengerへ送ります。
+4. Data Messengerは要求をData Commanderへ渡し、Data CommanderがData Processingを呼びます。Data Processingが商品情報を返すと、Data CommanderはData Messengerへ応答送信を依頼します。Data Messengerが結果をProcess Messengerへ送り、Process MessengerがProcess Commanderへ渡します。
+5. Process CommanderがProcess Processingを再開し、Process Processingが検索結果を返します。
+6. Process CommanderはProcess Messengerへ最終結果の送信を依頼します。Process MessengerがUI Messengerへ送り、UI Messengerが結果をUI Commanderへ渡します。UI CommanderはUI Processingを呼んで一覧を表示します。
 
 ## ドキュメント
 
