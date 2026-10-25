@@ -1,6 +1,8 @@
 # Application Boundary
 
-UPD Commander では、Application を単なる実行ファイルや製品全体ではなく、UI / Process / Data が1組として閉じる独立した機能境界として扱う。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+UPD Commander では、[Application](../docs/glossary.md#application) を単なる実行ファイルや製品全体ではなく、[UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) が1組として閉じる独立した機能[境界](../docs/glossary.md#boundary)として扱う。
 
 ## 1. Application の定義
 
@@ -9,15 +11,15 @@ UPD Commander では、Application を単なる実行ファイルや製品全体
 - 独自の画面群を持つ。
 - 独自の処理フローを持つ。
 - 独自の状態を持つ。
-- 独自の保存・取得責務を持つ。
-- 他画面・他機能の Processing を直接利用せず成立する。
+- 独自の保存・取得[責務](../docs/glossary.md#responsibility)を持つ。
+- 他画面・他機能の [Processing](../docs/glossary.md#processing) を直接利用せず成立する。
 - 他機能との通信を明示的な境界として定義できる。
 
 画面が別であることだけでは Application 分割の十分条件ではない。表示だけが異なり、同一の Process / Data を共有する場合は同一 Application 内の複数 UI として扱ってよい。
 
 ## 2. Nested Application
 
-1つの製品内に複数の独立機能が存在する場合、それぞれを Sub Application として分割し、各 Application 内で UI / Process / Data の3層を再度適用する。
+1つの製品内に複数の独立機能が存在する場合、それぞれを [Sub Application](../docs/glossary.md#sub-application) として分割し、各 Application 内で UI / Process / Data の[3層](../docs/glossary.md#layer)を再度適用する。
 
 ```text
 Product
@@ -52,10 +54,10 @@ MainApplication/Process Processing
 
 Application 間で通信が必要な場合は、次のいずれかを使用する。
 
-- 上位 Application / Product の Commander
-- 明示された Messenger
-- Application 間 Contract / DTO / Message
-- 特定 Application に属さない Shared Contract
+- 上位 Application / Product の [Commander](../docs/glossary.md#commander)
+- 明示された [Messenger](../docs/glossary.md#messenger)
+- Application 間 [Contract](../docs/glossary.md#contract) / [DTO](../docs/glossary.md#dto) / [Message](../docs/glossary.md#message)
+- 特定 Application に属さない [Shared](../docs/glossary.md#shared) Contract
 
 Shared 領域に Processing や保存処理を置いて Application 境界を回避してはならない。`shared` というディレクトリ・namespace・package 名だけでは境界 API とみなさず、Contract / DTO / Message 等として境界責務が明示されている必要がある。
 

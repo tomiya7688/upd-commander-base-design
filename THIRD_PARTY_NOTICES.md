@@ -1,7 +1,9 @@
 # Third-Party Notices
 
+用語の意味は[日本語用語集](docs/glossary.md)で確認できます。
+
 UPD Commander Base Design本体はルートの `LICENSE` に記載されたMIT Licenseで提供されます。
-配布されるチェッカーには、次の第三者コンポーネントが含まれる場合があります。
+配布される[チェッカー](docs/glossary.md#checker)には、次の第三者コンポーネントが含まれる場合があります。
 
 ## Microsoft.CodeAnalysis.CSharp (Roslyn)
 

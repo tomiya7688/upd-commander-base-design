@@ -1,15 +1,17 @@
 # Message Contract
 
-本書は Messenger 間で受け渡すメッセージの最低限の契約を規定する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+本書は [Messenger](../docs/glossary.md#messenger) 間で受け渡す[メッセージ](../docs/glossary.md#message)の最低限の[契約](../docs/glossary.md#contract)を規定する。
 
 ## 1. 基本原則
 
 1. メッセージは送信元層の内部実装を受信先へ漏らしてはならない。
 2. メッセージは受信先が処理判断に必要な情報を明示的に含む。
-3. UI フレームワーク、DB 接続、ファイルハンドル等の実装依存オブジェクトを層間メッセージとして渡してはならない。
+3. [UI](../docs/glossary.md#ui) フレームワーク、DB 接続、ファイルハンドル等の実装依存オブジェクトを層間メッセージとして渡してはならない。
 4. メッセージ形式は言語や通信手段に依存しない概念として定義する。
-5. 複数の入力値・返却値は、必要に応じて Compresser により単一の通信単位へまとめてよい。
-6. Commander / Messenger は、原則として payload 内部の個々の値の業務的意味を解釈しない。
+5. 複数の入力値・返却値は、必要に応じて [Compresser](../docs/glossary.md#compresser) により単一の通信単位へまとめてよい。
+6. [Commander](../docs/glossary.md#commander) / Messenger は、原則として [payload](../docs/glossary.md#payload) 内部の個々の値の業務的意味を解釈しない。
 
 ## 2. 推奨フィールド
 
@@ -76,7 +78,7 @@ Commander / Messenger は配送に必要な範囲を除き、payload の内部�
 
 ## 6. Processing からの追加要求
 
-Processing が処理継続のために別層データを必要とする場合、Processing の結果として「必要な操作」を Commander に返してよい。
+[Processing](../docs/glossary.md#processing) が処理継続のために[別層](../docs/glossary.md#layer)データを必要とする場合、Processing の結果として「必要な操作」を Commander に返してよい。
 
 概念例:
 
@@ -120,6 +122,6 @@ error:
 
 ## 8. 型の共有
 
-DTO、構造体、record 等を用いて契約を型として表現することを推奨する。
+[DTO](../docs/glossary.md#dto)、構造体、record 等を用いて契約を型として表現することを推奨する。
 
-ただし、その型定義に UI / Process / Data の実処理を持たせてはならない。
+ただし、その型定義に UI / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) の実処理を持たせてはならない。

@@ -1,6 +1,8 @@
 # Compresser Specification
 
-Compresser は、Commander / Messenger 間で受け渡される入力値・返却値を、クラス単位の Container としてまとめ、通信単位として扱いやすくするための専用コンポーネントである。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+[Compresser](../docs/glossary.md#compresser) は、[Commander](../docs/glossary.md#commander) / [Messenger](../docs/glossary.md#messenger) 間で受け渡される入力値・返却値を、クラス単位の [Container](../docs/glossary.md#container) としてまとめ、通信単位として扱いやすくするための専用コンポーネントである。
 
 ## 1. 目的
 
@@ -20,14 +22,14 @@ Compresser はこの問題を避けるため、1つのクラスに渡す入力�
 2. 1つのクラスから返される返却情報は、原則として1つの Output Container にまとめる。
 3. 戻り値が単一値である場合も、その値自体が実質的に1つの返却単位であるため、無理に複雑な Container を作る必要はない。ただし複数の返却情報を持つ場合は1つの Output Container にまとめる。
 4. Compresser 自体の実装単位は固定しない。1つのクラス専用に1つの Compresser を定義してもよく、関連する複数クラスを機能単位でまとめて1つの Compresser が扱ってもよい。
-5. Compresser が複数クラスを扱う場合でも、1クラス1 Container の境界を壊してはならない。
-6. 通信時に複数の Container を1つの Package / Message にまとめて送信してよい。
-7. 異なるクラスや異なる責務の Container を、単一の巨大な共通 Container に無理に統合してはならない。
+5. Compresser が複数クラスを扱う場合でも、1クラス1 Container の[境界](../docs/glossary.md#boundary)を壊してはならない。
+6. 通信時に複数の Container を1つの Package / [Message](../docs/glossary.md#message) にまとめて送信してよい。
+7. 異なるクラスや異なる[責務](../docs/glossary.md#responsibility)の Container を、単一の巨大な共通 Container に無理に統合してはならない。
 8. Commander / Messenger は、原則として Compresser が生成した Container / Package の内部構造を業務的に解釈してはならない。
 9. Container の生成・格納・取り出し方法に関する責務は Compresser が持つ。
 10. Compresser は値の格納形式を扱うが、業務処理・表示判断・保存判断を行ってはならない。
-11. 通信単位は UI フレームワーク、DB 接続、ファイルハンドル等の層固有実装を漏らしてはならない。
-12. Compresser の導入によって Messenger / Commander に Processing の責務を移してはならない。
+11. 通信単位は [UI](../docs/glossary.md#ui) フレームワーク、DB 接続、ファイルハンドル等の層固有実装を漏らしてはならない。
+12. Compresser の導入によって Messenger / Commander に [Processing](../docs/glossary.md#processing) の責務を移してはならない。
 
 ## 3. クラス単位の Container
 
@@ -192,7 +194,7 @@ Compresser が担当してよいもの:
 - 複数返却値の Output Container への格納
 - Container からの値取得を可能にする構造の提供
 - 複数 Container の Package / Message への格納
-- 通信契約に従ったフィールド配置
+- 通信[契約](../docs/glossary.md#contract)に従ったフィールド配置
 - request / response 用 Container の生成
 - 言語や通信方式に応じた非業務的なシリアライズ準備
 

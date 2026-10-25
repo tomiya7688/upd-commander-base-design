@@ -1,6 +1,8 @@
 # Responsibility Check Rules
 
-この文書は、UPD Commander Checker が責務過多と責務単位の配置を判定するときの共通基準を定義します。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+この文書は、UPD Commander Checker が[責務](../docs/glossary.md#responsibility)過多と責務単位の配置を判定するときの共通基準を定義します。
 
 ## UPD401: 責務単位が過大
 
@@ -12,7 +14,7 @@
 
 - source span: **250行まで**
 - responsibility-bearing methods: **12個まで**
-- **251行以上**、または **13メソッド以上**で `UPD401` warning
+- **251行以上**、または **13メソッド以上**で `UPD401` [warning](../docs/glossary.md#warning)
 
 行数とメソッド数のどちらか一方が境界を超えれば警告対象です。
 
@@ -25,7 +27,7 @@ ASTで型を認識できる実装は、ファイル全体より型を優先し�
 - C++: class / struct
 - C#: class / struct / record などの type declaration
 
-言語構造上、責務単位を型として確定できないソースだけは file/module を近似責務単位として扱って構いません。この場合、メッセージに file/module approximation であることが分かる表現を用います。
+言語構造上、責務単位を型として確定できないソースだけは file/[module](../docs/glossary.md#module) を近似責務単位として扱って構いません。この場合、メッセージに file/module approximation であることが分かる表現を用います。
 
 ### 行数の数え方
 
@@ -58,7 +60,7 @@ Goではメソッドが型宣言の外側に書かれるため、named type decl
 - data-only type + data-only type
 - data-only type + behavioral type/class
 
-データ専用型は、DTO、Contract、Value Container、設定値保持用型など、主目的がデータ保持であり、業務的な処理を持たない型を指します。
+データ専用型は、[DTO](../docs/glossary.md#dto)、[Contract](../docs/glossary.md#contract)、Value [Container](../docs/glossary.md#container)、設定値保持用型など、主目的がデータ保持であり、業務的な処理を持たない型を指します。
 
 この規則の目的は、型名から定義ファイルを予測しやすくすることです。`Foo` 型の定義を探すとき、原則として `Foo` に対応するファイルを確認すれば到達できる構造を推奨します。
 
@@ -81,7 +83,7 @@ Goではメソッドが型宣言の外側に書かれるため、named type decl
 ### 優先順位
 
 - データ専用型が専用ファイルに1つだけ存在: 問題なし
-- データ専用型が別の型と同居し、別ファイル参照なし: `UPD403` attention
+- データ専用型が別の型と同居し、別ファイル参照なし: `UPD403` [attention](../docs/glossary.md#attention)
 - データ専用型が別の型と同居し、別ファイル参照あり: `UPD404` warning
 - `UPD404` が成立する型について、同じ型に `UPD403` を重複表示する必要はありません
 
@@ -97,7 +99,7 @@ Goではメソッドが型宣言の外側に書かれるため、named type decl
 
 ## Checker実装要件
 
-各言語Checkerは、この文書の250行 / 12メソッドを共通の基準値として実装しなければなりません。
+各言語[Checker](../docs/glossary.md#checker)は、この文書の250行 / 12メソッドを共通の基準値として実装しなければなりません。
 
 また `UPD403/UPD404` は、言語ごとの可視性指定ではなく、実際の構文上の参照を基準に判定しなければなりません。
 

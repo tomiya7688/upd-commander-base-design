@@ -2,8 +2,8 @@
   "name": "upd-commander-base-design-docs",
   "private": true,
   "scripts": {
-    "format": "prettier --write README.md README.en.md docs/formatting.md package.json package-lock.json .prettierrc.json .github/workflows/ci.yml",
-    "format:check": "prettier --check README.md README.en.md docs/formatting.md package.json package-lock.json .prettierrc.json .github/workflows/ci.yml"
+    "format": "prettier --write README.md README.en.md AI_CONTEXT.md THIRD_PARTY_NOTICES.md \"docs/*.md\" \"specification/*.md\" \"support_tools/**/*.md\" .github/BRANCH_PROTECTION.md package.json package-lock.json .prettierrc.json .github/workflows/ci.yml",
+    "format:check": "prettier --check README.md README.en.md AI_CONTEXT.md THIRD_PARTY_NOTICES.md \"docs/*.md\" \"specification/*.md\" \"support_tools/**/*.md\" .github/BRANCH_PROTECTION.md package.json package-lock.json .prettierrc.json .github/workflows/ci.yml"
   },
   "devDependencies": {
     "prettier": "3.9.10"

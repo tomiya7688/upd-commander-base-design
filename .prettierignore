@@ -1,0 +1,3 @@
+# Japanese documentation is the maintained scope; keep the existing English README check.
+**/*.en.md
+!/README.en.md

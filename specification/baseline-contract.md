@@ -2,26 +2,28 @@
 
 **日本語** | [English](baseline-contract.en.md)
 
-この文書はFinding identityとbaselineファイルのversion 1契約を定義する。4言語Checkerは同じ入力から同じfingerprintを生成する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+この文書は[Finding](../docs/glossary.md#finding) identityとbaselineファイルのversion 1[契約](../docs/glossary.md#contract)を定義する。4言語[Checker](../docs/glossary.md#checker)は同じ入力から同じfingerprintを生成する。
 
 ## 1. Finding identity
 
 fingerprintの入力は次の4要素である。
 
-| Field | Required | Canonical form |
-|---|---:|---|
-| `rule` | Yes | `UPD` + 3桁以上の数字、大文字 |
-| `path` | Yes | repository root相対、`/`区切り、`.`要素除去、`..`と絶対pathは禁止 |
-| `symbol` | Yes | qualified type/function/member等。特定できない場合は空文字 |
-| `context` | Yes | rule固有の安定した識別文脈。空文字は禁止 |
+| Field     | Required | Canonical form                                                       |
+| --------- | -------: | -------------------------------------------------------------------- |
+| `rule`    |      Yes | `UPD` + 3桁以上の数字、大文字                                        |
+| `path`    |      Yes | repository root相対、`/`区切り、`.`要素除去、`..`と絶対pathは禁止    |
+| `symbol`  |      Yes | qualified type/function/member等。特定できない場合は空文字           |
+| `context` |      Yes | [rule](../docs/glossary.md#rule)固有の安定した識別文脈。空文字は禁止 |
 
 文字列はUnicode NFCへ正規化する。pathの大文字・小文字は保持する。symbol/contextには表示用文章や絶対pathを使わず、同一ファイル内の同一ruleに複数findingがある場合は別findingを識別できる安定情報を含める。例として依存findingのcontextには正規化済みtarget identityを含める。
 
 次の値はfingerprintに含めない。
 
 - 行番号、列番号、周辺source行
-- severity
-- 表示用message
+- [severity](../docs/glossary.md#severity)
+- 表示用[message](../docs/glossary.md#message)
 - 時刻、絶対path、実行環境固有値
 
 従って行挿入やseverity変更、説明文修正だけではidentityが変わらない。rule/path/symbol/contextのいずれかが変われば別identityとなる。contextは位置番号の代用品ではなく、ruleの意味に基づく安定した識別情報とする。
@@ -66,7 +68,7 @@ fingerprintの入力は次の4要素である。
 
 - 同一schema versionで未知の追加propertyは読み飛ばす。
 - 未対応の新しいschema/fingerprint versionは推測して読み込まず、対応versionと実ファイルversionを示す明確なエラーにする。
-- 古いversionは明示的なmigrationが実装されている場合のみ読み込む。それ以外は明確なunsupported-version errorにする。
+- 古いversionは明示的なmigrationが実装されている場合のみ読み込む。それ以外は明確なunsupported-version [error](../docs/glossary.md#error)にする。
 - 必須field欠落、型不一致、不正fingerprint、重複fingerprint、不正pathはbaseline破損として扱う。
 - 空の`findings`は有効なbaselineである。
 

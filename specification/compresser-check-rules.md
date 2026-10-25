@@ -1,10 +1,12 @@
 # Compresser / Container Checker Rules
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 本書は `compresser-spec.md` に基づく静的チェックの重要度と判定方針を定義する。
 
 ## 1. Container 化は必須規定ではない
 
-1クラスの入力を1つの Input Container、返却情報を1つの Output Container にまとめることは推奨するが、一般プロジェクトに対して必須とはしない。
+1クラスの入力を1つの Input [Container](../docs/glossary.md#container)、返却情報を1つの Output Container にまとめることは推奨するが、一般プロジェクトに対して必須とはしない。
 
 理由は、Container / Package の生成、格納、取り出し、必要に応じたシリアライズ等そのものにも処理・実装上のコストが存在するためである。
 
@@ -19,16 +21,16 @@ A UPD301 ... multiple inputs reduce readability; consider one Input Container
 A UPD302 ... multiple return values reduce readability; consider one Output Container
 ```
 
-Attention は設計改善候補の提示であり、適合違反ではない。
+[Attention](../docs/glossary.md#attention) は設計改善候補の提示であり、適合違反ではない。
 
 Container 化による効果が小さい場合や、パッケージ化コストの方が大きい場合は、Attention を確認した上で現在の実装を維持してよい。
 
 ### 2.1 対象 callable
 
-UPD301 / UPD302 はアクセス可視性ではなく、型・モジュールの操作として定義された callable を対象とする。
+UPD301 / UPD302 はアクセス可視性ではなく、型・[モジュール](../docs/glossary.md#module)の操作として定義された callable を対象とする。
 
 - public / exported method だけでなく private / protected / unexported method も対象とする。
-- constructor は初期化責務であり通常の操作とは分けるため、UPD301 / UPD302 の対象外とする。
+- constructor は初期化[責務](../docs/glossary.md#responsibility)であり通常の操作とは分けるため、UPD301 / UPD302 の対象外とする。
 - Python は `__init__` と `__new__` を constructor / construction hook として対象外にするが、`_run` のような private 相当methodは対象とする。
 - C# / C++ は言語構文上の constructor を対象外にする。
 - Go は receiver method を可視性に関係なく対象とし、package-level function は対象外とする。`NewX` 等の命名だけからconstructor判定は行わない。
@@ -41,12 +43,12 @@ UPD301 は、callable の**有効入力数が設定された上限を超えた�
 
 既定上限は **2入力** とする。したがって既定設定では次の境界になる。
 
-| 有効入力数 | 既定結果 |
-|---:|---|
-| 0 | findingなし |
-| 1 | findingなし |
-| 2 | findingなし（境界値） |
-| 3以上 | `UPD301` attention（境界+1以上） |
+| 有効入力数 | 既定結果                                   |
+| ---------: | ------------------------------------------ |
+|          0 | [finding](../docs/glossary.md#finding)なし |
+|          1 | findingなし                                |
+|          2 | findingなし（境界値）                      |
+|      3以上 | `UPD301` attention（境界+1以上）           |
 
 「2入力程度の自然な操作」まで機械的に Container 化候補へしないことが目的である。
 
@@ -54,16 +56,16 @@ UPD301 は、callable の**有効入力数が設定された上限を超えた�
 
 有効入力数は「呼び出しシグネチャ上の独立した引数スロット数」とする。値の型、大きさ、default値の有無、実行時に渡される要素数では変化させない。
 
-| 形式 | 有効入力数 |
-|---|---:|
-| 通常の positional parameter | 1 |
-| positional-only parameter | 1 |
-| positional-or-keyword parameter | 1 |
-| keyword-only parameter | 1 |
-| optional / default付きparameter | 1 |
-| variadic parameter / parameter pack | 宣言1つにつき1 |
-| implicit receiver（`this`, Go receiver等） | 0 |
-| Python method の receiver としての `self` / `cls` | 0 |
+| 形式                                              |     有効入力数 |
+| ------------------------------------------------- | -------------: |
+| 通常の positional parameter                       |              1 |
+| positional-only parameter                         |              1 |
+| positional-or-keyword parameter                   |              1 |
+| keyword-only parameter                            |              1 |
+| optional / default付きparameter                   |              1 |
+| variadic parameter / parameter pack               | 宣言1つにつき1 |
+| implicit receiver（`this`, Go receiver等）        |              0 |
+| Python method の receiver としての `self` / `cls` |              0 |
 
 補足:
 
@@ -92,7 +94,7 @@ UPD301 の上限設定キーは `upd301_max_inputs` とする。
 - 有効値: **1以上の整数**
 - `effective_inputs <= upd301_max_inputs`: findingなし
 - `effective_inputs > upd301_max_inputs`: `UPD301` attention
-- `null`, boolean, string, 小数、0以下: config error
+- `null`, boolean, string, 小数、0以下: config [error](../docs/glossary.md#error)
 - config error は既存の設定エラー処理に従い、解析を開始せず非0終了する
 
 既存configにこのキーが無くても読み込み可能である。ただし、旧実装の「2入力からUPD301」を維持したい利用者は `upd301_max_inputs: 1` を明示する。
@@ -103,24 +105,24 @@ UPD301 の上限設定キーは `upd301_max_inputs` とする。
 
 performance hot path、ABI/API互換、allocation回避など、特定箇所だけContainer化を避ける場合は、専用のUPD301例外構文を追加しない。
 
-既存の inline ignore、path/rule ignore、CI gate等の局所例外機構を利用し、可能な場合は理由を残す。1箇所の例外のためにproject全体の `upd301_max_inputs` を引き上げることは推奨しない。
+既存の inline ignore、path/[rule](../docs/glossary.md#rule) ignore、CI [gate](../docs/glossary.md#gate)等の局所例外機構を利用し、可能な場合は理由を残す。1箇所の例外のためにproject全体の `upd301_max_inputs` を引き上げることは推奨しない。
 
 ### 2.5 4言語共通の境界fixture
 
 既定値 `upd301_max_inputs = 2` では、次のgood/bad境界を4言語で同じ期待値として扱う。
 
-| Fixture | Effective inputs | Expected |
-|---|---:|---|
-| no-input | 0 | findingなし |
-| one-input | 1 | findingなし |
-| two-inputs | 2 | findingなし |
-| boundary | 2 | findingなし |
-| boundary-plus-one | 3 | `A UPD301` |
-| one-fixed-plus-variadic | 2 | findingなし |
-| two-fixed-plus-variadic | 3 | `A UPD301` |
-| custom-max-1 / two-inputs | 2 | `A UPD301` |
-| custom-max-3 / three-inputs | 3 | findingなし |
-| custom-max-3 / four-inputs | 4 | `A UPD301` |
+| Fixture                     | Effective inputs | Expected    |
+| --------------------------- | ---------------: | ----------- |
+| no-input                    |                0 | findingなし |
+| one-input                   |                1 | findingなし |
+| two-inputs                  |                2 | findingなし |
+| boundary                    |                2 | findingなし |
+| boundary-plus-one           |                3 | `A UPD301`  |
+| one-fixed-plus-variadic     |                2 | findingなし |
+| two-fixed-plus-variadic     |                3 | `A UPD301`  |
+| custom-max-1 / two-inputs   |                2 | `A UPD301`  |
+| custom-max-3 / three-inputs |                3 | findingなし |
+| custom-max-3 / four-inputs  |                4 | `A UPD301`  |
 
 代表的な境界コードは次のとおり。どの言語でも `Good` は有効入力数2、`Bad` は3である。
 
@@ -157,13 +159,13 @@ internal sealed class Worker
 
 ## 3. Warning
 
-Commander または Messenger について、Compresser / Container を導入することでクラス自体を大幅に圧縮できると推定される場合のみ `warning` を出す。
+[Commander](../docs/glossary.md#commander) または [Messenger](../docs/glossary.md#messenger) について、[Compresser](../docs/glossary.md#compresser) / Container を導入することでクラス自体を大幅に圧縮できると推定される場合のみ `warning` を出す。
 
 ```text
 W UPD303 ... Compresser/Container introduction is expected to substantially reduce this Commander/Messenger
 ```
 
-Warning の目的は「複数引数があること」そのものを罰することではなく、多数の通信値の受け渡しによって Commander / Messenger が肥大化している状態を検出することである。
+[Warning](../docs/glossary.md#warning) の目的は「複数引数があること」そのものを罰することではなく、多数の通信値の受け渡しによって Commander / Messenger が肥大化している状態を検出することである。
 
 初期実装では、削減可能量の推定値が10行以上であり、かつ対象 Commander / Messenger の有効コード量のおおむね20%以上を削減できると推定される場合を「大幅な圧縮」とみなす。
 

@@ -1,44 +1,46 @@
 # Checker Regression Matrix
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 UPD Commander Checker の4言語実装は、同じルールを同じ意味で回帰検証します。
 
 ## 共通必須ケース
 
-| Case | Rule | Expected |
-|---|---|---|
-| dependency-ui-data | UPD101 | error |
-| dependency-cross-application | UPD102 | error |
-| data-commander-direct | UPD103 | warning |
-| commander-loop | UPD201 | warning |
-| commander-calculation | UPD202 | warning |
-| commander-direct-work | UPD203 | error |
-| upd301-two-inputs | UPD301 | no finding |
-| upd301-boundary-default-2 | UPD301 | no finding |
-| upd301-boundary-plus-one | UPD301 | attention |
-| upd301-custom-max-1-two-inputs | UPD301 | attention |
-| upd301-custom-max-3-three-inputs | UPD301 | no finding |
-| upd301-custom-max-3-four-inputs | UPD301 | attention |
-| multiple-outputs | UPD302 | attention |
-| substantial-compresser-opportunity | UPD303 | warning |
-| responsibility-too-large | UPD401 | warning |
-| multiple-behavior-types | UPD402 | warning |
-| colocated-data-type | UPD403 | attention |
-| externally-used-colocated-data-type | UPD404 | warning |
-| flat-layer-small-flat | UPD405 | no finding |
-| flat-layer-large-nested | UPD405 | no finding |
-| flat-layer-large-flat | UPD405 | attention |
-| flat-layer-generated-heavy | UPD405 | no finding |
-| flat-layer-boundary-below-percent | UPD405 | no finding |
-| flat-layer-boundary-over-percent | UPD405 | attention |
-| model-two-item-repeat | UPD406 | no finding |
-| model-repeated-parameters | UPD406 | attention |
-| model-one-off-parameters | UPD406 | no finding |
-| model-repeated-tuple | UPD406 | attention |
-| model-repeated-parallel-index | UPD406 | attention |
-| model-existing-aggregate | UPD406 | no finding |
-| model-performance-suppressed | UPD406 | no finding |
-| model-different-order | UPD406 | no finding |
-| model-cross-layer-only | UPD406 | no finding |
+| Case                                                                 | [Rule](../docs/glossary.md#rule) | Expected                                   |
+| -------------------------------------------------------------------- | -------------------------------- | ------------------------------------------ |
+| dependency-ui-data                                                   | UPD101                           | [error](../docs/glossary.md#error)         |
+| dependency-cross-application                                         | UPD102                           | error                                      |
+| data-[commander](../docs/glossary.md#commander)-direct               | UPD103                           | [warning](../docs/glossary.md#warning)     |
+| commander-loop                                                       | UPD201                           | warning                                    |
+| commander-calculation                                                | UPD202                           | warning                                    |
+| commander-direct-work                                                | UPD203                           | error                                      |
+| upd301-two-inputs                                                    | UPD301                           | no [finding](../docs/glossary.md#finding)  |
+| upd301-boundary-default-2                                            | UPD301                           | no finding                                 |
+| upd301-boundary-plus-one                                             | UPD301                           | [attention](../docs/glossary.md#attention) |
+| upd301-custom-max-1-two-inputs                                       | UPD301                           | attention                                  |
+| upd301-custom-max-3-three-inputs                                     | UPD301                           | no finding                                 |
+| upd301-custom-max-3-four-inputs                                      | UPD301                           | attention                                  |
+| multiple-outputs                                                     | UPD302                           | attention                                  |
+| substantial-[compresser](../docs/glossary.md#compresser)-opportunity | UPD303                           | warning                                    |
+| [responsibility](../docs/glossary.md#responsibility)-too-large       | UPD401                           | warning                                    |
+| multiple-behavior-types                                              | UPD402                           | warning                                    |
+| colocated-data-type                                                  | UPD403                           | attention                                  |
+| externally-used-colocated-data-type                                  | UPD404                           | warning                                    |
+| flat-[layer](../docs/glossary.md#layer)-small-flat                   | UPD405                           | no finding                                 |
+| flat-layer-large-nested                                              | UPD405                           | no finding                                 |
+| flat-layer-large-flat                                                | UPD405                           | attention                                  |
+| flat-layer-generated-heavy                                           | UPD405                           | no finding                                 |
+| flat-layer-boundary-below-percent                                    | UPD405                           | no finding                                 |
+| flat-layer-boundary-over-percent                                     | UPD405                           | attention                                  |
+| model-two-item-repeat                                                | UPD406                           | no finding                                 |
+| model-repeated-parameters                                            | UPD406                           | attention                                  |
+| model-one-off-parameters                                             | UPD406                           | no finding                                 |
+| model-repeated-tuple                                                 | UPD406                           | attention                                  |
+| model-repeated-parallel-index                                        | UPD406                           | attention                                  |
+| model-existing-aggregate                                             | UPD406                           | no finding                                 |
+| model-performance-suppressed                                         | UPD406                           | no finding                                 |
+| model-different-order                                                | UPD406                           | no finding                                 |
+| model-cross-layer-only                                               | UPD406                           | no finding                                 |
 
 ## Ignore共通ケース
 
@@ -61,9 +63,9 @@ ASTまたは同等の構文解析を使う言語は、次を共通で確認し�
 
 `baseline-fingerprint-fixtures.json` を4言語で共有し、次を検証します。
 
-- 行挿入、severity変更、rule/pathの正規化では同じfingerprint
+- 行挿入、[severity](../docs/glossary.md#severity)変更、rule/pathの正規化では同じfingerprint
 - rule、repository相対path、symbol、rule-specific contextの差では別fingerprint
-- Finding messageや表示lineはidentityを変更しない
+- Finding [message](../docs/glossary.md#message)や表示lineはidentityを変更しない
 
 ## 言語別テスト入口
 

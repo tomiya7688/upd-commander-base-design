@@ -2,14 +2,16 @@
 
 **日本語正本** | [English](model-attention-check-rules.en.md)
 
-本書は、関連する複数値を同じ組として繰り返し羅列している場合に、Model / DTO / struct / record 等の意味単位へまとめられる可能性を示す Attention の判定契約を定義する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
 
-この規則は Model 化を必須にしない。SoA、SIMD、連続メモリ配置、FFI、低レベル API、hot path 等、性能や ABI の理由で値を分離して保持する設計は正当であり、必要に応じて既存の rule-specific ignore で明示的に抑制できる。
+本書は、関連する複数値を同じ組として繰り返し羅列している場合に、Model / [DTO](../docs/glossary.md#dto) / struct / record 等の意味単位へまとめられる可能性を示す [Attention](../docs/glossary.md#attention) の判定[契約](../docs/glossary.md#contract)を定義する。
+
+この規則は Model 化を必須にしない。SoA、SIMD、連続メモリ配置、FFI、低レベル API、hot path 等、性能や ABI の理由で値を分離して保持する設計は正当であり、必要に応じて既存の [rule](../docs/glossary.md#rule)-specific ignore で明示的に抑制できる。
 
 ## 1. Rule
 
 - Rule ID: `UPD406`
-- Severity: `attention`
+- [Severity](../docs/glossary.md#severity): `attention`
 - 目的: 3項目以上の同一値グループが2箇所以上で繰り返される場合に、意味あるデータ単位へまとめる余地を提示する
 - 既定 CI: blocking しない
 
@@ -23,7 +25,7 @@ UPD406 は「Model を作らなければならない」という判定ではな�
 
 ## 2. 対象となる occurrence
 
-Checker は次のいずれかを **value-group occurrence** として扱う。
+[Checker](../docs/glossary.md#checker) は次のいずれかを **value-group occurrence** として扱う。
 
 ### 2.1 parameter group
 
@@ -92,8 +94,8 @@ camelCase / snake_case の分割、単複変換、同義語推定、型名推定
 
 - 項目順が異なれば別 group
 - occurrence kind が異なれば別 group
-- 別 Application / Sub Application は別 group
-- UI / Process / Data の別 layer は別 group
+- 別 [Application](../docs/glossary.md#application) / [Sub Application](../docs/glossary.md#sub-application) は別 group
+- [UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) の別 [layer](../docs/glossary.md#layer) は別 group
 - Application / layer を識別できない場合は現在の scan/classification scope を使う
 
 subset 探索はしない。4項目 group の中に含まれる任意の3項目を別候補として量産してはならない。
@@ -116,7 +118,7 @@ occurrence_count >= model_group_min_occurrences
 
 既定では単なる2値組は対象外。
 
-finding は signature ごとに最大1件とし、最初の eligible occurrence を位置として使う。
+[finding](../docs/glossary.md#finding) は signature ごとに最大1件とし、最初の eligible occurrence を位置として使う。
 
 ## 5. 既存 Model / DTO / aggregate の除外
 
@@ -164,7 +166,7 @@ generated / third_party / vendor / external / build 等、既存 path ignore / �
 
 - 3以上の整数
 - 既定値: `3`
-- 2以下、負数、真偽値、文字列、小数、`null` は config error
+- 2以下、負数、真偽値、文字列、小数、`null` は config [error](../docs/glossary.md#error)
 
 ### model_group_min_occurrences
 
@@ -182,7 +184,7 @@ finding には最低限、次を含める。
 - `items`: ordered item keys
 - `occurrences`: eligible occurrence count
 
-CLI の短い message では同一行に含めてよい。
+CLI の短い [message](../docs/glossary.md#message) では同一行に含めてよい。
 
 位置:
 
@@ -198,17 +200,17 @@ CLI の短い message では同一行に含めてよい。
 
 必須ケース:
 
-| Case | kind | items | occurrences | Expected |
-|---|---|---:|---:|---|
-| two-item-repeat | parameters | 2 | 3 | no finding |
-| repeated-parameters | parameters | 3 | 2 | attention |
-| one-off-parameters | parameters | 4 | 1 | no finding |
-| repeated-tuple | tuple | 3 | 2 | attention |
-| repeated-parallel-index | parallel_collection | 3 | 2 | attention |
-| existing-model | aggregate_definition | 4 | 3 | no finding |
-| performance-suppressed | parallel_collection | 3 | 3 | no finding |
-| different-order | parameters | 3 | 2 signatures | no finding |
-| cross-layer-only | parameters | 3 | 1 per layer | no finding |
+| Case                    | kind                 | items |  occurrences | Expected   |
+| ----------------------- | -------------------- | ----: | -----------: | ---------- |
+| two-item-repeat         | parameters           |     2 |            3 | no finding |
+| repeated-parameters     | parameters           |     3 |            2 | attention  |
+| one-off-parameters      | parameters           |     4 |            1 | no finding |
+| repeated-tuple          | tuple                |     3 |            2 | attention  |
+| repeated-parallel-index | parallel_collection  |     3 |            2 | attention  |
+| existing-model          | aggregate_definition |     4 |            3 | no finding |
+| performance-suppressed  | parallel_collection  |     3 |            3 | no finding |
+| different-order         | parameters           |     3 | 2 signatures | no finding |
+| cross-layer-only        | parameters           |     3 |  1 per layer | no finding |
 
 performance-suppressed は `UPD406` rule-specific ignore を利用する。
 

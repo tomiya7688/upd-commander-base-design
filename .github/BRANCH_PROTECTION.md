@@ -1,5 +1,7 @@
 # main branch protection
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 通常の変更はPull Request経由で `main` に入れ、次の2つのstatus checkを必須にする。
 
 - `CI / required`
@@ -15,7 +17,7 @@ GitHub の `Settings -> Branches` または Rulesets で `main` を対象にし�
 - 通常の直接pushは禁止する
 - 管理者bypassは、CI自体が壊れて修復不能な緊急時だけに限定する
 
-`CI / required` は通常の品質gateである。Pythonのcompile/test、Goのgofmt/go vet/test、C++のconfigure/build/test、C#のCSharpier/build/testがすべて成功した場合だけ成功する。
+`CI / required` は通常の品質[gate](../docs/glossary.md#gate)である。Pythonのcompile/test、Goのgofmt/go vet/test、C++のconfigure/build/test、C#のCSharpier/build/testがすべて成功した場合だけ成功する。
 
 `Checker Self Check / required` はUpd checker固有の自己検証gateである。Python / Go / C++ / C# の checker self check、license packaging、Windows GUI acceptanceがすべて成功した場合だけ成功する。C# jobではCSharpierも再確認するため、既存のrequired設定だけが有効な期間でもCSharpier違反はmerge gateから漏れない。
 
