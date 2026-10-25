@@ -10,6 +10,8 @@
 
 ### UPDを初めて読む
 
+先に小さな機能を動かしたい場合は、[最小UPDチュートリアル](../docs/minimal-tutorial.md)へ進んでください。入力・検証・保存・表示の配置からCheckerの実行までを体験できます。
+
 1. [Architecture](../docs/architecture.md) — [UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) と各[役割](../docs/glossary.md#role)の全体像
 2. [Layer Specification](layer-spec.md) — [3層](../docs/glossary.md#layer)それぞれが担当すること
 3. [Commander Specification](commander-spec.md) — [Commander](../docs/glossary.md#commander)が呼び出しをどう整理するか
