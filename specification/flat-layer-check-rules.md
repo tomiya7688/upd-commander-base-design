@@ -2,14 +2,16 @@
 
 **日本語正本** | [English](flat-layer-check-rules.en.md)
 
-本書は、UI / Process / Data 配下が大規模にもかかわらず平坦で、探索性が低下している場合に出す Attention の判定契約を定義する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+本書は、[UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) 配下が大規模にもかかわらず平坦で、探索性が低下している場合に出す [Attention](../docs/glossary.md#attention) の判定[契約](../docs/glossary.md#contract)を定義する。
 
 この規則は UPD 適合性の必須条件ではない。小規模な平坦構成や、性能・ビルド方式・既存資産等の理由で意図的に平坦化した構成を禁止しない。
 
 ## 1. Rule
 
-- Rule ID: `UPD405`
-- Severity: `attention`
+- [Rule](../docs/glossary.md#rule) ID: `UPD405`
+- [Severity](../docs/glossary.md#severity): `attention`
 - 目的: 大規模な層で、ほぼ全てのソースが層 root 直下へ集中している場合に、探索性改善の検討を促す
 - 既定 CI: blocking しない
 
@@ -19,11 +21,11 @@
 UPD405 large flat layer reduces navigability; consider grouping related responsibilities
 ```
 
-具体的なフォルダ名、階層数、Application 分割方法は強制しない。
+具体的なフォルダ名、階層数、[Application](../docs/glossary.md#application) 分割方法は強制しない。
 
 ## 2. 対象
 
-各 Checker が認識した Application / Sub Application ごとに、次の layer root を独立して判定する。
+各 [Checker](../docs/glossary.md#checker) が認識した Application / [Sub Application](../docs/glossary.md#sub-application) ごとに、次の [layer](../docs/glossary.md#layer) root を独立して判定する。
 
 - UI
 - Process
@@ -31,7 +33,7 @@ UPD405 large flat layer reduces navigability; consider grouping related responsi
 
 同じ物理ディレクトリ配下でも、別 Application / Sub Application と分類されたファイルは親 Application の集計へ含めない。
 
-Application 境界を識別できない場合は、現在の分類 root 内で認識できる UI / Process / Data ごとに判定する。
+Application [境界](../docs/glossary.md#boundary)を識別できない場合は、現在の分類 root 内で認識できる UI / Process / Data ごとに判定する。
 
 ## 3. eligible source file
 
@@ -101,7 +103,7 @@ direct_files * 100 >= total_files * flat_layer_min_direct_percent
 
 - 正の整数
 - 既定値: `12`
-- `0`、負数、真偽値、文字列、小数、`null` は config error
+- `0`、負数、真偽値、文字列、小数、`null` は config [error](../docs/glossary.md#error)
 
 ### flat_layer_min_direct_percent
 
@@ -119,7 +121,7 @@ UPD405 は layer root ごとに最大1件とする。
 - line: `1`
 - severity: `attention`
 
-個々のファイルへ重複して finding を出してはならない。
+個々のファイルへ重複して [finding](../docs/glossary.md#finding) を出してはならない。
 
 ## 7. 共通 fixture 契約
 
@@ -127,14 +129,14 @@ UPD405 は layer root ごとに最大1件とする。
 
 必須ケース:
 
-| Case | eligible total | direct | nested | excluded | Expected |
-|---|---:|---:|---:|---:|---|
-| small-flat | 8 | 8 | 0 | 0 | no finding |
-| large-nested | 12 | 4 | 8 | 0 | no finding |
-| large-flat | 12 | 12 | 0 | 0 | attention |
-| generated-heavy | 5 | 5 | 0 | 20 | no finding |
-| boundary-below-percent | 12 | 9 | 3 | 0 | no finding |
-| boundary-over-percent | 12 | 10 | 2 | 0 | attention |
+| Case                   | eligible total | direct | nested | excluded | Expected   |
+| ---------------------- | -------------: | -----: | -----: | -------: | ---------- |
+| small-flat             |              8 |      8 |      0 |        0 | no finding |
+| large-nested           |             12 |      4 |      8 |        0 | no finding |
+| large-flat             |             12 |     12 |      0 |        0 | attention  |
+| generated-heavy        |              5 |      5 |      0 |       20 | no finding |
+| boundary-below-percent |             12 |      9 |      3 |        0 | no finding |
+| boundary-over-percent  |             12 |     10 |      2 |        0 | attention  |
 
 各言語のfixtureは構文だけを言語に合わせ、この file count / directory placement / expected severity を一致させる。
 
@@ -142,8 +144,8 @@ UPD405 は layer root ごとに最大1件とする。
 
 この rule は次を判定しない。
 
-- 個々のクラスやファイルの責務過多
-- Namespace / package / module 名の妥当性
+- 個々のクラスやファイルの[責務](../docs/glossary.md#responsibility)過多
+- Namespace / package / [module](../docs/glossary.md#module) 名の妥当性
 - 特定のフォルダ名を採用したか
 - Application / Sub Application に分割すべきかどうか
 - 平坦構成そのものが UPD 違反かどうか

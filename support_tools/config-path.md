@@ -1,6 +1,8 @@
 # Support Tool Path Configuration
 
-各言語の UPD Commander checker は、引数なし実行でも同じ設定方式を利用できるよう `config/path.json` を共通設定として使用します。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+各言語の UPD Commander [checker](../docs/glossary.md#checker) は、引数なし実行でも同じ設定方式を利用できるよう `config/path.json` を共通設定として使用します。
 
 ## 形式
 
@@ -23,8 +25,8 @@
 - `input`: 検査対象ファイルまたはディレクトリ。相対パスは `config` ディレクトリの親を基準に解決する。
 - `output`: 検査結果を書き出すテキストファイル。空文字列の場合はファイル出力しない。
 - `ignore`: 除外するパスglobの配列。既存の `.updcommanderignore` および行単位Ignoreと併用できる。
-- `warnings_as_errors`: `true` の場合、warning が1件以上あれば終了コードを失敗にする。
-- `common_roots`: 層中立 Common / Shared として認識するディレクトリ名。既定は `["common", "shared"]`。空配列で自動認識を無効化する。各値は空でない単一ディレクトリ名で、path separator・`.`・`..`・UI/Process/Dataのlayer名は不可。
+- `warnings_as_errors`: `true` の場合、[warning](../docs/glossary.md#warning) が1件以上あれば終了コードを失敗にする。
+- `common_roots`: 層中立 [Common](../docs/glossary.md#common) / [Shared](../docs/glossary.md#shared) として認識するディレクトリ名。既定は `["common", "shared"]`。空配列で自動認識を無効化する。各値は空でない単一ディレクトリ名で、path separator・`.`・`..`・[UI](../docs/glossary.md#ui)/[Process](../docs/glossary.md#process)/[Data](../docs/glossary.md#data)の[layer](../docs/glossary.md#layer)名は不可。
 - `enabled_rules`: 有効にするUPD番号の配列。省略時は全ルール、空配列は全ルール無効。未知の番号は設定エラー。
 
 ## 探索順

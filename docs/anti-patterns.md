@@ -1,6 +1,8 @@
 # Anti-patterns
 
-UPD Commander Base Design では、責務境界を壊す次の構造を避けます。
+用語の意味は[日本語用語集](glossary.md)で確認できます。
+
+UPD Commander Base Design では、[責務](glossary.md#responsibility)[境界](glossary.md#boundary)を壊す次の構造を避けます。
 
 ## Commander に実処理を書く
 
@@ -11,7 +13,7 @@ class BattleCommander:
         target.hp -= max(damage, 0)
 ```
 
-Commander がダメージ計算を行っているためNGです。
+[Commander](glossary.md#commander) がダメージ計算を行っているためNGです。
 
 Commander は処理を呼ぶだけにします。
 
@@ -28,9 +30,9 @@ if hp < max_hp * 0.25:
     show_warning = True
 ```
 
-これは UI 表示上の判断なので UI Processing の責務です。
+これは [UI](glossary.md#ui) 表示上の判断なので UI [Processing](glossary.md#processing) の責務です。
 
-Messenger は内容を判断せず配送します。
+[Messenger](glossary.md#messenger) は内容を判断せず配送します。
 
 ## UI から Data へ直接アクセスする
 
@@ -40,7 +42,7 @@ UI → Data
 
 禁止します。
 
-必要なデータは Process を通して要求します。
+必要なデータは [Process](glossary.md#process) を通して要求します。
 
 ```text
 UI → Process → Data
@@ -52,7 +54,7 @@ UI → Process → Data
 HPが25%以下なので文字色を赤にする
 ```
 
-赤色や点滅などは UI Layer の責務です。
+赤色や点滅などは UI [Layer](glossary.md#layer) の責務です。
 
 Process Layer は意味上の値や状態を返します。
 
@@ -63,7 +65,7 @@ max_hp = 100
 
 ## Data がゲームルールを判断する
 
-Data Layer は保存形式や取得方法を扱いますが、ゲーム上の意味は判断しません。
+[Data](glossary.md#data) Layer は保存形式や取得方法を扱いますが、ゲーム上の意味は判断しません。
 
 ```text
 このモンスターは毒無効なので毒状態を保存しない

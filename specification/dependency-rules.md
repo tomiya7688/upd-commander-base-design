@@ -1,10 +1,12 @@
 # Dependency Rules
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 本書は UPD Commander における依存関係の許可・禁止を規定する。
 
 ## 1. 基本依存
 
-許可される層間境界は次の2つだけである。
+許可される層間[境界](../docs/glossary.md#boundary)は次の2つだけである。
 
 ```text
 UI <-> Process
@@ -15,34 +17,34 @@ Process <-> Data
 
 ## 2. 許可表
 
-| 呼び出し元 | 呼び出し先 | 許可 | 条件 |
-|---|---|---:|---|
-| UI Commander | UI Processing | Yes | 同一層の処理呼び出し |
-| UI Commander | UI Messenger | Yes | Process への要求送信 |
-| UI Processing | UI Commander | Yes | 処理結果・追加要求の返却 |
-| UI Messenger | Process Messenger | Yes | 層間通信 |
-| Process Messenger | Process Commander | Yes | 受信要求の引き渡し |
-| Process Commander | Process Processing | Yes | 同一層の処理呼び出し |
-| Process Commander | Process Messenger | Yes | UI/Data への送信 |
-| Process Processing | Process Commander | Yes | 処理結果・追加要求の返却 |
-| Process Messenger | Data Messenger | Yes | Data への層間通信 |
-| Data Messenger | Data Commander | Yes | 受信要求の引き渡し |
-| Data Commander | Data Processing | Yes | 同一層の処理呼び出し |
-| Data Commander | Data Messenger | Yes | Process への返却 |
-| Data Processing | Data Commander | Yes | 処理結果の返却 |
+| 呼び出し元                                                              | 呼び出し先                                      | 許可 | 条件                                                |
+| ----------------------------------------------------------------------- | ----------------------------------------------- | ---: | --------------------------------------------------- |
+| [UI](../docs/glossary.md#ui) [Commander](../docs/glossary.md#commander) | UI [Processing](../docs/glossary.md#processing) |  Yes | 同一層の処理呼び出し                                |
+| UI Commander                                                            | UI [Messenger](../docs/glossary.md#messenger)   |  Yes | [Process](../docs/glossary.md#process) への要求送信 |
+| UI Processing                                                           | UI Commander                                    |  Yes | 処理結果・追加要求の返却                            |
+| UI Messenger                                                            | Process Messenger                               |  Yes | 層間通信                                            |
+| Process Messenger                                                       | Process Commander                               |  Yes | 受信要求の引き渡し                                  |
+| Process Commander                                                       | Process Processing                              |  Yes | 同一層の処理呼び出し                                |
+| Process Commander                                                       | Process Messenger                               |  Yes | UI/[Data](../docs/glossary.md#data) への送信        |
+| Process Processing                                                      | Process Commander                               |  Yes | 処理結果・追加要求の返却                            |
+| Process Messenger                                                       | Data Messenger                                  |  Yes | Data への層間通信                                   |
+| Data Messenger                                                          | Data Commander                                  |  Yes | 受信要求の引き渡し                                  |
+| Data Commander                                                          | Data Processing                                 |  Yes | 同一層の処理呼び出し                                |
+| Data Commander                                                          | Data Messenger                                  |  Yes | Process への返却                                    |
+| Data Processing                                                         | Data Commander                                  |  Yes | 処理結果の返却                                      |
 
 ## 3. 禁止表
 
-| 呼び出し元 | 呼び出し先 | 理由 |
-|---|---|---|
-| UI Layer | Data Layer | Process を飛び越えるため |
-| UI Processing | Process Processing | Messenger/Commander を迂回するため |
-| UI Processing | Data Processing | 2層を飛び越えるため |
-| Process Processing | Data Processing | Commander/Messenger を迂回するため |
-| Data Processing | Process Processing | 逆方向にゲームロジックへ侵入するため |
-| Data Layer | UI Layer | 表示責務を Data が知ることになるため |
-| Messenger | 任意の Processing | Commander を迂回するため |
-| 別層 Commander | 別層 Processing | Messenger を迂回するため |
+| 呼び出し元                            | 呼び出し先         | 理由                                                                       |
+| ------------------------------------- | ------------------ | -------------------------------------------------------------------------- |
+| UI [Layer](../docs/glossary.md#layer) | Data Layer         | Process を飛び越えるため                                                   |
+| UI Processing                         | Process Processing | Messenger/Commander を迂回するため                                         |
+| UI Processing                         | Data Processing    | 2層を飛び越えるため                                                        |
+| Process Processing                    | Data Processing    | Commander/Messenger を迂回するため                                         |
+| Data Processing                       | Process Processing | 逆方向にゲームロジックへ侵入するため                                       |
+| Data Layer                            | UI Layer           | 表示[責務](../docs/glossary.md#responsibility)を Data が知ることになるため |
+| Messenger                             | 任意の Processing  | Commander を迂回するため                                                   |
+| 別層 Commander                        | 別層 Processing    | Messenger を迂回するため                                                   |
 
 ## 4. Import / Reference 規定
 
@@ -50,7 +52,7 @@ Process <-> Data
 
 例えば UI Layer から Data Layer のクラスを import することは、実際に呼び出していなくても原則禁止する。
 
-共通 DTO、Message Contract、値オブジェクト等を共有する必要がある場合は、特定層の実装に属さない Common / Shared 領域へ置くことを許可する。
+共通 [DTO](../docs/glossary.md#dto)、[Message Contract](../docs/glossary.md#contract)、値オブジェクト等を共有する必要がある場合は、特定層の実装に属さない [Common](../docs/glossary.md#common) / [Shared](../docs/glossary.md#shared) 領域へ置くことを許可する。
 
 依存方向は `UI/Process/Data -> Common/Shared` を許可し、`Common/Shared -> UI/Process/Data` を禁止する。Common / Shared は第四層ではない。
 

@@ -1,13 +1,15 @@
 # Commander & Messenger
 
+用語の意味は[日本語用語集](glossary.md)で確認できます。
+
 ## Commander
 
-Commander は各層における呼び出しの交通整理を担当します。
+[Commander](glossary.md#commander) は[各層](glossary.md#layer)における呼び出しの交通整理を担当します。
 
 ### Commander が行うこと
 
-- Messenger から届いた要求を受け取る
-- 適切な Processing を呼ぶ
+- [Messenger](glossary.md#messenger) から届いた要求を受け取る
+- 適切な [Processing](glossary.md#processing) を呼ぶ
 - 必要に応じて Messenger に他層への要求送信を依頼する
 - Processing の結果を適切な次の処理へ渡す
 
@@ -34,7 +36,7 @@ Messenger は層間通信を担当します。
 ### Messenger が行わないこと
 
 - ゲームロジックの判断
-- UI表示判断
+- [UI](glossary.md#ui)表示判断
 - データ整形
 - 保存処理
 - 呼び出し先 Processing の選定
@@ -78,4 +80,4 @@ Data Processing
 > 「どの処理を呼ぶか」は Commander。
 > 「その処理をどう実行するか」は Processing。
 
-この境界を守ることで Commander を薄く保ちます。
+この[境界](glossary.md#boundary)を守ることで Commander を薄く保ちます。

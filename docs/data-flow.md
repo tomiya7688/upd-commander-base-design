@@ -2,20 +2,22 @@
 
 **日本語** | [English](data-flow.en.md)
 
-この文書は、UI・Process・Dataの間で要求と結果がどう渡るかを説明します。図は責務の移動を示す概念図であり、特定の関数呼出し順や同期方式を指定するものではありません。
+用語の意味は[日本語用語集](glossary.md)で確認できます。
+
+この文書は、[UI](glossary.md#ui)・[Process](glossary.md#process)・[Data](glossary.md#data)の間で要求と結果がどう渡るかを説明します。図は[責務](glossary.md#responsibility)の移動を示す概念図であり、特定の関数呼出し順や同期方式を指定するものではありません。
 
 ## 図の記号
 
-| 表記 | 意味 |
-| --- | --- |
-| `--[呼出]-->` | Commanderが同じ層のProcessingまたはMessengerへ処理を依頼する |
-| `--[結果返却: ...]-->` | 呼び出されたProcessingが結果をCommanderへ返す。追加データ要求も結果として返す |
-| `==[メッセージ: ...]==>` | 層間のMessengerが隣接層のMessengerへ要求または結果を運ぶ |
-| `--[受渡し]-->` | 受信したMessengerが同じ層のCommanderへ内容を渡す |
+| 表記                     | 意味                                                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `--[呼出]-->`            | [Commander](glossary.md#commander)が同じ層の[Processing](glossary.md#processing)または[Messenger](glossary.md#messenger)へ処理を依頼する |
+| `--[結果返却: ...]-->`   | 呼び出されたProcessingが結果をCommanderへ返す。追加データ要求も結果として返す                                                            |
+| `==[メッセージ: ...]==>` | 層間のMessengerが隣接層のMessengerへ要求または結果を運ぶ                                                                                 |
+| `--[受渡し]-->`          | 受信したMessengerが同じ層のCommanderへ内容を渡す                                                                                         |
 
 `結果返却`は処理結果の受渡しを表し、呼出し元が返答を待つ同期処理を必須としません。Messengerの通信は、返答を待つ同期処理・返答を後から受け取る非同期処理のどちらでも実装できます。複数の非同期要求を対応付ける方法は[Message Contract](../specification/message-contract.md)を参照してください。
 
-`メッセージ`は通信責務の境界を示し、メッセージキューや非同期処理を必須にしません。Messengerの内部で直接メソッド呼出しを使う実装も可能です。
+`メッセージ`は通信責務の[境界](glossary.md#boundary)を示し、[メッセージ](glossary.md#message)キューや非同期処理を必須にしません。Messengerの内部で直接メソッド呼出しを使う実装も可能です。
 
 ## 要求の流れ
 
@@ -35,7 +37,7 @@ Data Messenger --[受渡し]--> Data Commander
 Data Commander --[呼出]--> Data Processing
 ```
 
-Process Processingが追加データを必要とするとき、Processingは「どのデータが必要か」を処理結果としてCommanderへ返します。Processing自身がMessengerを呼んだり、別層へ直接要求を送ったりするわけではありません。Commanderが返却結果を受けて、Messengerへ要求送信を依頼します。
+Process Processingが追加データを必要とするとき、Processingは「どのデータが必要か」を処理結果としてCommanderへ返します。Processing自身がMessengerを呼んだり、[別層](glossary.md#layer)へ直接要求を送ったりするわけではありません。Commanderが返却結果を受けて、Messengerへ要求送信を依頼します。
 
 ## 応答の流れ
 
@@ -68,4 +70,4 @@ UI Processingは最終結果を画面表示へ変換できます。反対に、D
 6. Data Processingが取得結果をData Commanderへ返すと、Data MessengerがProcess Messengerへ応答メッセージを送り、Process Messengerが結果をProcess Commanderへ渡します。Process CommanderはProcess Processingを再開します。
 7. Process Processingが検索結果を返すと、Process CommanderはProcess Messengerへ最終結果を渡します。Process MessengerはUI Messengerへ結果メッセージを送り、UI Messengerは結果をUI Commanderへ渡します。UI CommanderがUI Processingを呼び、一覧を表示します。
 
-この例の`検索要求`や`追加要求`は役割を説明するための概念名です。具体的な型、メッセージ名、同期・非同期の選択は実装に合わせて決めます。層と役割の全体像は[Architecture](architecture.md)、CommanderとMessengerの責務は[Commander & Messenger](commander-messenger.md)を参照してください。
+この例の`検索要求`や`追加要求`は[役割](glossary.md#role)を説明するための概念名です。具体的な型、メッセージ名、同期・非同期の選択は実装に合わせて決めます。層と役割の全体像は[Architecture](architecture.md)、CommanderとMessengerの責務は[Commander & Messenger](commander-messenger.md)を参照してください。

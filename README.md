@@ -2,13 +2,15 @@
 
 **日本語** | [English](README.en.md)
 
-UPD Commander Base Design は、アプリケーションを **UI / Process / Data** の3層に分離し、各層の処理呼び出しを **Commander**、層間通信を **Messenger**、実際の処理を各層の処理モジュールへ分離するための基本設計です。
+用語の意味は[日本語用語集](docs/glossary.md)で確認できます。
 
-この設計は MVVM 等の既存パターン名をコード構造へそのまま持ち込むことを目的としません。UI・ゲーム処理・データ処理の責務と通信経路を明示し、依存方向を制御することを目的とします。
+UPD Commander Base Design は、アプリケーションを **[UI](docs/glossary.md#ui) / [Process](docs/glossary.md#process) / [Data](docs/glossary.md#data)** の[3層](docs/glossary.md#layer)に分離し、各層の処理呼び出しを **[Commander](docs/glossary.md#commander)**、層間通信を **[Messenger](docs/glossary.md#messenger)**、実際の処理を各層の[処理モジュール](docs/glossary.md#processing)へ分離するための基本設計です。
+
+この設計は MVVM 等の既存パターン名をコード構造へそのまま持ち込むことを目的としません。UI・ゲーム処理・データ処理の[責務](docs/glossary.md#responsibility)と通信経路を明示し、依存方向を制御することを目的とします。
 
 ## この設計の本質
 
-UPD Commander Base Design の大きな特徴は、規則に従って実装することで、**各クラス・モジュール・アクセス制御単位の責務が自然に小さくなる**ことです。
+UPD Commander Base Design の大きな特徴は、規則に従って実装することで、**各クラス・[モジュール](docs/glossary.md#module)・アクセス制御単位の責務が自然に小さくなる**ことです。
 
 処理量が増えた場合でも、1つの Commander や処理モジュールへ処理を抱え込ませる必要はありません。処理を複数の処理モジュールや下位 Commander に分割し、上位 Commander はそれらを順番に呼び出して一連の処理を構成できます。
 
@@ -61,7 +63,7 @@ Data Layer
 | `==[メッセージ: ...]==>` | Messengerが要求または結果を隣接層のMessengerへ運ぶ                |
 | `--[受渡し]-->`          | Messengerが受信内容を同じ層のCommanderへ渡す                      |
 
-Messengerは直接メソッド呼び出しでも実装できます。メッセージの表記はキューや非同期処理を必須にしません。詳しくは[Data Flow](docs/data-flow.md)を参照してください。
+Messengerは直接メソッド呼び出しでも実装できます。[メッセージ](docs/glossary.md#message)の表記はキューや非同期処理を必須にしません。詳しくは[Data Flow](docs/data-flow.md)を参照してください。
 
 ### 1. UI → Process: 入力から処理を始める
 
@@ -130,11 +132,11 @@ UI Commander --[呼出]--> UI Processing
 
 ## スコープ
 
-UPD Commander Base Design は、設計規約とそれを補助・検証する checker / support tools のためのプロジェクトです。
+UPD Commander Base Design は、設計規約とそれを補助・検証する [checker](docs/glossary.md#checker) / support tools のためのプロジェクトです。
 
 コンテキスト削減、AI向けread routing、探索停止、Context Pack生成そのものを目的とする仕組みではありません。
 
-他の開発支援手法やAI向けツールがこの設計の責務境界を利用することはできますが、それらはUPD Commander本体とは別の関心事として扱います。
+他の開発支援手法やAI向けツールがこの設計の責務[境界](docs/glossary.md#boundary)を利用することはできますが、それらはUPD Commander本体とは別の関心事として扱います。
 
 ## 最重要ルール
 

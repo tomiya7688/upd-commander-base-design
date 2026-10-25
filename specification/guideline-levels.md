@@ -1,8 +1,10 @@
 # UPD Guideline Levels
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 この文書は、UPD Commander 設計に含まれる規則・推奨事項・実装上の小技を、強さごとに整理します。
 
-UPD Commander は特定の実装形を強制するフレームワークではなく、UI / Process / Data の責務と通信経路を整理するための設計思想です。
+UPD Commander は特定の実装形を強制するフレームワークではなく、[UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) の[責務](../docs/glossary.md#responsibility)と通信経路を整理するための設計思想です。
 
 そのため、**性能・メモリ・呼び出しコスト・キャッシュ局所性・配置制約・既存資産との互換性に影響しうる事項は、原則として必須にしません。**
 
@@ -25,22 +27,22 @@ UPD Commander は特定の実装形を強制するフレームワークではな
 ### 層を越える依存経路を制御する
 
 - UI から Data へ直接アクセスしない。
-- 別層の Processing を直接呼び出さない。
+- [別層](../docs/glossary.md#layer)の [Processing](../docs/glossary.md#processing) を直接呼び出さない。
 - Process は UI の表示方式を知らない。
 - Data は UI や業務・ゲームロジックを知らない。
-- 層固有の型を不必要に境界越しへ漏らさない。
+- 層固有の型を不必要に[境界](../docs/glossary.md#boundary)越しへ漏らさない。
 
 ### Commander は処理の交通整理を担当する
 
-Commander は、どの処理をどの順序で呼び出すかを管理します。
+[Commander](../docs/glossary.md#commander) は、どの処理をどの順序で呼び出すかを管理します。
 
 Commander 内に複数のルーティング用メソッドを並べる実装は許容されます。重要なのは、Commander 自身が独立した業務処理・ゲーム処理・保存処理を抱え込まないことです。
 
 ### Messenger / Communicator は層間通信を担当する
 
-Messenger / Communicator は層を越える通信経路を担当します。
+[Messenger](../docs/glossary.md#messenger) / Communicator は層を越える通信経路を担当します。
 
-通信メソッドを1つのモジュールやファイルへまとめる実装も許容されます。重要なのは、通信経路の内部へ独立した実処理を混在させないことです。
+通信メソッドを1つの[モジュール](../docs/glossary.md#module)やファイルへまとめる実装も許容されます。重要なのは、通信経路の内部へ独立した実処理を混在させないことです。
 
 ### 実処理は担当層に置く
 
@@ -73,13 +75,13 @@ Processing 同士を横方向へ直接結合せず、必要に応じて Commande
 
 ### Compresser / Container を利用する
 
-引数や返却値が増え、Commander / Messenger が肥大化する場合は、Container 化による通信単位の圧縮を推奨します。
+引数や返却値が増え、Commander / Messenger が肥大化する場合は、[Container](../docs/glossary.md#container) 化による通信単位の圧縮を推奨します。
 
 Container 化そのものには生成・コピー・配置等のコストが生じる可能性があるため、一般プロジェクトでは必須としません。
 
 ### Application / Sub Application 単位で再帰的に分離する
 
-大規模システムでは、独立した機能境界を Application として扱い、その内部へ再度 UI / Process / Data を適用する構造を推奨します。
+大規模システムでは、独立した機能境界を [Application](../docs/glossary.md#application) として扱い、その内部へ再度 UI / Process / Data を適用する構造を推奨します。
 
 小規模システムや性能上単純構造が有利な場合は、不要な階層を増やす必要はありません。
 
@@ -135,7 +137,7 @@ Communicator / Messenger
 
 ### 静的Checkerの警告を設計判断の材料として使う
 
-UPD Checker の Attention / Warning は、機械的に設計を決定するものではありません。
+UPD [Checker](../docs/glossary.md#checker) の [Attention](../docs/glossary.md#attention) / [Warning](../docs/glossary.md#warning) は、機械的に設計を決定するものではありません。
 
 性能測定、プロファイル結果、既存制約等を確認し、必要なら Ignore 理由を残した上で意図的に推奨事項を外せます。
 

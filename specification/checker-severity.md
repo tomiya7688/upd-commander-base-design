@@ -1,9 +1,11 @@
 # Checker Severity Boundary
 
-この文書は、UPD Commander Checker / Tester の severity 分類の正本です。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+この文書は、UPD Commander Checker / Tester の [severity](../docs/glossary.md#severity) 分類の正本です。
 
 設計上の規則の強さは [Guideline Levels](guideline-levels.md) の「必須 / 推奨 / 小技」に従います。
-Checker の severity は、その分類を機械的に対応させたものです。
+[Checker](../docs/glossary.md#checker) の severity は、その分類を機械的に対応させたものです。
 
 ```text
 必須（UPD Core Rules）     → Error
@@ -22,27 +24,27 @@ UPD として成立するための最低条件を破るものです。
 
 ### 判定基準
 
-- UI / Process / Data の責務分離を破る
+- [UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) の[責務](../docs/glossary.md#responsibility)分離を破る
 - UI から Data へ直接依存する
-- 別層 Processing を直接呼び出す
-- Commander が独立した業務処理・ゲーム処理・保存処理を抱え込み、交通整理の役割を失う
-- Messenger / Communicator が通信以外の独立した実処理を持つ
-- 層固有型を不必要に境界越しへ漏らし、依存経路を曖昧にする
+- [別層](../docs/glossary.md#layer) [Processing](../docs/glossary.md#processing) を直接呼び出す
+- [Commander](../docs/glossary.md#commander) が独立した業務処理・ゲーム処理・保存処理を抱え込み、交通整理の[役割](../docs/glossary.md#role)を失う
+- [Messenger](../docs/glossary.md#messenger) / Communicator が通信以外の独立した実処理を持つ
+- 層固有型を不必要に[境界](../docs/glossary.md#boundary)越しへ漏らし、依存経路を曖昧にする
 
 ### 代表ルール（現状）
 
-| Rule | 概要 |
-|------|------|
-| UPD101 | 層を越える不正な依存（例: UI → Data） |
-| UPD102 | Application 境界を破る依存 |
-| UPD103 | Data Commander 間の不正な直接通信 等 |
-| UPD201 | Commander が実処理を持つ |
-| UPD202 | Commander 内の禁止された計算・ループ等 |
-| UPD203 | Commander / Messenger からの外部 I/O・API 直接呼び出し |
+| [Rule](../docs/glossary.md#rule) | 概要                                                          |
+| -------------------------------- | ------------------------------------------------------------- |
+| UPD101                           | 層を越える不正な依存（例: UI → Data）                         |
+| UPD102                           | [Application](../docs/glossary.md#application) 境界を破る依存 |
+| UPD103                           | Data Commander 間の不正な直接通信 等                          |
+| UPD201                           | Commander が実処理を持つ                                      |
+| UPD202                           | Commander 内の禁止された計算・ループ等                        |
+| UPD203                           | Commander / Messenger からの外部 I/O・API 直接呼び出し        |
 
 （各 rule の詳細定義は dependency-rules / commander-spec / data-commander-communication 等を正とする）
 
-Error は「推奨を守っていない」ことを理由に出してはいけません。
+[Error](../docs/glossary.md#error) は「推奨を守っていない」ことを理由に出してはいけません。
 
 ## 2. Warning = 推奨違反
 
@@ -55,20 +57,20 @@ UPD としては成立しているが、保守性・探索性・可読性・責�
 
 ### 判定基準
 
-- 責務単位（ファイル / モジュール / クラス）が過大
+- 責務単位（ファイル / [モジュール](../docs/glossary.md#module) / クラス）が過大
 - 1ファイルに複数の主要責務型がある
 - Namespace / package / module とフォルダ構成が不必要に乖離している
 - Processing をより細かく閉じられる余地がある
-- Application / Sub Application 分割で見通しが良くなる
-- Compresser / Container 導入により Commander / Messenger を大幅に圧縮できる
+- Application / [Sub Application](../docs/glossary.md#sub-application) 分割で見通しが良くなる
+- [Compresser](../docs/glossary.md#compresser) / [Container](../docs/glossary.md#container) 導入により Commander / Messenger を大幅に圧縮できる
 
 ### 代表ルール（現状）
 
-| Rule | 概要 |
-|------|------|
-| UPD401 | 責務単位が過大（250行超 or 13メソッド超） |
-| UPD402 | 1ファイルに複数の主要責務型 |
-| UPD404 | 同居するデータ専用型が外部参照されている |
+| Rule   | 概要                                                             |
+| ------ | ---------------------------------------------------------------- |
+| UPD401 | 責務単位が過大（250行超 or 13メソッド超）                        |
+| UPD402 | 1ファイルに複数の主要責務型                                      |
+| UPD404 | 同居するデータ専用型が外部参照されている                         |
 | UPD303 | Compresser/Container 導入で Commander/Messenger を大幅圧縮できる |
 
 ## 3. Attention = 小技 / 軽微な改善候補
@@ -88,38 +90,38 @@ UPD 適合性にも設計品質の主要部分にも直結せず、より読み�
 
 ### 代表ルール（現状）
 
-| Rule | 概要 |
-|------|------|
-| UPD301 | 有効入力数が設定上限を超過 → Input Container 検討 |
-| UPD302 | 複数返却値 → Output Container 検討 |
-| UPD403 | データ専用型が別の型と同居（外部参照なし） |
-| UPD405 | 大規模な UI / Process / Data で大部分のソースが layer root 直下に集中 |
-| UPD406 | 3項目以上の同一値グループが複数箇所で反復し、Model/DTO等への意味単位化候補 |
+| Rule   | 概要                                                                                                  |
+| ------ | ----------------------------------------------------------------------------------------------------- |
+| UPD301 | 有効入力数が設定上限を超過 → Input Container 検討                                                     |
+| UPD302 | 複数返却値 → Output Container 検討                                                                    |
+| UPD403 | データ専用型が別の型と同居（外部参照なし）                                                            |
+| UPD405 | 大規模な UI / Process / Data で大部分のソースが layer root 直下に集中                                 |
+| UPD406 | 3項目以上の同一値グループが複数箇所で反復し、Model/[DTO](../docs/glossary.md#dto)等への意味単位化候補 |
 
 ## 4. Self Check と一般利用の分離
 
 ### CI gate policy
 
-CI gate changes only the exit decision; it must not hide or remove findings. Every enabled rule still runs and all findings remain in the report.
+CI [gate](../docs/glossary.md#gate) changes only the exit decision; it must not hide or remove findings. Every enabled rule still runs and all findings remain in the report.
 
-- `fail_on` is an optional list of `error`, `warning`, and/or `attention`. When present, only listed effective severities fail the run. An empty list means no finding severity blocks CI.
+- `fail_on` is an optional list of `error`, `warning`, and/or `attention`. When present, only listed effective severities fail the run. An empty list means no [finding](../docs/glossary.md#finding) severity blocks CI.
 - `fail_on_scope` is `all` (default) or `new`. `new` requires a baseline comparison and limits gate candidates to findings classified as `NEW`; existing debt does not fail CI. The CLI option `--fail-on-scope all|new` overrides the config value.
 - `severity_overrides` is an optional object mapping a rule ID such as `UPD101` to one of the three severities. The override is applied to the reported finding and gate decision, without changing detection or fingerprint identity.
 - `gate_exceptions` is an optional list of local, reasoned gate allowances. Each entry has `rule`, `path`, `reason`, and optional positive integer `line`. `path` is an exact, case-sensitive, forward-slash path relative to the scan target; it cannot contain wildcards or `.` / `..` segments. Omitting `line` matches every finding for that rule in that file; specifying it matches only that line. If both file-wide and line-specific entries match, the line-specific reason takes precedence.
 - A matching gate exception is evaluated after severity overrides. It removes only that finding from the set of gate candidates; detection, reported severity, summary counts, and the finding itself remain unchanged. The finding line includes `[gate exception: <reason>]` so the allowance is auditable.
 - Gate exceptions are not `ignore` rules: ignore suppresses a finding from output, while a gate exception keeps it visible and only prevents it from failing CI. A reason is mandatory and must be a non-empty, single-line value.
 - CLI `--fail-on error,warning` replaces the configured list. Repeated `--severity-override UPD101=warning` entries override that rule's configured value; other configured overrides remain.
-- When `fail_on` is absent from both CLI and config, legacy behavior is retained: Error fails by default, `warnings_as_errors` adds Warning, and `--attentions-as-errors` adds Attention. An explicitly supplied `fail_on` is authoritative over these legacy toggles.
+- When `fail_on` is absent from both CLI and config, legacy behavior is retained: Error fails by default, `warnings_as_errors` adds [Warning](../docs/glossary.md#warning), and `--attentions-as-errors` adds [Attention](../docs/glossary.md#attention). An explicitly supplied `fail_on` is authoritative over these legacy toggles.
 - Invalid severity names, rule IDs, or value types are configuration/usage errors, not silent fallbacks.
 
 The baseline CI policy composes with this common gate: `fail_on_scope` selects which findings are candidates, then `fail_on` and the legacy defaults select failing effective severities. Severity overrides apply before scope and exceptions; output and summary counts continue to include all findings. It must not duplicate severity parsing or override rules.
 
 ## 5. Self Check と一般利用の分離
 
-| モード | Error | Warning | Attention |
-|--------|--------|---------|-----------|
-| 一般プロジェクト既定 | CI失敗 | 失敗にしない | 失敗にしない |
-| Checker 自身の strict Self Check | 失敗 | 失敗 | 失敗 |
+| モード                           | Error  | Warning      | Attention    |
+| -------------------------------- | ------ | ------------ | ------------ |
+| 一般プロジェクト既定             | CI失敗 | 失敗にしない | 失敗にしない |
+| Checker 自身の strict Self Check | 失敗   | 失敗         | 失敗         |
 
 Checker 自身は設計例として扱うため、Self Check では Warning / Attention も残さないことを目標とします。
 これは一般プロジェクトへ推奨・小技を強制する規定ではありません。

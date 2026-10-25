@@ -2,13 +2,15 @@
 
 **日本語正本** | [English](common-shared-spec.en.md)
 
-本書は、UPD Commander における `Common` / `Shared` 領域の責務、依存方向、設定契約を定義する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
 
-Common / Shared は UI / Process / Data に並ぶ第四層ではない。特定層へ所属しない、複数層または複数 Application から共有可能な**層中立資産領域**である。
+本書は、UPD Commander における `Common` / `Shared` 領域の[責務](../docs/glossary.md#responsibility)、依存方向、設定[契約](../docs/glossary.md#contract)を定義する。
+
+[Common](../docs/glossary.md#common) / [Shared](../docs/glossary.md#shared) は [UI](../docs/glossary.md#ui) / [Process](../docs/glossary.md#process) / [Data](../docs/glossary.md#data) に並ぶ第四層ではない。特定層へ所属しない、複数層または複数 [Application](../docs/glossary.md#application) から共有可能な**層中立資産領域**である。
 
 ## 1. 基本原則
 
-通常の Application は引き続き次の3層で構成する。
+通常の Application は引き続き次の[3層](../docs/glossary.md#layer)で構成する。
 
 ```text
 Application
@@ -43,13 +45,13 @@ Application
 
 次のような、特定層の処理責務を持たない資産を置ける。
 
-- DTO
-- Message / Contract
+- [DTO](../docs/glossary.md#dto)
+- [Message](../docs/glossary.md#message) / Contract
 - value object
 - enum / constant
 - immutable data structure
 - 複数層で利用される純粋な型定義
-- 複数 Application 間の境界 contract
+- 複数 Application 間の[境界](../docs/glossary.md#boundary) contract
 - framework非依存の小さな共通 utility
 - 層に依存しない serialization schema / protocol schema
 
@@ -62,9 +64,9 @@ Application
 - UI描画・UIイベント処理
 - 業務ロジック・ゲームロジック
 - DB / file / network persistence
-- UI / Process / Data Processing
-- 層固有 Commander
-- 層固有 Messenger
+- UI / Process / Data [Processing](../docs/glossary.md#processing)
+- 層固有 [Commander](../docs/glossary.md#commander)
+- 層固有 [Messenger](../docs/glossary.md#messenger)
 - 特定フレームワークへ密結合した実装
 - 特定層専用なのに共有領域へ退避しただけの処理
 
@@ -74,15 +76,15 @@ Application
 
 依存の正本は次である。
 
-| Source | Target | Allowed | Notes |
-|---|---|---:|---|
-| UI | Common/Shared | Yes | 中立contract/value利用 |
-| Process | Common/Shared | Yes | 中立contract/value利用 |
-| Data | Common/Shared | Yes | 中立contract/value利用 |
-| Common/Shared | Common/Shared | Yes | 中立資産間の依存 |
-| Common/Shared | UI | No | UI責務へ依存して中立性を失う |
-| Common/Shared | Process | No | 業務/ゲーム処理へ依存して中立性を失う |
-| Common/Shared | Data | No | 保存方式へ依存して中立性を失う |
+| Source        | Target        | Allowed | Notes                                 |
+| ------------- | ------------- | ------: | ------------------------------------- |
+| UI            | Common/Shared |     Yes | 中立contract/value利用                |
+| Process       | Common/Shared |     Yes | 中立contract/value利用                |
+| Data          | Common/Shared |     Yes | 中立contract/value利用                |
+| Common/Shared | Common/Shared |     Yes | 中立資産間の依存                      |
+| Common/Shared | UI            |      No | UI責務へ依存して中立性を失う          |
+| Common/Shared | Process       |      No | 業務/ゲーム処理へ依存して中立性を失う |
+| Common/Shared | Data          |      No | 保存方式へ依存して中立性を失う        |
 
 Common / Shared は層間通信経路を置き換えない。
 
@@ -122,15 +124,15 @@ Product-level Common も UI / Process / Data の内部実装へ依存しては�
 
 ## 6. Checker における分類
 
-Checker は recognized common root 配下を `Common` と分類する。
+[Checker](../docs/glossary.md#checker) は recognized common root 配下を `Common` と分類する。
 
 `Common` は UI / Process / Data のいずれにも分類しない。
 
 したがって:
 
-- Common配下だからという理由だけで「層未所属」Errorを出してはならない
+- Common配下だからという理由だけで「層未所属」[Error](../docs/glossary.md#error)を出してはならない
 - Common配下を第四層としてUPDの3層必須条件へ追加してはならない
-- Common -> UI/Process/Data の参照は Core Rule違反として扱う
+- Common -> UI/Process/Data の参照は Core [Rule](../docs/glossary.md#rule)違反として扱う
 - UI/Process/Data -> Common の参照は、他の境界違反がなければ許可する
 
 ## 7. path classification の優先順位
@@ -215,9 +217,9 @@ Commonから層固有実装への依存を、単に便利だからという理�
 本仕様は次を定義しない。
 
 - Common資産が本当に複数層で使われているか
-- 1層専用Common資産へのWarning
+- 1層専用Common資産への[Warning](../docs/glossary.md#warning)
 - 言語ごとのimport/include/reference抽出方法
-- package/namespace/module命名規則
+- package/namespace/[module](../docs/glossary.md#module)命名規則
 
 「実質1層専用のCommon資産」判定は #83 系列で別途定義する。
 
@@ -227,15 +229,15 @@ Commonから層固有実装への依存を、単に便利だからという理�
 
 ## 13. 実装判定表
 
-| Scenario | Expected |
-|---|---|
-| UI -> Common DTO | allowed |
-| Process -> Common value object | allowed |
-| Data -> Common schema | allowed |
-| Common contract -> Common value object | allowed |
-| Common -> UI rendering implementation | Core Rule violation |
-| Common -> Process business processing | Core Rule violation |
-| Common -> Data repository implementation | Core Rule violation |
-| Application-local Common used as another Application's internal implementation | cross-Application violation |
-| Product-level Common contract used by multiple Applications | allowed |
-| source under recognized Common root | not an unassigned-layer error |
+| Scenario                                                                       | Expected                      |
+| ------------------------------------------------------------------------------ | ----------------------------- |
+| UI -> Common DTO                                                               | allowed                       |
+| Process -> Common value object                                                 | allowed                       |
+| Data -> Common schema                                                          | allowed                       |
+| Common contract -> Common value object                                         | allowed                       |
+| Common -> UI rendering implementation                                          | Core Rule violation           |
+| Common -> Process business processing                                          | Core Rule violation           |
+| Common -> Data repository implementation                                       | Core Rule violation           |
+| Application-local Common used as another Application's internal implementation | cross-Application violation   |
+| Product-level Common contract used by multiple Applications                    | allowed                       |
+| source under recognized Common root                                            | not an unassigned-layer error |

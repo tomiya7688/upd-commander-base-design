@@ -1,18 +1,20 @@
 # Error Handling Specification
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 本書は UPD Commander におけるエラーの扱いと伝播を規定する。
 
 ## 1. 基本原則
 
 1. エラーは発生した層で検出する。
-2. その層で解決可能なエラーは、その層の Processing で処理してよい。
-3. 呼び出し元の判断が必要なエラーは Commander へ返す。
-4. 層を越えて通知する必要がある場合は Messenger を経由する。
+2. その層で解決可能なエラーは、その層の [Processing](../docs/glossary.md#processing) で処理してよい。
+3. 呼び出し元の判断が必要なエラーは [Commander](../docs/glossary.md#commander) へ返す。
+4. 層を越えて通知する必要がある場合は [Messenger](../docs/glossary.md#messenger) を経由する。
 5. Messenger がエラーの意味を業務判断してはならない。
 
 ## 2. UI Layer のエラー
 
-UI 固有のエラーは UI Layer で扱う。
+[UI](../docs/glossary.md#ui) 固有のエラーは UI [Layer](../docs/glossary.md#layer) で扱う。
 
 例:
 
@@ -20,7 +22,7 @@ UI 固有のエラーは UI Layer で扱う。
 - UI 部品生成失敗
 - 入力デバイス関連エラー
 
-Process に通知する必要がない UI 表示上の失敗は UI 内で完結してよい。
+[Process](../docs/glossary.md#process) に通知する必要がない UI 表示上の失敗は UI 内で完結してよい。
 
 ## 3. Process Layer のエラー
 
@@ -39,7 +41,7 @@ Process Layer が直接エラーメッセージの色やダイアログ形式を
 
 ## 4. Data Layer のエラー
 
-データ取得・保存に関する失敗は Data Layer で検出する。
+データ取得・保存に関する失敗は [Data](../docs/glossary.md#data) Layer で検出する。
 
 例:
 
@@ -48,7 +50,7 @@ Process Layer が直接エラーメッセージの色やダイアログ形式を
 - 形式不正
 - 読み書き失敗
 
-Data Layer は必要に応じて内部例外を層間契約用の失敗情報へ変換する。
+Data Layer は必要に応じて内部例外を層間[契約](../docs/glossary.md#contract)用の失敗情報へ変換する。
 
 ## 5. 伝播
 
@@ -88,4 +90,4 @@ error:
 
 ログ出力はエラー処理そのものとは分離する。
 
-各層は自身の技術情報をログへ出力してよいが、ログ出力を理由として責務境界を破ってはならない。
+各層は自身の技術情報をログへ出力してよいが、ログ出力を理由として[責務](../docs/glossary.md#responsibility)[境界](../docs/glossary.md#boundary)を破ってはならない。

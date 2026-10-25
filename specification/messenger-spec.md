@@ -1,27 +1,29 @@
 # Messenger Specification
 
-Messenger は UPD Commander における層間通信専用コンポーネントである。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+[Messenger](../docs/glossary.md#messenger) は UPD Commander における層間通信専用コンポーネントである。
 
 ## 1. 基本原則
 
 1. Messenger は層を越える要求・返却を運ぶ。
-2. Messenger は実処理を持ってはならない。
-3. Messenger は受信した内容を対象層の Messenger または Commander へ渡す。
-4. Messenger はゲームルール、UI 表示ルール、保存ルールを判断してはならない。
+2. Messenger は[実処理](../docs/glossary.md#processing)を持ってはならない。
+3. Messenger は受信した内容を対象層の Messenger または [Commander](../docs/glossary.md#commander) へ渡す。
+4. Messenger はゲームルール、[UI](../docs/glossary.md#ui) 表示ルール、保存ルールを判断してはならない。
 5. Messenger は通信形式の変換など、通信成立に必要な最小限の処理のみ許可する。
-6. 複数の引数・返却値が存在する場合、それらを個別に理解して運ぶのではなく、Compresser により単一の通信単位へまとめて扱うことを推奨する。
-7. Messenger は Compresser が生成した payload 内部の業務的意味を原則として解釈してはならない。
+6. 複数の引数・返却値が存在する場合、それらを個別に理解して運ぶのではなく、[Compresser](../docs/glossary.md#compresser) により単一の通信単位へまとめて扱うことを推奨する。
+7. Messenger は Compresser が生成した [payload](../docs/glossary.md#payload) 内部の業務的意味を原則として解釈してはならない。
 
 ## 2. Messenger が行ってよいこと
 
-- メッセージ送信
+- [メッセージ](../docs/glossary.md#message)送信
 - メッセージ受信
 - 宛先の識別
 - コマンド種別の付与・解釈
 - request_id / correlation_id 等の通信識別子管理
 - 同期 / 非同期送信
 - 通信失敗の検出
-- 通信契約に沿った最低限のラップ / アンラップ
+- 通信[契約](../docs/glossary.md#contract)に沿った最低限のラップ / アンラップ
 - Compresser によって生成された単一の通信単位の配送
 
 ## 3. Messenger が行ってはならないこと
@@ -32,8 +34,8 @@ Messenger は UPD Commander における層間通信専用コンポーネント�
 - ファイル内容の意味上の整形
 - セーブデータ生成
 - ゲーム状態更新
-- DB クエリ組み立てを含む Data Processing
-- Process Processing の代替
+- DB クエリ組み立てを含む [Data](../docs/glossary.md#data) Processing
+- [Process](../docs/glossary.md#process) Processing の代替
 - payload 内部の個々の値を読み、その意味に応じて業務判断すること
 
 ## 4. 正式な通信経路
@@ -88,7 +90,7 @@ Messenger は原則としてフレームワーク非依存・層外実装非依�
 
 避けるべき例:
 
-- pygame.Event を Process Layer へ送る
+- pygame.Event を Process [Layer](../docs/glossary.md#layer) へ送る
 - DB Connection を Process Layer へ渡す
 - ファイルハンドルを UI Layer へ返す
 
@@ -114,7 +116,7 @@ Messenger は原則としてフレームワーク非依存・層外実装非依�
 
 複数値を扱う場合でも Messenger の引数を増やすのではなく、可能な限り Message Contract に従った単一の通信単位へまとめる。
 
-パッケージ化・展開そのものの責務は `compresser-spec.md` に従う。
+パッケージ化・展開そのものの[責務](../docs/glossary.md#responsibility)は `compresser-spec.md` に従う。
 
 ## 7. 通信方式
 
@@ -131,4 +133,4 @@ UPD Commander は通信手段を固定しない。
 - IPC
 - ネットワーク通信
 
-ただし、どの方式でも責務境界は同じでなければならない。
+ただし、どの方式でも責務[境界](../docs/glossary.md#boundary)は同じでなければならない。

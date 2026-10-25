@@ -1,29 +1,31 @@
 # Testing Rules
 
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
 本書は UPD Commander に従う実装のテスト規定を定める。
 
 ## 1. 基本原則
 
-1. 各層は可能な限り独立してテスト可能でなければならない。
-2. Processing は Commander や Messenger を起動しなくても単体テストできる構造を推奨する。
+1. [各層](../docs/glossary.md#layer)は可能な限り独立してテスト可能でなければならない。
+2. [Processing](../docs/glossary.md#processing) は [Commander](../docs/glossary.md#commander) や [Messenger](../docs/glossary.md#messenger) を起動しなくても単体テストできる構造を推奨する。
 3. Commander は実処理の正しさではなく、正しい処理・Messenger を呼び出すことをテストする。
-4. Messenger は業務結果ではなく、正しい宛先へ正しい契約で送受信できることをテストする。
+4. Messenger は業務結果ではなく、正しい宛先へ正しい[契約](../docs/glossary.md#contract)で送受信できることをテストする。
 5. 層間統合テストでは正式な通信経路を通ることを確認する。
 
 ## 2. UI Layer
 
-UI Processing のうち、表示値への変換や表示状態判定は描画本体と分離してテスト可能にすることを推奨する。
+[UI](../docs/glossary.md#ui) Processing のうち、表示値への変換や表示状態判定は描画本体と分離してテスト可能にすることを推奨する。
 
 例:
 
 - HP 24/100 -> ratio 0.24
-- ratio が閾値以下 -> warning=true
+- ratio が閾値以下 -> [warning](../docs/glossary.md#warning)=true
 
 pygame 等を必要とする描画テストと、純粋な表示変換テストを分けてよい。
 
 ## 3. Process Layer
 
-Process Processing は最も重点的に単体テストする。
+[Process](../docs/glossary.md#process) Processing は最も重点的に単体テストする。
 
 テスト対象例:
 
@@ -33,7 +35,7 @@ Process Processing は最も重点的に単体テストする。
 - 無効入力
 - 追加データ要求の返却
 
-UI や Data の実装を起動せずテストできる構造を推奨する。
+UI や [Data](../docs/glossary.md#data) の実装を起動せずテストできる構造を推奨する。
 
 ## 4. Data Layer
 
@@ -76,6 +78,6 @@ Messenger のテストでゲームロジックの正しさを検証してはな�
 
 ## 8. 回帰テスト
 
-責務移動やリファクタリング後も、外部から見た command / response の契約を維持する。
+[責務](../docs/glossary.md#responsibility)移動やリファクタリング後も、外部から見た command / response の契約を維持する。
 
 契約変更が必要な場合は message contract の変更として明示的に扱う。

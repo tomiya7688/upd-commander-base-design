@@ -1,8 +1,10 @@
 # C# UPD Commander Checker
 
+用語の意味は[日本語用語集](../../../docs/glossary.md)で確認できます。
+
 C#プロジェクト向けのUPD Commander静的チェッカーです。
 
-.NET 8 + Roslyn (`Microsoft.CodeAnalysis.CSharp`) の構文木を使用し、UPD Commanderの依存規則・Application境界・Commander責務・Container/Compresser候補を解析します。コメントや文字列をC#構文として誤認せず、複数行宣言もSyntax Node単位で扱います。
+.NET 8 + Roslyn (`Microsoft.CodeAnalysis.CSharp`) の構文木を使用し、UPD Commanderの依存規則・[Application](../../../docs/glossary.md#application)[境界](../../../docs/glossary.md#boundary)・[Commander](../../../docs/glossary.md#commander)[責務](../../../docs/glossary.md#responsibility)・[Container](../../../docs/glossary.md#container)/[Compresser](../../../docs/glossary.md#compresser)候補を解析します。コメントや文字列をC#構文として誤認せず、複数行宣言もSyntax Node単位で扱います。
 
 ## 実行
 
@@ -66,9 +68,9 @@ OK
 
 `enabled_rules` は4言語で共通です。既存設定との互換性のため、項目自体がない場合は全ルールを有効にします。`[]` を明示するとルール検出をすべて停止しますが、対象不在や設定不正などの実行エラーは引き続き報告します。
 
-`fail_on` は `error` / `warning` / `attention` のうち、終了コード1にするseverityを指定します。未指定時は従来どおりerrorが失敗し、`warnings_as_errors` と `--attentions-as-errors` で追加できます。明示的な `fail_on` または `--fail-on` は従来フラグより優先されます。`"fail_on": []` または `--fail-on ""` はfindingによる失敗を無効にします。`fail_on_scope` は gate 対象を `all`（既定）または `new` にし、`--fail-on-scope all|new` で上書きできます。`new` は `--baseline` が必要で、全findingの出力・集計は維持します。CLI例: `--fail-on error,warning --severity-override UPD203=warning`。`severity_overrides` / `--severity-override` はfindingを保持したまま有効severityを変更し、表示・集計・ゲートに反映します。CLI overrideは同じルールの設定値より優先です。
+`fail_on` は `error` / `warning` / `attention` のうち、終了コード1にする[severity](../../../docs/glossary.md#severity)を指定します。未指定時は従来どおり[error](../../../docs/glossary.md#error)が失敗し、`warnings_as_errors` と `--attentions-as-errors` で追加できます。明示的な `fail_on` または `--fail-on` は従来フラグより優先されます。`"fail_on": []` または `--fail-on ""` は[finding](../../../docs/glossary.md#finding)による失敗を無効にします。`fail_on_scope` は [gate](../../../docs/glossary.md#gate) 対象を `all`（既定）または `new` にし、`--fail-on-scope all|new` で上書きできます。`new` は `--baseline` が必要で、全findingの出力・集計は維持します。CLI例: `--fail-on error,warning --severity-override UPD203=warning`。`severity_overrides` / `--severity-override` はfindingを保持したまま有効severityを変更し、表示・集計・ゲートに反映します。CLI overrideは同じルールの設定値より優先です。
 
-`gate_exceptions` はrule・相対path・任意の1始まりlineでgate対象を限定し、必須の理由をFinding行へ表示します。対象Findingと集計は残りますが、CI gateだけを通過できます。pathはscan targetからの大文字小文字を区別する `/` 区切り完全一致です。`ignore` のように検出・出力を抑止しません。
+`gate_exceptions` は[rule](../../../docs/glossary.md#rule)・相対path・任意の1始まりlineでgate対象を限定し、必須の理由をFinding行へ表示します。対象Findingと集計は残りますが、CI gateだけを通過できます。pathはscan targetからの大文字小文字を区別する `/` 区切り完全一致です。`ignore` のように検出・出力を抑止しません。
 
 ## Ignore
 
@@ -104,7 +106,7 @@ var value = left + right; // upd: ignore UPD202 - performance hot path
 
 `app/`, `apps/`, `application/`, `applications/`, `feature/`, `features/` の直下をApplication IDとして扱います。
 
-別Applicationの内部実装への直接 `using` は `UPD102` です。Messenger、contract/contracts、dto/dtos、shared は境界APIとして許可します。
+別Applicationの内部実装への直接 `using` は `UPD102` です。[Messenger](../../../docs/glossary.md#messenger)、[contract](../../../docs/glossary.md#contract)/contracts、[dto](../../../docs/glossary.md#dto)/dtos、[shared](../../../docs/glossary.md#shared) は境界APIとして許可します。
 
 ## EXEビルド
 
@@ -135,7 +137,7 @@ self-contained のため.NETランタイム未導入環境でも実行できま�
 
 - `UPD001`: ソース読み込み失敗
 - `UPD002`: 構文・AST解析エラー
-- `UPD101`: UI / Process / Data・Commander / Messenger / Processing依存違反
+- `UPD101`: [UI](../../../docs/glossary.md#ui) / [Process](../../../docs/glossary.md#process) / [Data](../../../docs/glossary.md#data)・Commander / Messenger / [Processing](../../../docs/glossary.md#processing)依存違反
 - `UPD102`: Application境界越しの内部実装直接依存
 - `UPD103`: Data Commander同士の直接通信
 - `UPD201`: Commander内のループ

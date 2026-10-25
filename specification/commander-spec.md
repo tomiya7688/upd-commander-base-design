@@ -1,11 +1,13 @@
 # Commander Specification
 
-Commander は UPD Commander における「呼び出しの責任者」である。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+[Commander](../docs/glossary.md#commander) は UPD Commander における「呼び出しの責任者」である。
 
 ## 1. 基本原則
 
-1. Commander は実処理を実装してはならない。
-2. Commander は、受け取った要求または返却結果に応じて、適切な Processing または Messenger を呼び出す。
+1. Commander は[実処理](../docs/glossary.md#processing)を実装してはならない。
+2. Commander は、受け取った要求または返却結果に応じて、適切な Processing または [Messenger](../docs/glossary.md#messenger) を呼び出す。
 3. Commander は層内の制御点として振る舞う。
 4. Commander は層外の Processing を直接呼び出してはならない。
 5. Commander 自身がデータ取得・計算・描画・整形を行ってはならない。
@@ -17,7 +19,7 @@ Commander は UPD Commander における「呼び出しの責任者」である�
 - Processing へ必要な引数を渡す
 - Processing の結果を受け取る
 - 次に呼ぶ Processing を決定する
-- 別層への要求が必要な場合に Messenger を呼び出す
+- [別層](../docs/glossary.md#layer)への要求が必要な場合に Messenger を呼び出す
 - 別層から返ってきた結果を適切な Processing へ渡す
 - 成功・失敗・継続など処理フロー上の分岐を行う
 
@@ -60,7 +62,7 @@ else:
     damage = 1
 ```
 
-後者はゲームロジックであり、Process Processing の責務である。
+後者はゲームロジックであり、[Process](../docs/glossary.md#process) Processing の[責務](../docs/glossary.md#responsibility)である。
 
 ## 5. Processing が追加データを必要とする場合
 
@@ -93,7 +95,7 @@ Commander 内に以下が増えた場合、責務違反を疑う。
 - 計算式
 - 複雑なループ
 - データ変換
-- UI フレームワーク呼び出し
+- [UI](../docs/glossary.md#ui) フレームワーク呼び出し
 - ファイル / DB API 呼び出し
 - 業務ルールを表す条件式
 

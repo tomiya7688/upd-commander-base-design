@@ -1,18 +1,20 @@
 # Processing Specification
 
-Processing は各層における実処理を担当する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+[Processing](../docs/glossary.md#processing) は[各層](../docs/glossary.md#layer)における実処理を担当する。
 
 ## 1. 共通原則
 
 1. 実際の計算・変換・描画・データ操作は Processing に置く。
-2. Processing は自身の層の責務範囲だけを扱う。
+2. Processing は自身の層の[責務](../docs/glossary.md#responsibility)範囲だけを扱う。
 3. Processing は別層の Processing を直接呼び出してはならない。
-4. 別層の情報が必要な場合は Commander に要求を返す。
+4. 別層の情報が必要な場合は [Commander](../docs/glossary.md#commander) に要求を返す。
 5. Processing は可能な限り単一責務で分割する。
 
 ## 2. UI Processing
 
-UI Processing は表示・入力解釈・UI 固有変換を担当する。
+[UI](../docs/glossary.md#ui) Processing は表示・入力解釈・UI 固有変換を担当する。
 
 担当例:
 
@@ -27,7 +29,7 @@ UI Processing はゲームルールや保存処理を持たない。
 
 ## 3. Process Processing
 
-Process Processing はアプリケーション本体の規則・計算を担当する。
+[Process](../docs/glossary.md#process) Processing はアプリケーション本体の規則・計算を担当する。
 
 担当例:
 
@@ -42,7 +44,7 @@ Process Processing は UI 固有表現や保存方式を知らない。
 
 ## 4. Data Processing
 
-Data Processing はデータ取得・保存およびそれに必要な変換を担当する。
+[Data](../docs/glossary.md#data) Processing はデータ取得・保存およびそれに必要な変換を担当する。
 
 担当例:
 
@@ -64,7 +66,7 @@ Processing は結果を Commander に返す。
 - 別層データが必要であることを示す要求
 - 失敗情報
 
-Processing 自身が Messenger を使って別層へ送信することは原則禁止する。
+Processing 自身が [Messenger](../docs/glossary.md#messenger) を使って別層へ送信することは原則禁止する。
 
 ## 6. 単一責務
 
@@ -85,4 +87,4 @@ TurnOrderProcessing
 VictoryProcessing
 ```
 
-分割単位は言語の class / module / function に固定しないが、責務境界が追跡可能でなければならない。
+分割単位は言語の class / [module](../docs/glossary.md#module) / function に固定しないが、責務[境界](../docs/glossary.md#boundary)が追跡可能でなければならない。

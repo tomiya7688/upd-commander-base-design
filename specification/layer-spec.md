@@ -1,19 +1,21 @@
 # Layer Specification
 
-本書は UPD Commander における `UI` / `Process` / `Data` の3層の責務を規定する。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+本書は UPD Commander における `UI` / `Process` / `Data` の[3層](../docs/glossary.md#layer)の[責務](../docs/glossary.md#responsibility)を規定する。
 
 ## 1. 共通規定
 
 1. システムは原則として `UI Layer`、`Process Layer`、`Data Layer` に分離しなければならない。
-2. 各層は `Commander`、必要な `Messenger`、実処理を担当する Processing 群から構成する。
+2. 各層は `Commander`、必要な `Messenger`、[実処理](../docs/glossary.md#processing)を担当する Processing 群から構成する。
 3. ある層の Processing が別層の Processing を直接呼び出してはならない。
-4. 層を越える要求・返却は Messenger を経由しなければならない。
-5. Commander と Messenger に実処理を実装してはならない。
+4. 層を越える要求・返却は [Messenger](../docs/glossary.md#messenger) を経由しなければならない。
+5. [Commander](../docs/glossary.md#commander) と Messenger に実処理を実装してはならない。
 6. フレームワーク固有依存は、それを必要とする層の内部へ閉じ込める。
 
 ## 2. UI Layer
 
-UI Layer は利用者との入出力と表示上の処理を担当する。
+[UI](../docs/glossary.md#ui) Layer は利用者との入出力と表示上の処理を担当する。
 
 ### 2.1 UI Layer が担当するもの
 
@@ -21,7 +23,7 @@ UI Layer は利用者との入出力と表示上の処理を担当する。
 - ウィンドウ、画面、画面部品の生成
 - 描画
 - アニメーション、画面遷移、表示上の演出
-- Process Layer から返された値を表示用の値・状態へ変換する処理
+- [Process](../docs/glossary.md#process) Layer から返された値を表示用の値・状態へ変換する処理
 - 表示上だけに意味を持つ判定
 - UI フレームワーク固有処理
 
@@ -45,7 +47,7 @@ UI Layer は利用者との入出力と表示上の処理を担当する。
 
 pygame 等の UI フレームワーク固有型は、原則として UI Layer の外へ渡してはならない。
 
-Process Layer に送る前に、UI Messenger が扱えるフレームワーク非依存の値またはメッセージへ変換する。
+Process Layer に送る前に、UI Messenger が扱えるフレームワーク非依存の値または[メッセージ](../docs/glossary.md#message)へ変換する。
 
 ## 3. Process Layer
 
@@ -59,7 +61,7 @@ Process Layer はアプリケーションの意味上の処理、規則、計算
 - 状態遷移
 - 判定
 - UI や保存形式に依存しないデータ処理
-- Data Layer から受け取ったデータを用いた計算
+- [Data](../docs/glossary.md#data) Layer から受け取ったデータを用いた計算
 
 ### 3.2 Process Layer が担当してはならないもの
 
@@ -102,7 +104,7 @@ Data Layer は「その値をゲーム上どう使うか」を知らなくてよ
 
 ## 5. 層の境界
 
-以下を正式な境界とする。
+以下を正式な[境界](../docs/glossary.md#boundary)とする。
 
 ```text
 UI <-> Process <-> Data
@@ -114,7 +116,7 @@ UI がデータ保存を必要とする場合でも、UI は Process Layer に�
 
 ## 6. Common / Shared
 
-特定層へ所属しない DTO / Contract / value object 等は、必要に応じて層中立の Common / Shared 領域へ置いてよい。
+特定層へ所属しない [DTO](../docs/glossary.md#dto) / [Contract](../docs/glossary.md#contract) / value object 等は、必要に応じて層中立の [Common](../docs/glossary.md#common) / [Shared](../docs/glossary.md#shared) 領域へ置いてよい。
 
 Common / Shared は第四層ではなく、UI / Process / Data の責務を実装してはならない。詳細は [Common / Shared Specification](common-shared-spec.md) を正本とする。
 

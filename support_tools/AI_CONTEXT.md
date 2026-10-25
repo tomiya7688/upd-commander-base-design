@@ -1,6 +1,8 @@
 # Checker Development AI Context
 
-> Scope: `support_tools/` の UPD Commander Checker 開発。root `AI_CONTEXT.md` の共通ルールを前提とし、ここには Checker 固有の差分だけを書く。
+用語の意味は[日本語用語集](../docs/glossary.md)で確認できます。
+
+> Scope: `support_tools/` の UPD Commander Checker 開発。root `AI_CONTEXT.md` の共通ルールを前提とし、ここには [Checker](../docs/glossary.md#checker) 固有の差分だけを書く。
 
 ## Start
 
@@ -24,51 +26,66 @@ C#      support_tools/cs/upd_commander_checker/
 ## Rule Routing
 
 ### UPD101 / UPD102 / UPD103 — Dependency
+
 Read:
+
 - 対象言語の `dependency*` analyzer/rules
-- classifier / module-role 判定は必要時のみ
+- classifier / [module](../docs/glossary.md#module)-[role](../docs/glossary.md#role) 判定は必要時のみ
 - `specification/dependency-rules.md`
 - `specification/application-boundary.md` (`UPD102`)
 - `specification/data-commander-communication.md` (`UPD103`)
 
 Tests:
-- dependency / application boundary / Data Commander regression
+
+- dependency / [application](../docs/glossary.md#application) [boundary](../docs/glossary.md#boundary) / [Data](../docs/glossary.md#data) [Commander](../docs/glossary.md#commander) regression
 
 4言語へ広げる条件:
-- rule意味、code、severity、Application境界の共通定義を変更するとき
+
+- [rule](../docs/glossary.md#rule)意味、code、[severity](../docs/glossary.md#severity)、Application境界の共通定義を変更するとき
 
 ### UPD201 / UPD202 / UPD203 — Commander
+
 Read:
+
 - 対象言語の `commander*` analyzer
 - `specification/commander-spec.md`
 
 Tests:
+
 - loop / calculation / direct-work regression
 - AST言語では comment/string false-positive regression
 
 4言語へ広げる条件:
+
 - Commanderで許可/禁止する処理の意味を変えるとき
 
 ### UPD301 / UPD302 / UPD303 — Container / Compresser
+
 Read:
+
 - 対象言語の `container*` analyzer/rules
 - `specification/compresser-spec.md`
 - `specification/compresser-check-rules.md`
 
 Tests:
+
 - multiple input/output
 - substantial compression threshold
 
 4言語へ広げる条件:
+
 - severity、圧縮判定、共通しきい値を変更するとき
 
 ### UPD401 / UPD402 / UPD403 / UPD404 — Responsibility / Type location
+
 Read:
+
 - 対象言語の `responsibility*` rules
 - `data_type_location*` / 相当実装（403/404）
 - `specification/responsibility-check-rules.md`
 
 Tests:
+
 - 250/251 lines
 - 12/13 methods
 - multiple behavioral types
@@ -76,16 +93,20 @@ Tests:
 - external reference promotion to UPD404
 
 4言語へ広げる条件:
+
 - しきい値、data-only定義、severity、型配置ルールを変更するとき
 
 ### Config / Ignore / Output
+
 Read:
+
 - `config*` loader/model
 - `ignore*` rules
-- CLI / output formatter / finding emitter
+- CLI / output formatter / [finding](../docs/glossary.md#finding) emitter
 - `support_tools/config-path.md`
 
 Tests:
+
 - invalid config
 - CLI/path ignore
 - rule ignore
@@ -93,7 +114,9 @@ Tests:
 - short output compatibility
 
 ### AST / Parser infrastructure
+
 Read:
+
 - Scanner / AST analyzer / parser entry only
 - target analyzer
 - matching AST regression
@@ -121,35 +144,45 @@ Scannerへ新rule条件を直接追加しない。新ruleは対応analyzer/rules
 ## Validation Routing
 
 ### Python only
+
 ```text
 cd support_tools/python/upd_commander_checker
 python -m unittest discover -s tests
 ```
+
 その後 Python strict self-check。正確なCI手順は `.github/workflows/checker-self-check.yml` をSource of Truthとする。
 
 ### Go only
+
 ```text
 cd support_tools/go/upd_commander_checker
 go test ./...
 ```
+
 その後 Go strict self-check。
 
 ### C++ only
+
 build/config変更を伴わないrule変更でも、AST/libclangを使うため build + `ctest` を実施する。
+
 ```text
 ctest --test-dir build --output-on-failure
 ```
+
 正確なconfigure/build依存は workflow を参照する。
 
 ### C# only
+
 ```text
 cd support_tools/cs/upd_commander_checker
 dotnet test ../upd_commander_checker_tests/UpdCommanderChecker.Tests.csproj -c Release
 ```
+
 その後 C# strict self-check。
 
 ### Shared rule/spec change
-4言語のmatching regressionを更新し、`Checker Self Check` 全jobを確認する。責務境界変更なら `CSharp Responsibility Thresholds` も確認する。
+
+4言語のmatching regressionを更新し、`Checker Self Check` 全jobを確認する。[責務](../docs/glossary.md#responsibility)境界変更なら `CSharp Responsibility Thresholds` も確認する。
 
 ## Exploration Stop
 
@@ -169,6 +202,7 @@ dotnet test ../upd_commander_checker_tests/UpdCommanderChecker.Tests.csproj -c R
 このrepoは複数チャットから短時間にPRがマージされる。新規branch作成前とPR conflict解消前は必ず最新 `main` を確認する。
 
 優先順:
+
 ```text
 latest main commit
 → changed filenames / compact diff
