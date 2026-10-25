@@ -54,12 +54,12 @@ Data Layer
 
 Instead of packing a whole feature into one long arrow, the diagrams below separate the four routes that cross layer boundaries. Arrows show responsibility handoffs; they do not prescribe a particular function-call sequence or synchronization model.
 
-| Notation | Meaning |
-| --- | --- |
-| `--[call]-->` | A Commander asks Processing or Messenger in the same layer to do work |
-| `--[result: ...]-->` | Processing returns a result to its Commander. A request for additional data is also returned as a result |
-| `==[message: ...]==>` | A Messenger carries a request or result to the Messenger in an adjacent layer |
-| `--[handoff]-->` | A Messenger passes received content to a Commander in the same layer |
+| Notation              | Meaning                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `--[call]-->`         | A Commander asks Processing or Messenger in the same layer to do work                                    |
+| `--[result: ...]-->`  | Processing returns a result to its Commander. A request for additional data is also returned as a result |
+| `==[message: ...]==>` | A Messenger carries a request or result to the Messenger in an adjacent layer                            |
+| `--[handoff]-->`      | A Messenger passes received content to a Commander in the same layer                                     |
 
 A Messenger may use direct method calls. The message notation does not require a queue or asynchronous processing. See [Data Flow](docs/data-flow.en.md) for more detail.
 
