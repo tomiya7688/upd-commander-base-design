@@ -121,6 +121,7 @@ UI Commander --[呼出]--> UI Processing
 
 ## ドキュメント
 
+- [最小UPDチュートリアル](docs/minimal-tutorial.md) — 入力・検証・保存・表示を作り、Checkerを一度実行する
 - [日本語ドキュメント執筆ガイド](docs/japanese-writing-guide.md) — 日本語文書の用語・規則強度・レビュー基準
 - [Architecture](docs/architecture.md) — 全体構造と責務
 - [Layer Rules](docs/layer-rules.md) — UI / Process / Data 各層の規則
