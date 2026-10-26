@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   python:
     runs-on: ubuntu-latest
@@ -12,7 +15,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.16"
+      - uses: ./.github/actions/python-trust-setup
       - name: Install checker
         working-directory: support_tools/python/upd_commander_checker
         run: python -m pip install -e .
@@ -329,7 +333,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14.10"
+      - uses: ./.github/actions/python-trust-setup
       - name: Build and test CUI and GUI
         working-directory: support_tools/python/upd_commander_checker
         shell: cmd
