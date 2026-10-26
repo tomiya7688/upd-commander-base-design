@@ -25,13 +25,12 @@ runs:
         import certifi
         import pip
         import pip._vendor.certifi as pip_certifi
-        from pip._vendor.packaging.version import Version
 
         compromised_root = "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
-        if Version(pip.__version__) < Version("26.2.2"):
-            raise SystemExit(f"pip is too old: {pip.__version__}")
-        if Version(certifi.__version__) < Version("2026.10.19"):
-            raise SystemExit(f"certifi is too old: {certifi.__version__}")
+        if pip.__version__ != "26.2.2":
+            raise SystemExit(f"unexpected pip version: {pip.__version__}")
+        if certifi.__version__ != "2026.10.23":
+            raise SystemExit(f"unexpected certifi version: {certifi.__version__}")
         print(f"pip {pip.__version__}; certifi {certifi.__version__}")
         for label, path in (("pip", pip_certifi.where()), ("certifi", certifi.where())):
             print(f"{label} CA bundle: {path}")
