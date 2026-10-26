@@ -1,0 +1,45 @@
+name: Prepare Python TLS trust
+description: Update pip and certifi, then check the active bundled CA stores.
+runs:
+  using: composite
+  steps:
+    - name: Bootstrap pip with the published SHA-256
+      shell: bash
+      run: >-
+        python -m pip install
+        'pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70'
+    - name: Update the application CA bundle
+      shell: bash
+      run: python -m pip install 'certifi>=2026.10.19'
+    - name: Check pip and active CA bundles
+      shell: bash
+      run: |
+        python - <<'PY'
+        import hashlib
+        import re
+        import ssl
+        from pathlib import Path
+
+        import certifi
+        import pip
+        import pip._vendor.certifi as pip_certifi
+
+        compromised_root = "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
+        if tuple(int(part) for part in pip.__version__.split(".")[:3]) < (26, 2, 2):
+            raise SystemExit(f"pip is too old: {pip.__version__}")
+        if tuple(int(part) for part in certifi.__version__.split(".")[:3]) < (2026, 10, 19):
+            raise SystemExit(f"certifi is too old: {certifi.__version__}")
+        print(f"pip {pip.__version__}; certifi {certifi.__version__}")
+        for label, path in (("pip", pip_certifi.where()), ("certifi", certifi.where())):
+            print(f"{label} CA bundle: {path}")
+            pem = Path(path).read_text(encoding="ascii")
+            certificates = re.findall(
+                r"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", pem, re.DOTALL
+            )
+            if not certificates:
+                raise SystemExit(f"{label} CA bundle contains no certificates")
+            for certificate in certificates:
+                der = ssl.PEM_cert_to_DER_cert(certificate)
+                if hashlib.sha256(der).hexdigest() == compromised_root:
+                    raise SystemExit(f"{label} CA bundle contains the affected emSign root")
+        PY
