@@ -1,17 +1,19 @@
 name: Prepare Python TLS trust
-description: Update pip and certifi, then check the active bundled CA stores.
+description: Install pinned pip and certifi, then inspect their bundled CA stores.
 runs:
   using: composite
   steps:
     - name: Bootstrap pip with the published SHA-256
       shell: bash
       run: >-
-        python -m pip install
+        python -m pip install --force-reinstall --no-deps
         'pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70'
     - name: Update the application CA bundle
       shell: bash
-      run: python -m pip install 'certifi>=2026.10.19'
-    - name: Check pip and active CA bundles
+      run: >-
+        python -m pip install --force-reinstall --no-deps
+        'certifi @ https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl#sha256=e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1'
+    - name: Check pip and certifi CA bundles
       shell: bash
       run: |
         python - <<'PY'
@@ -23,11 +25,12 @@ runs:
         import certifi
         import pip
         import pip._vendor.certifi as pip_certifi
+        from pip._vendor.packaging.version import Version
 
         compromised_root = "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
-        if tuple(int(part) for part in pip.__version__.split(".")[:3]) < (26, 2, 2):
+        if Version(pip.__version__) < Version("26.2.2"):
             raise SystemExit(f"pip is too old: {pip.__version__}")
-        if tuple(int(part) for part in certifi.__version__.split(".")[:3]) < (2026, 10, 19):
+        if Version(certifi.__version__) < Version("2026.10.19"):
             raise SystemExit(f"certifi is too old: {certifi.__version__}")
         print(f"pip {pip.__version__}; certifi {certifi.__version__}")
         for label, path in (("pip", pip_certifi.where()), ("certifi", certifi.where())):
