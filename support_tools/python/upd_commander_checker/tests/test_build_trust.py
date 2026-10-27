@@ -1,9 +1,10 @@
 import hashlib
 import importlib
+import sys
 import unittest
 from collections import namedtuple
 from types import SimpleNamespace
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 from scripts import check_build_trust as trust
 
@@ -12,6 +13,22 @@ class BuildTrustTests(unittest.TestCase):
     def test_build_script_can_be_imported_as_a_module(self):
         build = importlib.import_module("scripts.build_exe")
         self.assertIs(build.verify_environment, trust.verify_environment)
+
+    def test_build_stops_before_pyinstaller_if_preflight_fails(self):
+        build = importlib.import_module("scripts.build_exe")
+        installer = SimpleNamespace(__main__=SimpleNamespace(run=Mock()))
+        with (
+            patch.object(
+                build, "verify_environment", side_effect=ValueError("blocked")
+            ),
+            patch.dict(
+                sys.modules,
+                {"PyInstaller": installer, "PyInstaller.__main__": installer.__main__},
+            ),
+            self.assertRaisesRegex(ValueError, "blocked"),
+        ):
+            build.main()
+        installer.__main__.run.assert_not_called()
 
     def test_python_requires_a_known_patched_release(self):
         with self.assertRaises(ValueError):
