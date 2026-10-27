@@ -14,6 +14,7 @@ _MINIMUM_PYTHON = {
     (3, 14): (3, 14, 10),
     (3, 15): (3, 15, 2),
 }
+# https://github.com/advisories/GHSA-6q48-6c7w-9gw2
 _AFFECTED_ROOT = "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b"
 _CERTIFICATE = re.compile(
     r"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----", re.DOTALL

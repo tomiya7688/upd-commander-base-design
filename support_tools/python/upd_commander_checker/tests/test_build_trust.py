@@ -1,4 +1,5 @@
 import hashlib
+import importlib
 import unittest
 from collections import namedtuple
 from types import SimpleNamespace
@@ -8,6 +9,10 @@ from scripts import check_build_trust as trust
 
 
 class BuildTrustTests(unittest.TestCase):
+    def test_build_script_can_be_imported_as_a_module(self):
+        build = importlib.import_module("scripts.build_exe")
+        self.assertIs(build.verify_environment, trust.verify_environment)
+
     def test_python_requires_a_known_patched_release(self):
         with self.assertRaises(ValueError):
             trust.require_python((3, 14, 10), "candidate")

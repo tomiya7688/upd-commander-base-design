@@ -2,7 +2,10 @@ import json
 import sys
 from pathlib import Path
 
-from check_build_trust import verify_environment
+if __package__:
+    from .check_build_trust import verify_environment
+else:
+    from check_build_trust import verify_environment
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _SOURCE_PATH = _PROJECT_ROOT / "src"
