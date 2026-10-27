@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-import PyInstaller.__main__
+from check_build_trust import verify_environment
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 _SOURCE_PATH = _PROJECT_ROOT / "src"
@@ -21,6 +21,9 @@ _DEFAULT_CONFIG = {
 
 
 def main() -> None:
+    verify_environment()
+    import PyInstaller.__main__
+
     project_root = _PROJECT_ROOT
     source_path = _SOURCE_PATH
     dist = project_root / "dist"

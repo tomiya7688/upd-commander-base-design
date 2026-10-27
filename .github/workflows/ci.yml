@@ -32,7 +32,10 @@ jobs:
       - uses: ./.github/actions/python-trust-setup
       - name: Install
         working-directory: support_tools/python/upd_commander_checker
-        run: python -m pip install -e .
+        run: python -m pip install -e ".[dev]"
+      - name: Check Python build preflight formatting
+        working-directory: support_tools/python/upd_commander_checker
+        run: python -m ruff format --check scripts/check_build_trust.py scripts/build_exe.py tests/test_build_trust.py
       - name: Compile
         working-directory: support_tools/python/upd_commander_checker
         run: python -m compileall -q upd_commander_checker

@@ -14,6 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 build = ["pyinstaller>=6"]
+dev = ["ruff==0.15.22"]
 
 [project.scripts]
 upd-commander-check = "upd_commander_checker.cli:main"
