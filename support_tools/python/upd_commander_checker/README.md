@@ -141,7 +141,7 @@ upd-commander-check . --warnings-as-errors
 
 EXEビルドの前に、セキュリティ修正済みのPython（3.11.18、3.12.16、3.13.18、3.14.10、3.15.2以上の対応系列）、pip 26.2.2以上、certifi 2026.10.19以上を用意します。`build_exe.bat` は依存のインストール前に、`scripts/build_exe.py` はビルド前に、Pythonとpip・certifiのバージョンと両CA束を検査します。未対応系列、古い環境、対象のemSignルートがあるCA束ではビルドを停止します。
 
-このビルド手順は開発・検証用で、署名済みの公開リリースは作成しません。生成されたEXEのAuthenticode署名、配布アーカイブの署名・attestationの生成、およびそれらの検証は行いません。ビルド環境の事前検査やCI成功だけでは成果物の真正性は保証されないため、未署名・未検証の成果物をGitHub Releasesなどで公開配布しないでください。公開配布に必要な対応は [Issue #221](https://github.com/tomiya7688/upd-commander-base-design/issues/221) を参照してください。
+このビルド手順は開発・検証用で、署名済みの公開リリースは作成しません。本手順は生成したEXEのAuthenticode署名やattestationの生成・検証を行わず、公開配布用アーカイブも作成しません。ビルド環境の事前検査やCI成功だけでは成果物の真正性は保証されないため、未署名・未検証の成果物をGitHub Releasesなどで公開配布しないでください。公開配布に必要な対応は [Issue #221](https://github.com/tomiya7688/upd-commander-base-design/issues/221) を参照してください。
 
 Checker自体は引き続きPython 3.10以上で使用できますが、Python 3.10は修正版のないサポート終了系列のため、EXEのビルドには使用できません。未知の系列やバックポート版も自動的には許可されず、修正済みであることを確認したうえで検査対象に追加する必要があります。
 
