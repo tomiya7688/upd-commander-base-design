@@ -1,5 +1,6 @@
 import hashlib
 import importlib
+import os
 import sys
 import unittest
 from collections import namedtuple
@@ -10,6 +11,54 @@ from scripts import check_build_trust as trust
 
 
 class BuildTrustTests(unittest.TestCase):
+    def test_environment_ca_bundle_files_are_checked(self):
+        values = {
+            "PIP_CERT": "pip-custom.pem",
+            "REQUESTS_CA_BUNDLE": "requests.pem",
+            "CURL_CA_BUNDLE": "curl.pem",
+            "SSL_CERT_FILE": "ssl.pem",
+        }
+        with (
+            patch.dict(os.environ, values, clear=True),
+            patch.object(trust, "check_bundle") as check,
+        ):
+            trust.check_environment_bundles()
+        self.assertEqual(
+            check.call_args_list, [call(name, path) for name, path in values.items()]
+        )
+
+    def test_environment_directory_is_rejected(self):
+        with (
+            patch.dict(os.environ, {"SSL_CERT_DIR": "ca-directory"}, clear=True),
+            self.assertRaisesRegex(ValueError, "SSL_CERT_DIR"),
+        ):
+            trust.check_environment_bundles()
+
+    def test_empty_environment_overrides_are_rejected(self):
+        for name in (
+            "SSL_CERT_DIR",
+            "PIP_CERT",
+            "REQUESTS_CA_BUNDLE",
+            "CURL_CA_BUNDLE",
+            "SSL_CERT_FILE",
+        ):
+            with (
+                self.subTest(name=name),
+                patch.dict(os.environ, {name: ""}, clear=True),
+                self.assertRaisesRegex(ValueError, name),
+            ):
+                trust.check_environment_bundles()
+
+    def test_affected_environment_bundle_is_rejected(self):
+        with (
+            patch.dict(os.environ, {"PIP_CERT": "affected.pem"}, clear=True),
+            patch.object(
+                trust, "check_bundle", side_effect=ValueError("affected root")
+            ),
+            self.assertRaisesRegex(ValueError, "affected root"),
+        ):
+            trust.check_environment_bundles()
+
     def test_build_script_can_be_imported_as_a_module(self):
         build = importlib.import_module("scripts.build_exe")
         self.assertIs(build.verify_environment, trust.verify_environment)
@@ -63,6 +112,25 @@ class BuildTrustTests(unittest.TestCase):
         ):
             trust.check_bundle("test", "unused")
 
+    def test_bundle_rejects_unsupported_or_incomplete_pem_blocks(self):
+        valid = "-----BEGIN CERTIFICATE-----\nfixture\n-----END CERTIFICATE-----"
+        for extra in (
+            "-----BEGIN TRUSTED CERTIFICATE-----\nfixture\n-----END TRUSTED CERTIFICATE-----",
+            "-----BEGIN X509 CERTIFICATE-----\nfixture\n-----END X509 CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\nincomplete",
+            "-----BEGIN PRIVATE-KEY-----\nfixture\n-----END PRIVATE-KEY-----",
+            "-----END CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\nfixture\n-----END TRUSTED CERTIFICATE-----",
+        ):
+            with (
+                self.subTest(extra=extra),
+                patch.object(
+                    trust.Path, "read_text", return_value=valid + "\n" + extra
+                ),
+                self.assertRaisesRegex(ValueError, "unsupported or malformed"),
+            ):
+                trust.check_bundle("test", "unused")
+
     def test_preflight_rejects_the_local_unpatched_python_before_imports(self):
         version_info = namedtuple(
             "VersionInfo", "major minor micro releaselevel serial"
@@ -95,6 +163,7 @@ class BuildTrustTests(unittest.TestCase):
             ),
             patch.object(trust, "import_module", side_effect=modules.__getitem__),
             patch.object(trust, "check_bundle") as check_bundle,
+            patch.dict(os.environ, {}, clear=True),
         ):
             trust.verify_environment()
         self.assertEqual(

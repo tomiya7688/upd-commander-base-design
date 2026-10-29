@@ -1,6 +1,7 @@
 """Fail closed before building a Python distribution with stale trust material."""
 
 import hashlib
+import os
 import re
 import ssl
 import sys
@@ -39,6 +40,14 @@ def require_version(name: str, actual: str, minimum: tuple[int, ...]) -> None:
 def check_bundle(label: str, path: str) -> None:
     pem = Path(path).read_text(encoding="ascii")
     certificates = _CERTIFICATE.findall(pem)
+    markers = re.findall(r"-----(BEGIN|END) ([^\r\n]+?)-----", pem)
+    expected = [
+        (kind, "CERTIFICATE") for _ in certificates for kind in ("BEGIN", "END")
+    ]
+    if markers != expected:
+        raise ValueError(
+            f"{label} CA bundle contains unsupported or malformed PEM blocks: {path}"
+        )
     if not certificates:
         raise ValueError(f"{label} CA bundle contains no certificates: {path}")
     for certificate in certificates:
@@ -46,6 +55,19 @@ def check_bundle(label: str, path: str) -> None:
         if hashlib.sha256(der).hexdigest() == _AFFECTED_ROOT:
             raise ValueError(f"{label} CA bundle contains the affected root: {path}")
     print(f"{label} CA bundle: {path}")
+
+
+def check_environment_bundles() -> None:
+    # OpenSSL certificate directories are not PEM bundle files; do not silently
+    # approve a trust source that this check cannot inspect.
+    if "SSL_CERT_DIR" in os.environ:
+        raise ValueError("SSL_CERT_DIR is not supported by build trust preflight")
+    for name in ("PIP_CERT", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE"):
+        if name in os.environ:
+            path = os.environ[name]
+            if not path:
+                raise ValueError(f"{name} is set to an empty path")
+            check_bundle(name, path)
 
 
 def verify_environment() -> None:
@@ -64,6 +86,7 @@ def verify_environment() -> None:
     )
     check_bundle("pip", pip_certifi.where())
     check_bundle("certifi", certifi.where())
+    check_environment_bundles()
 
 
 def main() -> int:

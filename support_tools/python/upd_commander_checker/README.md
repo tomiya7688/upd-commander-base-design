@@ -145,7 +145,7 @@ EXEビルドの前に、セキュリティ修正済みのPython（3.11.18、3.12
 
 Checker自体は引き続きPython 3.10以上で使用できますが、Python 3.10は修正版のないサポート終了系列のため、EXEのビルドには使用できません。未知の系列やバックポート版も自動的には許可されず、修正済みであることを確認したうえで検査対象に追加する必要があります。
 
-例えば古いpipの更新には、[Python公式の案内](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576)にあるSHA-256付きwheelを使用してください。Python自体とpipを修正済み版へ更新した後、必要なら `python -m pip install "certifi>=2026.10.19"` でcertifiを導入します。`PIP_CERT`、`SSL_CERT_FILE`、`REQUESTS_CA_BUNDLE` などで別途指定したCA束、OSストア、実際のTLSチェーン、完成した配布物の検査はこの事前チェックの対象外です。
+例えば古いpipの更新には、[Python公式の案内](https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576)にあるSHA-256付きwheelを使用してください。Python自体とpipを修正済み版へ更新した後、必要なら `python -m pip install "certifi>=2026.10.19"` でcertifiを導入します。事前チェックは `PIP_CERT`、`REQUESTS_CA_BUNDLE`、`CURL_CA_BUNDLE`、`SSL_CERT_FILE` に指定されたCA束も検査し、対象ルートを含む束や読めない束では停止します。`SSL_CERT_DIR` が設定された場合は、そのディレクトリを検査できないため停止します。pipの設定ファイル等で指定したCA、OSストア、実際のTLSチェーン、完成した配布物はこの事前チェックの対象外です。
 
 Windows:
 
