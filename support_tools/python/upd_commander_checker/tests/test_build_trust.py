@@ -34,6 +34,21 @@ class BuildTrustTests(unittest.TestCase):
         ):
             trust.check_environment_bundles()
 
+    def test_empty_environment_overrides_are_rejected(self):
+        for name in (
+            "SSL_CERT_DIR",
+            "PIP_CERT",
+            "REQUESTS_CA_BUNDLE",
+            "CURL_CA_BUNDLE",
+            "SSL_CERT_FILE",
+        ):
+            with (
+                self.subTest(name=name),
+                patch.dict(os.environ, {name: ""}, clear=True),
+                self.assertRaisesRegex(ValueError, name),
+            ):
+                trust.check_environment_bundles()
+
     def test_affected_environment_bundle_is_rejected(self):
         with (
             patch.dict(os.environ, {"PIP_CERT": "affected.pem"}, clear=True),
@@ -91,6 +106,22 @@ class BuildTrustTests(unittest.TestCase):
             self.assertRaisesRegex(ValueError, "affected root"),
         ):
             trust.check_bundle("test", "unused")
+
+    def test_bundle_rejects_unsupported_or_incomplete_pem_blocks(self):
+        valid = "-----BEGIN CERTIFICATE-----\nfixture\n-----END CERTIFICATE-----"
+        for extra in (
+            "-----BEGIN TRUSTED CERTIFICATE-----\nfixture\n-----END TRUSTED CERTIFICATE-----",
+            "-----BEGIN X509 CERTIFICATE-----\nfixture\n-----END X509 CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\nincomplete",
+        ):
+            with (
+                self.subTest(extra=extra),
+                patch.object(
+                    trust.Path, "read_text", return_value=valid + "\n" + extra
+                ),
+                self.assertRaisesRegex(ValueError, "unsupported or malformed"),
+            ):
+                trust.check_bundle("test", "unused")
         with (
             patch.object(trust.Path, "read_text", return_value=""),
             self.assertRaisesRegex(ValueError, "no certificates"),

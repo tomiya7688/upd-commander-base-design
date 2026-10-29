@@ -40,6 +40,13 @@ def require_version(name: str, actual: str, minimum: tuple[int, ...]) -> None:
 def check_bundle(label: str, path: str) -> None:
     pem = Path(path).read_text(encoding="ascii")
     certificates = _CERTIFICATE.findall(pem)
+    markers = re.findall(r"-----BEGIN ([^-\r\n]+)-----", pem)
+    if any(marker != "CERTIFICATE" for marker in markers) or len(markers) != len(
+        certificates
+    ):
+        raise ValueError(
+            f"{label} CA bundle contains unsupported or malformed PEM blocks: {path}"
+        )
     if not certificates:
         raise ValueError(f"{label} CA bundle contains no certificates: {path}")
     for certificate in certificates:
@@ -52,11 +59,13 @@ def check_bundle(label: str, path: str) -> None:
 def check_environment_bundles() -> None:
     # OpenSSL certificate directories are not PEM bundle files; do not silently
     # approve a trust source that this check cannot inspect.
-    if os.environ.get("SSL_CERT_DIR"):
+    if "SSL_CERT_DIR" in os.environ:
         raise ValueError("SSL_CERT_DIR is not supported by build trust preflight")
     for name in ("PIP_CERT", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE"):
-        path = os.environ.get(name)
-        if path:
+        if name in os.environ:
+            path = os.environ[name]
+            if not path:
+                raise ValueError(f"{name} is set to an empty path")
             check_bundle(name, path)
 
 
