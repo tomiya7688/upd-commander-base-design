@@ -40,10 +40,11 @@ def require_version(name: str, actual: str, minimum: tuple[int, ...]) -> None:
 def check_bundle(label: str, path: str) -> None:
     pem = Path(path).read_text(encoding="ascii")
     certificates = _CERTIFICATE.findall(pem)
-    markers = re.findall(r"-----BEGIN ([^-\r\n]+)-----", pem)
-    if any(marker != "CERTIFICATE" for marker in markers) or len(markers) != len(
-        certificates
-    ):
+    markers = re.findall(r"-----(BEGIN|END) ([^\r\n]+?)-----", pem)
+    expected = [
+        (kind, "CERTIFICATE") for _ in certificates for kind in ("BEGIN", "END")
+    ]
+    if markers != expected:
         raise ValueError(
             f"{label} CA bundle contains unsupported or malformed PEM blocks: {path}"
         )

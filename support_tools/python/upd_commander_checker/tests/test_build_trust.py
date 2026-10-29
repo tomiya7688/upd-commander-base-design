@@ -106,6 +106,11 @@ class BuildTrustTests(unittest.TestCase):
             self.assertRaisesRegex(ValueError, "affected root"),
         ):
             trust.check_bundle("test", "unused")
+        with (
+            patch.object(trust.Path, "read_text", return_value=""),
+            self.assertRaisesRegex(ValueError, "no certificates"),
+        ):
+            trust.check_bundle("test", "unused")
 
     def test_bundle_rejects_unsupported_or_incomplete_pem_blocks(self):
         valid = "-----BEGIN CERTIFICATE-----\nfixture\n-----END CERTIFICATE-----"
@@ -113,6 +118,9 @@ class BuildTrustTests(unittest.TestCase):
             "-----BEGIN TRUSTED CERTIFICATE-----\nfixture\n-----END TRUSTED CERTIFICATE-----",
             "-----BEGIN X509 CERTIFICATE-----\nfixture\n-----END X509 CERTIFICATE-----",
             "-----BEGIN CERTIFICATE-----\nincomplete",
+            "-----BEGIN PRIVATE-KEY-----\nfixture\n-----END PRIVATE-KEY-----",
+            "-----END CERTIFICATE-----",
+            "-----BEGIN CERTIFICATE-----\nfixture\n-----END TRUSTED CERTIFICATE-----",
         ):
             with (
                 self.subTest(extra=extra),
@@ -122,11 +130,6 @@ class BuildTrustTests(unittest.TestCase):
                 self.assertRaisesRegex(ValueError, "unsupported or malformed"),
             ):
                 trust.check_bundle("test", "unused")
-        with (
-            patch.object(trust.Path, "read_text", return_value=""),
-            self.assertRaisesRegex(ValueError, "no certificates"),
-        ):
-            trust.check_bundle("test", "unused")
 
     def test_preflight_rejects_the_local_unpatched_python_before_imports(self):
         version_info = namedtuple(
