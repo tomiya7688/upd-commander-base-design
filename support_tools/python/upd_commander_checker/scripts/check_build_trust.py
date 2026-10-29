@@ -1,6 +1,7 @@
 """Fail closed before building a Python distribution with stale trust material."""
 
 import hashlib
+import os
 import re
 import ssl
 import sys
@@ -48,6 +49,17 @@ def check_bundle(label: str, path: str) -> None:
     print(f"{label} CA bundle: {path}")
 
 
+def check_environment_bundles() -> None:
+    # OpenSSL certificate directories are not PEM bundle files; do not silently
+    # approve a trust source that this check cannot inspect.
+    if os.environ.get("SSL_CERT_DIR"):
+        raise ValueError("SSL_CERT_DIR is not supported by build trust preflight")
+    for name in ("PIP_CERT", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE"):
+        path = os.environ.get(name)
+        if path:
+            check_bundle(name, path)
+
+
 def verify_environment() -> None:
     require_python(sys.version_info[:3], sys.version_info.releaselevel)
     pip_version = metadata.version("pip")
@@ -64,6 +76,7 @@ def verify_environment() -> None:
     )
     check_bundle("pip", pip_certifi.where())
     check_bundle("certifi", certifi.where())
+    check_environment_bundles()
 
 
 def main() -> int:
