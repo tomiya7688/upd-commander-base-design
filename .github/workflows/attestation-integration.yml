@@ -1,0 +1,59 @@
+name: Attestation integration
+
+on:
+  push:
+    branches:
+      - main
+      - security/221-attestation-verification
+    paths:
+      - .github/workflows/attestation-integration.yml
+      - support_tools/python/upd_commander_checker/scripts/verify_release_attestations.py
+      - support_tools/python/upd_commander_checker/tests/test_release_attestations.py
+
+permissions:
+  contents: read
+
+jobs:
+  fixture-attestation:
+    # Only the repository owner can initiate this write-capable test.
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Create non-release fixture and checksum
+        # GitHub-hosted runners isolate jobs; no concurrent step modifies this directory.
+        run: |
+          mkdir "$RUNNER_TEMP/attestation-fixture"
+          cd "$RUNNER_TEMP/attestation-fixture"
+          printf 'integration-test-only %s %s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > fixture.bin
+          sha256sum fixture.bin > SHA256SUMS
+      - name: Attest fixture and checksum
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: |
+            ${{ runner.temp }}/attestation-fixture/fixture.bin
+            ${{ runner.temp }}/attestation-fixture/SHA256SUMS
+      - name: Verify actual attestations and reject tampering
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          SIGNER_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          script=support_tools/python/upd_commander_checker/scripts/verify_release_attestations.py
+          directory="$RUNNER_TEMP/attestation-fixture"
+          workflow="$GITHUB_REPOSITORY/.github/workflows/attestation-integration.yml"
+          python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory
+          printf 'tampered\n' >> "$directory/fixture.bin"
+          if python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory 2> "$RUNNER_TEMP/tamper-error.txt"; then
+            echo 'Modified asset unexpectedly passed verification' >&2
+            exit 1
+          fi
+          grep -F 'checksum mismatch: fixture.bin' "$RUNNER_TEMP/tamper-error.txt"

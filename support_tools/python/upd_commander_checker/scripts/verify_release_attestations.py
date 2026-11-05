@@ -14,6 +14,7 @@ _WINDOWS_DEVICE = re.compile(r"(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?", 
 
 
 def checksum(path: Path) -> str:
+    """Hash a file in bounded chunks without treating the digest as provenance."""
     digest = hashlib.sha256()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -22,6 +23,7 @@ def checksum(path: Path) -> str:
 
 
 def verify_attestation(path: Path, workflow: str, source: str, signer: str) -> None:
+    """Ask gh to verify one file against the expected workflow and commits."""
     subprocess.run(
         [
             "gh",
@@ -43,6 +45,7 @@ def verify_attestation(path: Path, workflow: str, source: str, signer: str) -> N
 
 
 def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
+    """Verify the manifest and listed files in a caller-protected directory."""
     prefix = f"{REPOSITORY}/.github/workflows/"
     if not workflow.startswith(prefix) or not re.fullmatch(
         r"[A-Za-z0-9_-]+\.ya?ml", workflow.removeprefix(prefix)
@@ -92,6 +95,7 @@ def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
 
 
 def main() -> int:
+    """Run the partial verifier after the caller acknowledges its trust boundary."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("directory", type=Path)
     parser.add_argument("--workflow", required=True)

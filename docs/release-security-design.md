@@ -48,3 +48,5 @@ GitHub ActionsからのattestationにはOIDCを使用し、必要最小限の権
 `support_tools/python/upd_commander_checker/scripts/verify_release_attestations.py` は、信頼できる別経路で得たworkflow・ソースコミット・署名workflowのコミットを明示し、`SHA256SUMS`と各掲載ファイルのattestationおよびSHA-256を検証する補助ツールです。`gh`とGitHubへの接続が必要です。引数は `--workflow` に `tomiya7688/upd-commander-base-design/.github/workflows/<workflow>.yml`、`--source` と `--signer` にそれぞれ完全なコミットSHAを指定します。`SHA256SUMS`は小文字のSHA-256、半角空白2個、パスを含まないファイル名の形式です。
 
 このツールは掲載ファイル以外の有無、アーカイブ内部、Authenticode、証明書の失効、公開先の資産を検証しません。同時に書換えられない信頼済みディレクトリで実行し、その前提を `--trust-immutable-directory` で明示してください。このオプションは利用者の確認であり、ディレクトリの変更不能性を自動検証するものではありません。成功後に元のディレクトリのファイルをそのまま公開する根拠にもできません。検証から公開までのバイト列の同一性は別途保証してください。成功しても、公開ゲートの完了や配布の許可を意味しません。実際のattestationを使った検証も、公開用workflowと成果物の用意後に必要です。
+
+`.github/workflows/attestation-integration.yml` はテスト専用のダミーデータにattestationを生成します。このworkflowの識別子を公開成果物の信頼対象として使用しないでください。テスト対象をリリース資産としてアップロードしません。
