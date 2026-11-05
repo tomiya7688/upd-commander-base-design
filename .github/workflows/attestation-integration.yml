@@ -51,6 +51,17 @@ jobs:
           directory="$RUNNER_TEMP/attestation-fixture"
           workflow="$GITHUB_REPOSITORY/.github/workflows/attestation-integration.yml"
           python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory
+          wrong_sha=0000000000000000000000000000000000000000
+          if python "$script" "$directory" --workflow "$workflow" --source "$wrong_sha" --signer "$SIGNER_SHA" --trust-immutable-directory 2> "$RUNNER_TEMP/source-error.txt"; then
+            echo 'Unexpectedly accepted a different source commit' >&2
+            exit 1
+          fi
+          grep -Fx "Error: expected SourceRepositoryDigest to be $wrong_sha, got $SOURCE_SHA" "$RUNNER_TEMP/source-error.txt"
+          if python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$wrong_sha" --trust-immutable-directory 2> "$RUNNER_TEMP/signer-error.txt"; then
+            echo 'Unexpectedly accepted a different signer commit' >&2
+            exit 1
+          fi
+          grep -Fx "Error: expected BuildSignerDigest to be $wrong_sha, got $SIGNER_SHA" "$RUNNER_TEMP/signer-error.txt"
           printf 'tampered\n' >> "$directory/fixture.bin"
           if python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory 2> "$RUNNER_TEMP/tamper-error.txt"; then
             echo 'Modified asset unexpectedly passed verification' >&2
