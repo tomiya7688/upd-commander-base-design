@@ -6,6 +6,7 @@ This check is not a complete release authorization gate.
 
 import argparse
 import base64
+import ctypes
 import hashlib
 import json
 import os
@@ -38,6 +39,46 @@ if ($null -ne $signature.SignerCertificate) {
 """
 
 
+def windows_system_directory() -> Path:
+    """Get the system directory from Windows instead of trusting environment paths."""
+    if sys.platform != "win32":
+        raise ValueError("Authenticode verification requires Windows")
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    get_system_directory = kernel32.GetSystemDirectoryW
+    get_system_directory.argtypes = [ctypes.POINTER(ctypes.c_wchar), ctypes.c_uint]
+    get_system_directory.restype = ctypes.c_uint
+    buffer = ctypes.create_unicode_buffer(32768)
+    length = get_system_directory(buffer, len(buffer))
+    if length == 0 or length >= len(buffer):
+        raise ValueError("Windows did not return its system directory")
+    return Path(buffer.value)
+
+
+def require_local_path(path: Path) -> Path:
+    """Return an absolute local path and reject UNC or remote-drive inputs."""
+    if str(path).startswith(("\\\\", "//")):
+        raise ValueError("network paths are not supported")
+    absolute = Path(os.path.abspath(path))
+    if sys.platform == "win32":
+        if not absolute.anchor or absolute.anchor.startswith("\\\\"):
+            raise ValueError("network paths are not supported")
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        get_drive_type = kernel32.GetDriveTypeW
+        get_drive_type.argtypes = [ctypes.c_wchar_p]
+        get_drive_type.restype = ctypes.c_uint
+        drive_type = get_drive_type(absolute.anchor)
+        if drive_type not in {2, 3, 5, 6}:
+            raise ValueError("unknown or remote drives are not supported")
+    return absolute
+
+
+def reject_reparse_components(path: Path) -> None:
+    """Reject reparse points in the file path before opening or resolving it."""
+    for component in (path, *path.parents):
+        if has_reparse_point(component):
+            raise ValueError("target and parent paths must not contain reparse points")
+
+
 def checksum(path: Path) -> str:
     """Hash a file in bounded chunks."""
     digest = hashlib.sha256()
@@ -58,13 +99,15 @@ def read_authenticode(path: Path) -> dict[str, object]:
     """Read embedded-signature metadata with the inbox Windows PowerShell."""
     if sys.platform != "win32":
         raise ValueError("Authenticode verification requires Windows")
-    system_root = os.environ.get("SystemRoot")
-    if not system_root:
-        raise ValueError("SystemRoot is required to locate Windows PowerShell")
-    powershell = Path(system_root) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+    system_directory = windows_system_directory()
+    powershell = system_directory / "WindowsPowerShell/v1.0/powershell.exe"
     encoded = base64.b64encode(_POWERSHELL.encode("utf-16le")).decode("ascii")
     environment = os.environ.copy()
     environment["UPD_SIGNATURE_TARGET"] = str(path)
+    environment["SystemRoot"] = str(system_directory.parent)
+    environment["WINDIR"] = str(system_directory.parent)
+    environment["PATH"] = str(system_directory)
+    environment["PSModulePath"] = str(powershell.parent / "Modules")
     try:
         result = subprocess.run(
             [
@@ -80,6 +123,7 @@ def read_authenticode(path: Path) -> dict[str, object]:
             encoding="utf-8",
             errors="replace",
             env=environment,
+            cwd=str(powershell.parent),
             timeout=30,
         )
     except subprocess.TimeoutExpired as exc:
@@ -103,6 +147,8 @@ def signature_rows(output: str) -> list[tuple[int, str, str]]:
     """Parse SignTool's signature summary; unknown formats fail closed."""
     rows = []
     for line in output.splitlines():
+        if re.search(r"\b(?:warning|error)\b", line, re.IGNORECASE):
+            raise ValueError("SignTool reported a warning or error")
         match = _SIGNATURE_ROW.fullmatch(line)
         if match:
             index, algorithm, timestamp = match.groups()
@@ -120,15 +166,17 @@ def verify(path: Path, expected_signer: str, signtool: Path) -> str:
         )
     if path.suffix.casefold() not in {".exe", ".dll"}:
         raise ValueError("only .exe and .dll PE files are supported")
-    if has_reparse_point(path) or not path.is_file():
-        raise ValueError("target must be an existing regular non-reparse-point file")
     if not signtool.is_absolute() or signtool.name.casefold() != "signtool.exe":
         raise ValueError("provide an absolute path to a trusted signtool.exe")
-    if has_reparse_point(signtool) or not signtool.is_file():
+    path = require_local_path(path)
+    signtool = require_local_path(signtool)
+    reject_reparse_components(path)
+    reject_reparse_components(signtool)
+    if not path.is_file():
+        raise ValueError("target must be an existing regular non-reparse-point file")
+    if signtool.name.casefold() != "signtool.exe" or not signtool.is_file():
         raise ValueError("SignTool must be an existing regular non-reparse-point file")
 
-    path = path.resolve(strict=True)
-    signtool = signtool.resolve(strict=True)
     initial_hash = checksum(path)
     metadata = read_authenticode(path)
     if metadata.get("status") != "Valid":
@@ -150,7 +198,7 @@ def verify(path: Path, expected_signer: str, signtool: Path) -> str:
 
     try:
         result = subprocess.run(
-            [str(signtool), "verify", "/pa", "/all", "/tw", str(path)],
+            [str(signtool), "verify", "/v", "/pa", "/all", "/tw", str(path)],
             check=False,
             capture_output=True,
             text=True,
@@ -183,7 +231,7 @@ def main() -> int:
         "--trust-immutable-file",
         action="store_true",
         required=True,
-        help="acknowledge that the caller prevents concurrent modification; this tool does not enforce it",
+        help="acknowledge that the caller prevents concurrent file and path modification; this tool does not enforce it",
     )
     args = parser.parse_args()
     try:
