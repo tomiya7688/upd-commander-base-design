@@ -20,13 +20,14 @@
 実行例（PowerShell。SDKに含まれる信頼済みSignToolの絶対パスと、独立した手順で承認した証明書指紋を使う）:
 
 ```powershell
-python scripts/verify_windows_signature.py .\\dist\\app.exe `
+python .\support_tools\python\upd_commander_checker\scripts\verify_windows_signature.py `
+  .\support_tools\python\upd_commander_checker\dist\app.exe `
   --signer-sha256 <approved-certificate-sha256> `
-  --signtool 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\<sdk-version>\\x64\\signtool.exe' `
+  --signtool 'C:\Program Files (x86)\Windows Kits\10\bin\<sdk-version>\x64\signtool.exe' `
   --trust-immutable-file
 ```
 
-呼出元は検証中にファイルを変更できない状態に保ちます。このコマンドは競合する書換えを防止せず、同梱ファイル・インストーラー・アーカイブ・attestationを棚卸しません。OSが返す署名状態を使いますが、失効情報へのオンライン到達性やオフライン時の失効確認失敗動作は未検証です。ローカルの署名済みバイナリ1件で実行経路を確認しても、公開者の証明書を承認したことにはなりません。これらを含むリリースゲートと公開者の信頼ルートが整うまでは、Issue #221は未完了であり、一般公開を許可しません。
+呼出元は検証中にファイルと全親パスを変更できない状態に保ちます。ツールはUNCパスとリモートドライブを拒否しますが、競合するローカル書換えを防止せず、同梱ファイル・インストーラー・アーカイブ・attestationを棚卸しません。OSが返す署名状態を使いますが、失効情報へのオンライン到達性やオフライン時の失効確認失敗動作は未検証です。ローカルの署名済みバイナリ1件で実行経路を確認しても、公開者の証明書を承認したことにはなりません。これらを含むリリースゲートと公開者の信頼ルートが整うまでは、Issue #221は未完了であり、一般公開を許可しません。
 
 公開形態がZIP以外、wheel、コンテナ、他OS向けに増える場合は、実際にユーザーへ渡す最終形式を棚卸しに追加し、その形式の署名・検証ゲートができるまで公開しません。
 
