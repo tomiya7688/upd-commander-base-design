@@ -52,6 +52,33 @@ class ReleaseAttestationTests(unittest.TestCase):
         self.assertEqual(attest.call_count, 2)
 
     @patch.object(verifier, "verify_attestation")
+    def test_rejects_unlisted_files_and_directories(self, _attest):
+        extra = self.directory / "unlisted.bin"
+        extra.write_bytes(b"unlisted")
+        with self.assertRaisesRegex(ValueError, "unlisted=\\['unlisted.bin'\\]"):
+            self.run_verify()
+
+        extra.unlink()
+        nested = self.directory / "nested"
+        nested.mkdir()
+        with self.assertRaisesRegex(ValueError, "non-regular entry"):
+            self.run_verify()
+
+    @patch.object(verifier, "verify_attestation")
+    def test_rejects_inventory_change_during_verification(self, attest):
+        extra = self.directory / "added-during-verification.bin"
+
+        def add_file_after_manifest(path, *_args):
+            if path.name != "SHA256SUMS":
+                extra.write_bytes(b"late file")
+
+        attest.side_effect = add_file_after_manifest
+        with self.assertRaisesRegex(
+            ValueError, "unlisted=\\['added-during-verification.bin'\\]"
+        ):
+            self.run_verify()
+
+    @patch.object(verifier, "verify_attestation")
     def test_rejects_duplicates_and_empty_manifest(self, _attest):
         self.manifest.write_text(
             f"{self.digest}  checker.zip\n{self.digest}  CHECKER.ZIP\n",
