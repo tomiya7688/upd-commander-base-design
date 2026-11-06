@@ -49,7 +49,7 @@ class ReleaseAttestationTests(unittest.TestCase):
         self.manifest.write_text(f"{self.digest}  ../checker.zip\n", encoding="ascii")
         with self.assertRaisesRegex(ValueError, "invalid SHA256SUMS"):
             self.run_verify()
-        self.assertEqual(attest.call_count, 2)
+        self.assertEqual(attest.call_count, 1)
 
     @patch.object(verifier, "verify_attestation")
     def test_rejects_unlisted_files_and_directories(self, _attest):
