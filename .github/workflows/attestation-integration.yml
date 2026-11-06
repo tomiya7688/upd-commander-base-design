@@ -51,6 +51,13 @@ jobs:
           directory="$RUNNER_TEMP/attestation-fixture"
           workflow="$GITHUB_REPOSITORY/.github/workflows/attestation-integration.yml"
           python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory
+          printf 'unlisted fixture\n' > "$directory/unlisted.bin"
+          if python "$script" "$directory" --workflow "$workflow" --source "$SOURCE_SHA" --signer "$SIGNER_SHA" --trust-immutable-directory 2> "$RUNNER_TEMP/unlisted-error.txt"; then
+            echo 'Unexpectedly accepted an unlisted artifact' >&2
+            exit 1
+          fi
+          grep -F "asset inventory mismatch: missing=[]; unlisted=['unlisted.bin']" "$RUNNER_TEMP/unlisted-error.txt"
+          rm "$directory/unlisted.bin"
           wrong_sha=0000000000000000000000000000000000000000
           if python "$script" "$directory" --workflow "$workflow" --source "$wrong_sha" --signer "$SIGNER_SHA" --trust-immutable-directory 2> "$RUNNER_TEMP/source-error.txt"; then
             echo 'Unexpectedly accepted a different source commit' >&2
