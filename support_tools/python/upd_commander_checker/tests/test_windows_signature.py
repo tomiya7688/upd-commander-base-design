@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts import verify_windows_signature as verifier
+from scripts import windows_signature_support as signature_support
 
 
 class WindowsSignatureTests(unittest.TestCase):
@@ -20,7 +21,7 @@ class WindowsSignatureTests(unittest.TestCase):
             "timestamp_present": True,
         }
         self.path_checks = patch.object(
-            verifier, "has_reparse_point", return_value=False
+            signature_support, "has_reparse_point", return_value=False
         )
         self.path_checks.start()
         self.addCleanup(self.path_checks.stop)
@@ -142,7 +143,7 @@ class WindowsSignatureTests(unittest.TestCase):
             verifier.require_local_path(Path(r"\\server\share\release.exe"))
 
     @patch.object(verifier.sys, "platform", "win32")
-    @patch.object(verifier, "windows_system_directory")
+    @patch.object(signature_support, "windows_system_directory")
     @patch.object(verifier.subprocess, "run")
     def test_uses_os_system_directory_instead_of_systemroot(
         self, run, system_directory
@@ -152,7 +153,7 @@ class WindowsSignatureTests(unittest.TestCase):
         run.return_value = subprocess.CompletedProcess(
             args=[], returncode=0, stdout='{"status":"Valid"}', stderr=""
         )
-        with patch.dict(verifier.os.environ, {"SystemRoot": "Z:/untrusted"}):
+        with patch.dict(signature_support.os.environ, {"SystemRoot": "Z:/untrusted"}):
             verifier.read_authenticode(Path("C:/release/app.exe"))
 
         command = run.call_args.args[0]
