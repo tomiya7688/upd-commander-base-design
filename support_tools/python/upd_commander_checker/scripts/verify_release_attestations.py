@@ -1,4 +1,4 @@
-"""Verify listed files only; callers must prevent concurrent modification."""
+"""Verify a flat artifact inventory and attestations in a protected directory."""
 
 import argparse
 import hashlib
@@ -44,8 +44,28 @@ def verify_attestation(path: Path, workflow: str, source: str, signer: str) -> N
     )
 
 
+def verify_inventory(directory: Path, asset_names: set[str]) -> set[str]:
+    """Require exactly the manifest and listed regular files at directory top level."""
+    observed = set()
+    for entry in directory.iterdir():
+        if entry.is_symlink() or not entry.is_file():
+            raise ValueError(
+                f"asset inventory contains a non-regular entry: {entry.name}"
+            )
+        observed.add(entry.name)
+
+    expected = {"SHA256SUMS", *asset_names}
+    if observed != expected:
+        missing = sorted(expected - observed)
+        unlisted = sorted(observed - expected)
+        raise ValueError(
+            f"asset inventory mismatch: missing={missing}; unlisted={unlisted}"
+        )
+    return observed
+
+
 def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
-    """Verify the manifest and listed files in a caller-protected directory."""
+    """Verify the manifest, complete flat inventory, and listed attestations."""
     prefix = f"{REPOSITORY}/.github/workflows/"
     if not workflow.startswith(prefix) or not re.fullmatch(
         r"[A-Za-z0-9_-]+\.ya?ml", workflow.removeprefix(prefix)
@@ -60,7 +80,6 @@ def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
     if manifest.is_symlink() or not manifest.is_file():
         raise ValueError("SHA256SUMS must be a regular non-symlink file")
     manifest_hash = checksum(manifest)
-    verify_attestation(manifest, workflow, source, signer)
     raw = manifest.read_text(encoding="ascii")
     if checksum(manifest) != manifest_hash:
         raise ValueError("manifest changed during verification")
@@ -81,6 +100,9 @@ def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
         entries[key] = (name, digest)
     if not entries:
         raise ValueError("SHA256SUMS must list at least one asset")
+    asset_names = {name for name, _ in entries.values()}
+    initial_inventory = verify_inventory(directory, asset_names)
+    verify_attestation(manifest, workflow, source, signer)
     for name, expected in entries.values():
         asset = directory / name
         if asset.is_symlink() or not asset.is_file():
@@ -92,6 +114,8 @@ def verify(directory: Path, workflow: str, source: str, signer: str) -> None:
             raise ValueError(f"asset changed during verification: {name}")
     if checksum(manifest) != manifest_hash:
         raise ValueError("manifest changed during verification")
+    if verify_inventory(directory, asset_names) != initial_inventory:
+        raise ValueError("asset inventory changed during verification")
 
 
 def main() -> int:
@@ -114,9 +138,9 @@ def main() -> int:
         print(f"attestation verification failed: {exc}", file=sys.stderr)
         return 1
     print(
-        "Listed files passed attestation and checksum checks, assuming the directory "
-        "was not modified. Unlisted files and concurrent modification were not checked; "
-        "this does not authorize a release."
+        "Every top-level file passed attestation and checksum checks, assuming the "
+        "directory was not modified. Archive contents and concurrent modification "
+        "are not checked; this does not authorize a release."
     )
     return 0
 
