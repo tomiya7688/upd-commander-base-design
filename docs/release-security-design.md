@@ -1,6 +1,6 @@
 # 配布物の署名・真正性検証の設計
 
-この文書は [Issue #221](https://github.com/tomiya7688/upd-commander-base-design/issues/221) の実装設計です。ここに書いた署名、attestation、公開ゲートは**まだ実装・運用されていません**。完成するまで、未署名または検証できない成果物を公開しません。Pythonの証明書対応 [#220](https://github.com/tomiya7688/upd-commander-base-design/issues/220) も別途必要です。
+この文書は [Issue #221](https://github.com/tomiya7688/upd-commander-base-design/issues/221) の実装設計と進捗の正本です。Artifact Attestationの部分検証とWindows単体PE署名の部分検証は実装済みですが、全成果物を結ぶ公開ゲート・信頼された公開者の設定・失効確認の検証は未完了です。Issue #221が完了するまで、未署名または真正性を検証できない成果物を公開しません。Pythonの証明書対応 [#220](https://github.com/tomiya7688/upd-commander-base-design/issues/220) も別途必要です。
 
 ## 対象と現状
 
@@ -12,6 +12,21 @@
 | C# `support_tools/cs/upd_commander_checker/build_exe.bat`         | Windows向けself-contained single-file出力とライセンス文書           | 実行ファイルと最終配布物                                |
 
 これらはビルド経路の棚卸しであり、現在公開されている資産の一覧ではありません。GitHub Releases以外も含む既存配布物の所在・署名・対応状況は公開担当が確認し、検証できないものを明示する必要があります。CIのテスト用出力やローカルの開発ビルドが、公開用の署名済み成果物になるわけではありません。
+
+## Windows署名検証の現状
+
+`support_tools/python/upd_commander_checker/scripts/verify_windows_signature.py` は、Windows上の単一の`.exe`または`.dll`に対する部分検証コマンドです。Windows Authenticode APIで埋め込み署名、状態、署名者証明書SHA-256、timestamp証明書を読み、指定された信頼済み`signtool.exe`の`verify /pa /all /tw`出力で単一のSHA-256署名とRFC 3161 timestampを確認します。証明書のSHA-256値は、公開者を別途承認した管理済み情報から指定します。
+
+実行例（PowerShell。SDKに含まれる信頼済みSignToolの絶対パスと、独立した手順で承認した証明書指紋を使う）:
+
+```powershell
+python scripts/verify_windows_signature.py .\\dist\\app.exe `
+  --signer-sha256 <approved-certificate-sha256> `
+  --signtool 'C:\\Program Files (x86)\\Windows Kits\\10\\bin\\<sdk-version>\\x64\\signtool.exe' `
+  --trust-immutable-file
+```
+
+呼出元は検証中にファイルを変更できない状態に保ちます。このコマンドは競合する書換えを防止せず、同梱ファイル・インストーラー・アーカイブ・attestationを棚卸しません。OSが返す署名状態を使いますが、失効情報へのオンライン到達性やオフライン時の失効確認失敗動作は未検証です。ローカルの署名済みバイナリ1件で実行経路を確認しても、公開者の証明書を承認したことにはなりません。これらを含むリリースゲートと公開者の信頼ルートが整うまでは、Issue #221は未完了であり、一般公開を許可しません。
 
 公開形態がZIP以外、wheel、コンテナ、他OS向けに増える場合は、実際にユーザーへ渡す最終形式を棚卸しに追加し、その形式の署名・検証ゲートができるまで公開しません。
 
