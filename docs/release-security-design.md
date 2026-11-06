@@ -20,12 +20,16 @@
 実行例（PowerShell。SDKに含まれる信頼済みSignToolの絶対パスと、独立した手順で承認した証明書指紋を使う）:
 
 ```powershell
+$signerSha256 = 'REPLACE_WITH_APPROVED_CERTIFICATE_SHA256'
+$signtool = 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'
 python .\support_tools\python\upd_commander_checker\scripts\verify_windows_signature.py `
   .\support_tools\python\upd_commander_checker\dist\app.exe `
-  --signer-sha256 <approved-certificate-sha256> `
-  --signtool 'C:\Program Files (x86)\Windows Kits\10\bin\<sdk-version>\x64\signtool.exe' `
+  --signer-sha256 $signerSha256 `
+  --signtool $signtool `
   --trust-immutable-file
 ```
+
+`$signerSha256`には独立して承認した証明書SHA-256を設定し、`$signtool`は実際に導入済みSDKの信頼済みSignTool絶対パスへ合わせます。
 
 呼出元は検証中にファイルと全親パスを変更できない状態に保ちます。ツールはUNCパスとリモートドライブを拒否しますが、競合するローカル書換えを防止せず、同梱ファイル・インストーラー・アーカイブ・attestationを棚卸しません。OSが返す署名状態を使いますが、失効情報へのオンライン到達性やオフライン時の失効確認失敗動作は未検証です。ローカルの署名済みバイナリ1件で実行経路を確認しても、公開者の証明書を承認したことにはなりません。これらを含むリリースゲートと公開者の信頼ルートが整うまでは、Issue #221は未完了であり、一般公開を許可しません。
 
@@ -66,3 +70,4 @@ GitHub ActionsからのattestationにはOIDCを使用し、必要最小限の権
 このツールは掲載ファイル以外の有無、アーカイブ内部、Authenticode、証明書の失効、公開先の資産を検証しません。同時に書換えられない信頼済みディレクトリで実行し、その前提を `--trust-immutable-directory` で明示してください。このオプションは利用者の確認であり、ディレクトリの変更不能性を自動検証するものではありません。成功後に元のディレクトリのファイルをそのまま公開する根拠にもできません。検証から公開までのバイト列の同一性は別途保証してください。成功しても、公開ゲートの完了や配布の許可を意味しません。実際のattestationを使った検証も、公開用workflowと成果物の用意後に必要です。
 
 `.github/workflows/attestation-integration.yml` はテスト専用のダミーデータにattestationを生成します。このworkflowの識別子を公開成果物の信頼対象として使用しないでください。テスト対象をリリース資産としてアップロードしません。
+
