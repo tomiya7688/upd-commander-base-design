@@ -1,0 +1,182 @@
+import subprocess
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from scripts import verify_windows_signature as verifier
+from scripts import windows_signature_support as signature_support
+
+
+class WindowsSignatureTests(unittest.TestCase):
+    def setUp(self):
+        """Build path-only fixtures without writing test binaries."""
+        self.root = Path(__file__).parent.absolute()
+        self.target = self.root / "sample.exe"
+        self.signtool = self.root / "signtool.exe"
+        self.signer = "a" * 64
+        self.metadata = {
+            "status": "Valid",
+            "signature_type": "Authenticode",
+            "signer_sha256": self.signer,
+            "timestamp_present": True,
+        }
+        self.path_checks = patch.object(
+            signature_support, "has_reparse_point", return_value=False
+        )
+        self.path_checks.start()
+        self.addCleanup(self.path_checks.stop)
+        self.file_checks = patch.object(Path, "is_file", return_value=True)
+        self.file_checks.start()
+        self.addCleanup(self.file_checks.stop)
+        self.resolves = patch.object(
+            Path, "resolve", lambda path, strict=False: path.absolute()
+        )
+        self.resolves.start()
+        self.addCleanup(self.resolves.stop)
+        self.hashes = patch.object(verifier, "checksum", return_value="c" * 64)
+        self.hashes.start()
+        self.addCleanup(self.hashes.stop)
+
+    @patch.object(verifier.subprocess, "run")
+    @patch.object(verifier, "read_authenticode")
+    def test_accepts_exact_single_sha256_rfc3161_signature(self, read_metadata, run):
+        """Accept only the pinned signer and exact timestamped SignTool row."""
+        read_metadata.return_value = self.metadata
+        run.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="Index  Algorithm  Timestamp\n0      sha256     RFC3161\nSuccessfully verified\n",
+            stderr="",
+        )
+
+        digest = verifier.verify(self.target, self.signer, self.signtool)
+
+        self.assertEqual(digest, "c" * 64)
+        self.assertEqual(run.call_args.args[0][1:5], ["verify", "/v", "/pa", "/all"])
+        self.assertIn("/tw", run.call_args.args[0])
+
+    @patch.object(verifier, "read_authenticode")
+    def test_rejects_invalid_signature_metadata(self, read_metadata):
+        """Reject invalid, catalog, unpinned, or untimestamped signatures."""
+        cases = [
+            ("status", "NotSigned"),
+            ("signature_type", "Catalog"),
+            ("signer_sha256", "b" * 64),
+            ("timestamp_present", False),
+        ]
+        for key, value in cases:
+            with self.subTest(key=key):
+                read_metadata.return_value = {**self.metadata, key: value}
+                with self.assertRaises(ValueError):
+                    verifier.verify(self.target, self.signer, self.signtool)
+
+    @patch.object(verifier.subprocess, "run")
+    @patch.object(verifier, "read_authenticode")
+    def test_rejects_sign_tool_error_and_unexpected_summary(self, read_metadata, run):
+        read_metadata.return_value = self.metadata
+        for returncode, output in [
+            (2, "0 sha256 RFC3161\nSuccessfully verified"),
+            (0, "Successfully verified without a timestamp"),
+            (0, "0 sha1 RFC3161"),
+            (0, "0 sha256 RFC3161\n1 sha256 RFC3161"),
+            (0, "localized signature table"),
+        ]:
+            with self.subTest(returncode=returncode, output=output):
+                run.return_value = subprocess.CompletedProcess(
+                    args=[], returncode=returncode, stdout=output, stderr=""
+                )
+                with self.assertRaises(ValueError):
+                    verifier.verify(self.target, self.signer, self.signtool)
+
+        run.side_effect = subprocess.TimeoutExpired(cmd="signtool", timeout=30)
+        with self.assertRaisesRegex(ValueError, "timed out"):
+            verifier.verify(self.target, self.signer, self.signtool)
+
+    @patch.object(verifier.subprocess, "run")
+    @patch.object(verifier, "read_authenticode")
+    def test_detects_file_change_during_sign_tool_check(self, read_metadata, run):
+        """Detect a changed digest without mutating a fixture file."""
+        read_metadata.return_value = self.metadata
+
+        def mutate(*_args, **_kwargs):
+            return subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="0 sha256 RFC3161", stderr=""
+            )
+
+        run.side_effect = mutate
+        self.hashes.stop()
+        self.hashes = patch.object(
+            verifier, "checksum", side_effect=["c" * 64, "d" * 64]
+        )
+        self.hashes.start()
+        self.addCleanup(self.hashes.stop)
+        with self.assertRaisesRegex(ValueError, "changed during verification"):
+            verifier.verify(self.target, self.signer, self.signtool)
+
+    def test_rejects_invalid_paths_and_fingerprint(self):
+        """Reject unpinned fingerprints, relative tools, and unsupported files."""
+        with self.assertRaisesRegex(ValueError, "fingerprint"):
+            verifier.verify(self.target, "not-a-fingerprint", self.signtool)
+        with self.assertRaisesRegex(ValueError, "absolute path"):
+            verifier.verify(self.target, self.signer, Path("signtool.exe"))
+        with self.assertRaisesRegex(ValueError, "only .exe and .dll"):
+            verifier.verify(self.root / "archive.zip", self.signer, self.signtool)
+
+    def test_rejects_unknown_sign_tool_summary_rows(self):
+        """Reject output shapes that the SignTool parser cannot verify."""
+        with self.assertRaisesRegex(ValueError, "unrecognized"):
+            verifier.signature_rows("0 malformed summary row with extra data")
+
+    def test_rejects_sign_tool_warning_and_error_diagnostics(self):
+        """Treat diagnostics as failures even when a valid summary row exists."""
+        for diagnostic in (
+            "Warning: revocation status unavailable",
+            "Error: verification failed",
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                with self.assertRaisesRegex(ValueError, "warning or error"):
+                    verifier.signature_rows(f"0 sha256 RFC3161\n{diagnostic}")
+
+    def test_rejects_network_paths(self):
+        """Reject UNC paths before querying file metadata or launching tools."""
+        with self.assertRaisesRegex(ValueError, "network paths"):
+            verifier.require_local_path(Path(r"\\server\share\release.exe"))
+
+    @patch.object(verifier.sys, "platform", "win32")
+    @patch.object(signature_support, "windows_system_directory")
+    @patch.object(verifier.subprocess, "run")
+    def test_uses_os_system_directory_instead_of_systemroot(
+        self, run, system_directory
+    ):
+        """Ignore a caller-controlled SystemRoot when selecting PowerShell."""
+        system_directory.return_value = Path("C:/Windows/System32")
+        run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"status":"Valid"}', stderr=""
+        )
+        with patch.dict(signature_support.os.environ, {"SystemRoot": "Z:/untrusted"}):
+            verifier.read_authenticode(Path("C:/release/app.exe"))
+
+        command = run.call_args.args[0]
+        self.assertEqual(
+            command[0],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")),
+        )
+        self.assertNotIn("Z:/untrusted", command[0])
+        self.assertEqual(
+            run.call_args.kwargs["env"]["SystemRoot"], str(Path("C:/Windows"))
+        )
+        self.assertEqual(
+            run.call_args.kwargs["env"]["PATH"], str(Path("C:/Windows/System32"))
+        )
+        self.assertEqual(
+            run.call_args.kwargs["env"]["PSModulePath"],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0/Modules")),
+        )
+        self.assertEqual(
+            run.call_args.kwargs["cwd"],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0")),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

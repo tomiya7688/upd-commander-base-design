@@ -35,7 +35,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Check Python build preflight formatting
         working-directory: support_tools/python/upd_commander_checker
-        run: python -m ruff format --check scripts/check_build_trust.py scripts/build_exe.py scripts/verify_release_attestations.py tests/test_build_trust.py tests/test_release_attestations.py
+        run: python -m ruff format --check scripts/check_build_trust.py scripts/build_exe.py scripts/verify_release_attestations.py scripts/verify_windows_signature.py scripts/windows_signature_support.py tests/test_build_trust.py tests/test_release_attestations.py tests/test_windows_signature.py
       - name: Check Python build trust preflight
         working-directory: support_tools/python/upd_commander_checker
         run: python scripts/check_build_trust.py
