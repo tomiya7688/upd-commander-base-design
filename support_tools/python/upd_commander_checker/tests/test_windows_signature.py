@@ -8,6 +8,7 @@ from scripts import verify_windows_signature as verifier
 
 class WindowsSignatureTests(unittest.TestCase):
     def setUp(self):
+        """Build path-only fixtures without writing test binaries."""
         self.root = Path(__file__).parent.absolute()
         self.target = self.root / "sample.exe"
         self.signtool = self.root / "signtool.exe"
@@ -38,6 +39,7 @@ class WindowsSignatureTests(unittest.TestCase):
     @patch.object(verifier.subprocess, "run")
     @patch.object(verifier, "read_authenticode")
     def test_accepts_exact_single_sha256_rfc3161_signature(self, read_metadata, run):
+        """Accept only the pinned signer and exact timestamped SignTool row."""
         read_metadata.return_value = self.metadata
         run.return_value = subprocess.CompletedProcess(
             args=[],
@@ -49,11 +51,12 @@ class WindowsSignatureTests(unittest.TestCase):
         digest = verifier.verify(self.target, self.signer, self.signtool)
 
         self.assertEqual(digest, "c" * 64)
-        self.assertEqual(run.call_args.args[0][1:4], ["verify", "/pa", "/all"])
+        self.assertEqual(run.call_args.args[0][1:5], ["verify", "/v", "/pa", "/all"])
         self.assertIn("/tw", run.call_args.args[0])
 
     @patch.object(verifier, "read_authenticode")
     def test_rejects_invalid_signature_metadata(self, read_metadata):
+        """Reject invalid, catalog, unpinned, or untimestamped signatures."""
         cases = [
             ("status", "NotSigned"),
             ("signature_type", "Catalog"),
@@ -71,7 +74,7 @@ class WindowsSignatureTests(unittest.TestCase):
     def test_rejects_sign_tool_error_and_unexpected_summary(self, read_metadata, run):
         read_metadata.return_value = self.metadata
         for returncode, output in [
-            (2, "Successfully verified"),
+            (2, "0 sha256 RFC3161\nSuccessfully verified"),
             (0, "Successfully verified without a timestamp"),
             (0, "0 sha1 RFC3161"),
             (0, "0 sha256 RFC3161\n1 sha256 RFC3161"),
@@ -91,10 +94,10 @@ class WindowsSignatureTests(unittest.TestCase):
     @patch.object(verifier.subprocess, "run")
     @patch.object(verifier, "read_authenticode")
     def test_detects_file_change_during_sign_tool_check(self, read_metadata, run):
+        """Detect a changed digest without mutating a fixture file."""
         read_metadata.return_value = self.metadata
 
         def mutate(*_args, **_kwargs):
-            self.target.write_bytes(b"changed")
             return subprocess.CompletedProcess(
                 args=[], returncode=0, stdout="0 sha256 RFC3161", stderr=""
             )
@@ -110,6 +113,7 @@ class WindowsSignatureTests(unittest.TestCase):
             verifier.verify(self.target, self.signer, self.signtool)
 
     def test_rejects_invalid_paths_and_fingerprint(self):
+        """Reject unpinned fingerprints, relative tools, and unsupported files."""
         with self.assertRaisesRegex(ValueError, "fingerprint"):
             verifier.verify(self.target, "not-a-fingerprint", self.signtool)
         with self.assertRaisesRegex(ValueError, "absolute path"):
@@ -118,8 +122,59 @@ class WindowsSignatureTests(unittest.TestCase):
             verifier.verify(self.root / "archive.zip", self.signer, self.signtool)
 
     def test_rejects_unknown_sign_tool_summary_rows(self):
+        """Reject output shapes that the SignTool parser cannot verify."""
         with self.assertRaisesRegex(ValueError, "unrecognized"):
             verifier.signature_rows("0 malformed summary row with extra data")
+
+    def test_rejects_sign_tool_warning_and_error_diagnostics(self):
+        """Treat diagnostics as failures even when a valid summary row exists."""
+        for diagnostic in (
+            "Warning: revocation status unavailable",
+            "Error: verification failed",
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                with self.assertRaisesRegex(ValueError, "warning or error"):
+                    verifier.signature_rows(f"0 sha256 RFC3161\n{diagnostic}")
+
+    def test_rejects_network_paths(self):
+        """Reject UNC paths before querying file metadata or launching tools."""
+        with self.assertRaisesRegex(ValueError, "network paths"):
+            verifier.require_local_path(Path(r"\\server\share\release.exe"))
+
+    @patch.object(verifier.sys, "platform", "win32")
+    @patch.object(verifier, "windows_system_directory")
+    @patch.object(verifier.subprocess, "run")
+    def test_uses_os_system_directory_instead_of_systemroot(
+        self, run, system_directory
+    ):
+        """Ignore a caller-controlled SystemRoot when selecting PowerShell."""
+        system_directory.return_value = Path("C:/Windows/System32")
+        run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout='{"status":"Valid"}', stderr=""
+        )
+        with patch.dict(verifier.os.environ, {"SystemRoot": "Z:/untrusted"}):
+            verifier.read_authenticode(Path("C:/release/app.exe"))
+
+        command = run.call_args.args[0]
+        self.assertEqual(
+            command[0],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")),
+        )
+        self.assertNotIn("Z:/untrusted", command[0])
+        self.assertEqual(
+            run.call_args.kwargs["env"]["SystemRoot"], str(Path("C:/Windows"))
+        )
+        self.assertEqual(
+            run.call_args.kwargs["env"]["PATH"], str(Path("C:/Windows/System32"))
+        )
+        self.assertEqual(
+            run.call_args.kwargs["env"]["PSModulePath"],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0/Modules")),
+        )
+        self.assertEqual(
+            run.call_args.kwargs["cwd"],
+            str(Path("C:/Windows/System32/WindowsPowerShell/v1.0")),
+        )
 
 
 if __name__ == "__main__":
