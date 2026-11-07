@@ -14,19 +14,24 @@ $certificate = $null
 $rootCertificateInstalled = $false
 
 try {
+    Write-Host '[signature-smoke] copy unsigned fixture'
     Copy-Item -LiteralPath $source -Destination $target
     # The verifier must reject the absent timestamp before it ever launches this placeholder.
     Copy-Item -LiteralPath (Join-Path $env:WINDIR 'System32/where.exe') -Destination $fakeSignTool
 
+    Write-Host '[signature-smoke] create self-signed certificate'
     $certificate = New-SelfSignedCertificate `
         -Type CodeSigningCert `
         -Subject 'CN=UPD CI Test Only' `
         -CertStoreLocation 'Cert:\CurrentUser\My' `
         -NotAfter (Get-Date).AddDays(1)
+    Write-Host '[signature-smoke] export certificate'
     Export-Certificate -Cert $certificate -FilePath $certificateFile | Out-Null
+    Write-Host '[signature-smoke] trust certificate in CurrentUser Root'
     Import-Certificate -FilePath $certificateFile -CertStoreLocation 'Cert:\CurrentUser\Root' | Out-Null
     $rootCertificateInstalled = $true
 
+    Write-Host '[signature-smoke] sign fixture without timestamp'
     $signature = Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256
     if ($signature.Status.ToString() -ne 'Valid') {
         throw "Test fixture signing failed: $($signature.Status)"
@@ -49,6 +54,7 @@ try {
         $fakeSignTool,
         '--trust-immutable-file'
     )
+    Write-Host '[signature-smoke] run verifier'
     $output = & python @arguments 2>&1
     $exitCode = $LASTEXITCODE
     $message = $output -join "`n"
@@ -60,6 +66,7 @@ try {
     }
 }
 finally {
+    Write-Host '[signature-smoke] cleanup'
     if ($certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
         if ($rootCertificateInstalled) {
