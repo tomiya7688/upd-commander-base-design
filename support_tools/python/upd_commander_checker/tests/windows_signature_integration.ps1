@@ -10,8 +10,9 @@ $temporary = Join-Path $env:RUNNER_TEMP ("upd-signature-smoke-" + [guid]::NewGui
 New-Item -ItemType Directory -Path $temporary | Out-Null
 $target = Join-Path $temporary 'fixture.exe'
 $fakeSignTool = Join-Path $temporary 'signtool.exe'
+$certificateFile = Join-Path $temporary 'test-code-signing.cer'
+$certutil = Join-Path $env:WINDIR 'System32/certutil.exe'
 $certificate = $null
-$publicCertificate = $null
 $rootCertificateInstalled = $false
 
 try {
@@ -26,20 +27,14 @@ try {
         -Subject 'CN=UPD CI Test Only' `
         -CertStoreLocation 'Cert:\CurrentUser\My' `
         -NotAfter (Get-Date).AddDays(1)
+    Write-Information '[signature-smoke] export certificate'
+    Export-Certificate -Cert $certificate -FilePath $certificateFile | Out-Null
     Write-Information '[signature-smoke] trust certificate in CurrentUser Root'
-    $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificate.RawData)
-    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-        [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-        [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-    )
-    try {
-        $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $rootStore.Add($publicCertificate)
-        $rootCertificateInstalled = $true
+    & $certutil -user -f -addstore Root $certificateFile | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "certutil could not trust the test certificate (exit code $LASTEXITCODE)"
     }
-    finally {
-        $rootStore.Close()
-    }
+    $rootCertificateInstalled = $true
 
     Write-Information '[signature-smoke] sign fixture without timestamp'
     $signature = Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256
@@ -79,18 +74,10 @@ finally {
     Write-Information '[signature-smoke] cleanup'
     if ($certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
-        if ($rootCertificateInstalled -and $publicCertificate) {
-            $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-                [System.Security.Cryptography.X509Certificates.StoreName]::Root,
-                [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
-            )
-            try {
-                $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-                $rootStore.Remove($publicCertificate)
-            }
-            finally {
-                $rootStore.Close()
-                $publicCertificate.Dispose()
+        if ($rootCertificateInstalled) {
+            & $certutil -user -f -delstore Root $certificate.Thumbprint | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "certutil could not remove the temporary root certificate (exit code $LASTEXITCODE)"
             }
         }
     }
