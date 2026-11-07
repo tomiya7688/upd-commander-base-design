@@ -9,8 +9,8 @@ $temporary = Join-Path $env:RUNNER_TEMP ("upd-signature-smoke-" + [guid]::NewGui
 New-Item -ItemType Directory -Path $temporary | Out-Null
 $target = Join-Path $temporary 'fixture.exe'
 $fakeSignTool = Join-Path $temporary 'signtool.exe'
-$certificateFile = Join-Path $temporary 'test-code-signing.cer'
 $certificate = $null
+$publicCertificate = $null
 $rootCertificateInstalled = $false
 
 try {
@@ -25,11 +25,20 @@ try {
         -Subject 'CN=UPD CI Test Only' `
         -CertStoreLocation 'Cert:\CurrentUser\My' `
         -NotAfter (Get-Date).AddDays(1)
-    Write-Host '[signature-smoke] export certificate'
-    Export-Certificate -Cert $certificate -FilePath $certificateFile | Out-Null
     Write-Host '[signature-smoke] trust certificate in CurrentUser Root'
-    Import-Certificate -FilePath $certificateFile -CertStoreLocation 'Cert:\CurrentUser\Root' | Out-Null
-    $rootCertificateInstalled = $true
+    $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificate.RawData)
+    $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+        [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+        [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
+    )
+    try {
+        $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+        $rootStore.Add($publicCertificate)
+        $rootCertificateInstalled = $true
+    }
+    finally {
+        $rootStore.Close()
+    }
 
     Write-Host '[signature-smoke] sign fixture without timestamp'
     $signature = Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256
@@ -69,8 +78,19 @@ finally {
     Write-Host '[signature-smoke] cleanup'
     if ($certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
-        if ($rootCertificateInstalled) {
-            Remove-Item -LiteralPath "Cert:\CurrentUser\Root/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
+        if ($rootCertificateInstalled -and $publicCertificate) {
+            $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
+                [System.Security.Cryptography.X509Certificates.StoreName]::Root,
+                [System.Security.Cryptography.X509Certificates.StoreLocation]::CurrentUser
+            )
+            try {
+                $rootStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+                $rootStore.Remove($publicCertificate)
+            }
+            finally {
+                $rootStore.Close()
+                $publicCertificate.Dispose()
+            }
         }
     }
     Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
