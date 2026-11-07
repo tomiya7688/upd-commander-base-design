@@ -339,6 +339,11 @@ jobs:
         working-directory: support_tools/python/upd_commander_checker
         shell: cmd
         run: check_acceptance.bat
+      - name: Verify Windows rejects an untimestamped test signature
+        timeout-minutes: 5
+        working-directory: support_tools/python/upd_commander_checker
+        shell: pwsh
+        run: ./tests/windows_signature_integration.ps1
 
   required:
     name: required
