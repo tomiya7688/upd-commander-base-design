@@ -13,6 +13,21 @@
 
 これらはビルド経路の棚卸しであり、現在公開されている資産の一覧ではありません。GitHub Releases以外も含む既存配布物の所在・署名・対応状況は公開担当が確認し、検証できないものを明示する必要があります。CIのテスト用出力やローカルの開発ビルドが、公開用の署名済み成果物になるわけではありません。
 
+### 現行の公開状況（2026-11-08確認）
+
+確認対象のソースはmainのコミット `c60af49b525747ab7e3abca14aa8841765b13001` です。GitHub APIで確認した結果、GitHub Releasesは0件でした。これはGitHub Releases上に公開資産がないことだけを示し、GitHub外のダウンロードサイト、パッケージレジストリ、第三者ホスティングの不存在を示しません。
+
+mainの `.github/workflows` には `attestation-integration.yml`、`checker-self-check.yml`、`ci.yml`、`csharp-responsibility-thresholds.yml` があります。リリース公開用workflowは確認できませんでした。Attestation integrationは一時ディレクトリ内の `fixture.bin` と `SHA256SUMS` を使うテスト用であり、製品ビルドや公開資産ではありません。前掲のPython・Go・C++・C#の出力は開発用ビルド経路として記録し、現在の公開物とは扱いません。
+
+| 確認項目                | 2026-11-08時点の確認結果 | 範囲と残る確認                                                   |
+| ----------------------- | ------------------------ | ---------------------------------------------------------------- |
+| GitHub Releases         | 0件                      | GitHub Releases APIでの確認。リポジトリ外は対象外                |
+| リリース用workflow      | 確認できず               | mainの `.github/workflows` 4ファイルを確認                       |
+| Attestation integration | テストfixtureのみ        | `fixture.bin` と `SHA256SUMS`。製品・公開資産ではない            |
+| GitHub外の配布先        | 未確認                   | サイト、レジストリ、第三者ホスティング、旧版を公開担当が調査する |
+
+したがって、Issue #221の「現在サポート中の最新版release / 配布物」の調査と既存成果物の対応状況は未完了です。配布先と最新版を特定して実物を取得するまでは、外部の公開物が存在しない、または安全であるとは判断しません。未署名・真正性未確認の成果物を新規公開しない方針を維持します。
+
 ## Windows署名検証の現状
 
 `support_tools/python/upd_commander_checker/scripts/verify_windows_signature.py` は、Windows上の単一の`.exe`または`.dll`に対する部分検証コマンドです。Windows Authenticode APIで埋め込み署名、状態、署名者証明書SHA-256、timestamp証明書を読み、指定された信頼済み`signtool.exe`の`verify /pa /all /tw`出力で単一のSHA-256署名とRFC 3161 timestampを確認します。証明書のSHA-256値は、公開者を別途承認した管理済み情報から指定します。
