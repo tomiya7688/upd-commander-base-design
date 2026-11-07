@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$InformationPreference = 'Continue'
 
 $source = Join-Path $PWD 'dist/upd-commander-check/upd-commander-check.exe'
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
@@ -14,18 +15,18 @@ $publicCertificate = $null
 $rootCertificateInstalled = $false
 
 try {
-    Write-Host '[signature-smoke] copy unsigned fixture'
+    Write-Information '[signature-smoke] copy unsigned fixture'
     Copy-Item -LiteralPath $source -Destination $target
     # The verifier must reject the absent timestamp before it ever launches this placeholder.
     Copy-Item -LiteralPath (Join-Path $env:WINDIR 'System32/where.exe') -Destination $fakeSignTool
 
-    Write-Host '[signature-smoke] create self-signed certificate'
+    Write-Information '[signature-smoke] create self-signed certificate'
     $certificate = New-SelfSignedCertificate `
         -Type CodeSigningCert `
         -Subject 'CN=UPD CI Test Only' `
         -CertStoreLocation 'Cert:\CurrentUser\My' `
         -NotAfter (Get-Date).AddDays(1)
-    Write-Host '[signature-smoke] trust certificate in CurrentUser Root'
+    Write-Information '[signature-smoke] trust certificate in CurrentUser Root'
     $publicCertificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certificate.RawData)
     $rootStore = [System.Security.Cryptography.X509Certificates.X509Store]::new(
         [System.Security.Cryptography.X509Certificates.StoreName]::Root,
@@ -40,7 +41,7 @@ try {
         $rootStore.Close()
     }
 
-    Write-Host '[signature-smoke] sign fixture without timestamp'
+    Write-Information '[signature-smoke] sign fixture without timestamp'
     $signature = Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256
     if ($signature.Status.ToString() -ne 'Valid') {
         throw "Test fixture signing failed: $($signature.Status)"
@@ -63,7 +64,7 @@ try {
         $fakeSignTool,
         '--trust-immutable-file'
     )
-    Write-Host '[signature-smoke] run verifier'
+    Write-Information '[signature-smoke] run verifier'
     $output = & python @arguments 2>&1
     $exitCode = $LASTEXITCODE
     $message = $output -join "`n"
@@ -75,7 +76,7 @@ try {
     }
 }
 finally {
-    Write-Host '[signature-smoke] cleanup'
+    Write-Information '[signature-smoke] cleanup'
     if ($certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
         if ($rootCertificateInstalled -and $publicCertificate) {
