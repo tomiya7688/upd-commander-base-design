@@ -10,15 +10,12 @@ $temporary = Join-Path $env:RUNNER_TEMP ("upd-signature-smoke-" + [guid]::NewGui
 New-Item -ItemType Directory -Path $temporary | Out-Null
 $target = Join-Path $temporary 'fixture.exe'
 $fakeSignTool = Join-Path $temporary 'signtool.exe'
-$certificateFile = Join-Path $temporary 'test-code-signing.cer'
-$certutil = Join-Path $env:WINDIR 'System32/certutil.exe'
 $certificate = $null
-$rootCertificateInstalled = $false
 
 try {
     Write-Information '[signature-smoke] copy unsigned fixture'
     Copy-Item -LiteralPath $source -Destination $target
-    # The verifier must reject the absent timestamp before it ever launches this placeholder.
+    # The verifier must reject this temporary self-signed fixture before it ever launches this placeholder.
     Copy-Item -LiteralPath (Join-Path $env:WINDIR 'System32/where.exe') -Destination $fakeSignTool
 
     Write-Information '[signature-smoke] create self-signed certificate'
@@ -27,27 +24,20 @@ try {
         -Subject 'CN=UPD CI Test Only' `
         -CertStoreLocation 'Cert:\CurrentUser\My' `
         -NotAfter (Get-Date).AddDays(1)
-    Write-Information '[signature-smoke] export certificate'
-    Export-Certificate -Cert $certificate -FilePath $certificateFile | Out-Null
-    Write-Information '[signature-smoke] trust certificate in CurrentUser Root'
-    & $certutil -user -f -addstore Root $certificateFile | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "certutil could not trust the test certificate (exit code $LASTEXITCODE)"
-    }
-    $rootCertificateInstalled = $true
+    $fingerprint = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($certificate.RawData)).ToLowerInvariant()
 
     Write-Information '[signature-smoke] sign fixture without timestamp'
-    $signature = Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256
-    if ($signature.Status.ToString() -ne 'Valid') {
-        throw "Test fixture signing failed: $($signature.Status)"
+    Set-AuthenticodeSignature -FilePath $target -Certificate $certificate -HashAlgorithm SHA256 | Out-Null
+    $metadata = Get-AuthenticodeSignature -FilePath $target
+    if ($metadata.SignatureType.ToString() -ne 'Authenticode' -or -not $metadata.SignerCertificate) {
+        throw "Windows did not report an embedded signer certificate: $($metadata.Status)"
     }
-
-    $sha256 = [System.Security.Cryptography.SHA256]::Create()
-    try {
-        $fingerprint = [BitConverter]::ToString($sha256.ComputeHash($certificate.RawData)).Replace('-', '').ToLowerInvariant()
+    $observedFingerprint = [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($metadata.SignerCertificate.RawData)).ToLowerInvariant()
+    if ($observedFingerprint -ne $fingerprint) {
+        throw 'Windows reported an unexpected signer certificate'
     }
-    finally {
-        $sha256.Dispose()
+    if ($metadata.TimeStamperCertificate) {
+        throw 'Windows unexpectedly reported a timestamp certificate'
     }
 
     $arguments = @(
@@ -66,7 +56,7 @@ try {
     if ($exitCode -eq 0) {
         throw 'Verifier unexpectedly accepted a signature without an RFC 3161 timestamp'
     }
-    if ($message -notmatch 'Windows did not report a timestamp certificate') {
+    if ($message -notmatch 'Windows does not report a valid Authenticode signature|Windows did not report a timestamp certificate') {
         throw "Verifier failed for an unexpected reason: $message"
     }
 }
@@ -74,12 +64,6 @@ finally {
     Write-Information '[signature-smoke] cleanup'
     if ($certificate) {
         Remove-Item -LiteralPath "Cert:\CurrentUser\My/$($certificate.Thumbprint)" -Force -ErrorAction SilentlyContinue
-        if ($rootCertificateInstalled) {
-            & $certutil -user -f -delstore Root $certificate.Thumbprint | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Warning "certutil could not remove the temporary root certificate (exit code $LASTEXITCODE)"
-            }
-        }
     }
     Remove-Item -LiteralPath $temporary -Recurse -Force -ErrorAction SilentlyContinue
 }
