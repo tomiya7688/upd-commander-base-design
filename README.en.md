@@ -126,6 +126,7 @@ This route searches for products using a keyword from a search screen and displa
 - [Data Flow](docs/data-flow.en.md) — request and response flow
 - [Anti-patterns](docs/anti-patterns.en.md) — prohibited or discouraged structures
 - [Technical Specification](specification/README.en.md) — normative implementation rules
+- [Release security design (Japanese)](docs/release-security-design.md) — distribution inventory, signing, attestations, and release gates
 
 ## Scope
 

@@ -28,6 +28,18 @@ mainの `.github/workflows` には `attestation-integration.yml`、`checker-self
 
 したがって、Issue #221の「現在サポート中の最新版release / 配布物」の調査と既存成果物の対応状況は未完了です。配布先と最新版を特定して実物を取得するまでは、外部の公開物が存在しない、または安全であるとは判断しません。未署名・真正性未確認の成果物を新規公開しない方針を維持します。
 
+### GitHub外の配布先を探した結果（2026-11-08）
+
+調査時点の基準は既定ブランチの `88cc13c82539f44b7ac67efc3aa6646ca2809e0c` です。公開README、リポジトリ内の配布・公開設定、GitHubの公開情報、および製品名によるWeb検索を確認しました。検索結果に現れないことは、配布物が存在しない証拠ではありません。
+
+- [GitHub Releases](https://github.com/tomiya7688/upd-commander-base-design/releases) には調査時点でリリースがありません。
+- 日本語・英語READMEにダウンロード先はありません。Python CheckerのREADMEは開発・検証用のビルドを説明し、署名済み公開リリースや公開アーカイブを提供していないとしています。
+- リポジトリの既定ブランチを対象にPyPI、NuGet、Docker、wingetへの公開設定を検索しましたが該当は見つかりませんでした。GitHubリポジトリ検索もこのリポジトリ以外の候補を返しませんでした。いずれも検索範囲に限られ、網羅性はありません。
+- 製品名・リポジトリ名によるWeb検索でも該当する公開配布ページは見つかりませんでした。個人サイト、クラウドストレージ、非公開・非索引のレジストリやミラーは確認できていません。
+- GitHubのタグ一覧と最新タグは確認できていません。タグページの取得と `git ls-remote --tags` はネットワーク接続エラーとなりました。
+
+このため、現在サポート中の最新版、GitHub外の配布先、既存の実配布物は未特定です。次は所有者が管理するサイト・レジストリ・ストレージを確認し、配布物を入手できた場合に形式、版、SHA-256、署名とattestationを記録します。新たな未署名・未検証成果物を公開しない方針を維持します。
+
 ## Windows署名検証の現状
 
 `support_tools/python/upd_commander_checker/scripts/verify_windows_signature.py` は、Windows上の単一の`.exe`または`.dll`に対する部分検証コマンドです。Windows Authenticode APIで埋め込み署名、状態、署名者証明書SHA-256、timestamp証明書を読み、指定された信頼済み`signtool.exe`の`verify /pa /all /tw`出力で単一のSHA-256署名とRFC 3161 timestampを確認します。証明書のSHA-256値は、公開者を別途承認した管理済み情報から指定します。
