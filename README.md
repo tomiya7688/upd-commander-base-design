@@ -167,6 +167,7 @@ UI Commander --[呼出]--> UI Processing
 - [Anti-patterns](docs/anti-patterns.md) — 禁止・非推奨構造
 - [Technical Specification](specification/README.md) — 実装時に従う規定
 - [Third-Party Notices](THIRD_PARTY_NOTICES.md) — 配布チェッカーが含む第三者コンポーネントのライセンス
+- [配布物のセキュリティ](docs/release-security-design.md) — 現行公開状況、署名・attestation、公開ゲート
 
 ## スコープ
 
