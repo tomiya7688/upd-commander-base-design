@@ -40,6 +40,14 @@ mainの `.github/workflows` には `attestation-integration.yml`、`checker-self
 
 このため、現在サポート中の最新版、GitHub外の配布先、既存の実配布物は未特定です。次は所有者が管理するサイト・レジストリ・ストレージを確認し、配布物を入手できた場合に形式、版、SHA-256、署名とattestationを記録します。新たな未署名・未検証成果物を公開しない方針を維持します。
 
+### 所有者アカウントの公開情報を確認した結果（2026-11-08）
+
+GitHubの[所有者プロフィール](https://github.com/tomiya7688)では、確認時にPackagesの表示が0で、ページ本文に外部サイトへのリンクは見当たりませんでした。これは公開プロフィール上で確認できた表示に限られ、別アカウントや非公開の配布場所を否定するものではありません。
+
+Python Checkerのパッケージ定義（`support_tools/python/upd_commander_checker/pyproject.toml`）に記載された配布名は `upd-commander-checker`、CLI名は `upd-commander-check` です。これらの[PyPIプロジェクトページ](https://pypi.org/project/upd-commander-checker/)を確認しようとしましたが、参照ツールでページを取得できませんでした。取得失敗を未公開の証拠とは扱いません。NuGet・npm・Docker Hubの検索ページ、GitHub PagesのプロジェクトURLも同じく参照ツールから取得できず、公開状態は確認できていません。
+
+既定ブランチのコード検索では `deploy-pages`、`github-pages`、`gh-pages` に該当する設定は見つかりませんでした。GitHub PagesのURL自体にもアクセスできなかったため、Pagesが無効だとは結論しません。今回確認できた所有者管理の外部サイト・レジストリ・ストレージ、および取得可能な実配布物はありません。公開プロフィールや検索から分からないサイト・アカウント・保管場所は未確認のままです。
+
 ## Windows署名検証の現状
 
 `support_tools/python/upd_commander_checker/scripts/verify_windows_signature.py` は、Windows上の単一の`.exe`または`.dll`に対する部分検証コマンドです。Windows Authenticode APIで埋め込み署名、状態、署名者証明書SHA-256、timestamp証明書を読み、指定された信頼済み`signtool.exe`の`verify /pa /all /tw`出力で単一のSHA-256署名とRFC 3161 timestampを確認します。証明書のSHA-256値は、公開者を別途承認した管理済み情報から指定します。
